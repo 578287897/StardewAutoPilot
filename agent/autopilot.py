@@ -165,6 +165,7 @@ class DayLog:
         self.fish_failed = False   # time filler: no fishable water here, wait instead
         self.road_failed = False   # time filler: no road tiles or materials left today
         self.decor_failed = False  # time filler: nothing to decorate today
+        self.load_failed = False   # time filler: nothing (left) to put into the machines today
         self.road_skip = set()     # road tiles blocked today (trees, crops)
         self.junk_fishing = 0      # time-filler fishing rounds that caught only junk
         self.awaiting_script = False
@@ -354,6 +355,11 @@ class Agent:
                 morning.append({"type": "interact", "x": p["x"], "y": p["y"]})
         if st.get("unread_mail"):
             morning.append({"type": "check_mail"})
+        machines = st.get("machines") or []
+        if any(m.get("ready") for m in machines):
+            morning.append({"type": "collect_machines"})
+        if machines:
+            morning.append({"type": "load_machines"})
 
         prepared = self.prepared
         self.prepared = None
@@ -687,6 +693,8 @@ class Agent:
                 self.day.road_failed = True
             if not res.get("ok") and action["type"] == "decorate":
                 self.day.decor_failed = True
+            if action["type"] == "load_machines" and not res.get("ok"):
+                self.day.load_failed = True  # nothing left to put in; try again tomorrow
             elif action["type"] == "fish":
                 caught = res.get("caught") or []
                 if caught and all(c in self.JUNK for c in caught):
@@ -731,6 +739,11 @@ class Agent:
     def time_filler(self, st):
         """Fixed, model-free way to use the rest of the afternoon where the player already is."""
         p = st.get("player", {})
+        machines = st.get("machines") or []
+        if any(m.get("ready") for m in machines):
+            return {"type": "collect_machines"}
+        if not self.day.load_failed and any(not m.get("contains") for m in machines):
+            return {"type": "load_machines"}
         if not self.day.road_failed and self.farm_plan() and p.get("stamina", 0) >= 0.3 * p.get("max_stamina", 270):
             return {"type": "build_road"}
         if not self.day.decor_failed and self.farm_plan():
@@ -820,6 +833,12 @@ class Agent:
                 return res
             st = self.safe(self.game.state, st)
             action, t = {"type": "place", "item": action.get("item", "")}, "place"
+        if t == "interact" and "x" in action and "npc" not in action:
+            m = next((m for m in st.get("machines") or [] if (m["x"], m["y"]) == (action["x"], action["y"])), None)
+            if m:
+                action = {"type": "collect_machines"} if m.get("ready") else {"type": "load_machines"}
+                t = action["type"]
+                log(f"interact {m['name']} → 改成 {t}（机器要用 load_machines / collect_machines）")
         if t == "build_road":
             return self.build_road(st)
         if t == "decorate":
@@ -986,10 +1005,13 @@ class Agent:
                         return self.claim_spot(layout, spot)
             return None
         if "scarecrow" in name or "稻草人" in name:
+            zone = (layout.get("plan") or {}).get("zones", {}).get("crops")
             for plot in layout.get("plots", []):
-                spot = (plot["x"] + plot["w"] // 2, plot["y"] - 1)
-                if spot not in taken and self.placeable(spot):
-                    return self.claim_spot(layout, spot)
+                mid_x, mid_y = plot["x"] + plot["w"] // 2, plot["y"] + plot["h"] // 2
+                for spot in ((plot["x"] + plot["w"], mid_y), (plot["x"] - 1, mid_y), (mid_x, plot["y"] + plot["h"]), (mid_x, plot["y"] - 1)):
+                    inside = not zone or (zone[0] <= spot[0] < zone[0] + zone[2] and zone[1] <= spot[1] < zone[1] + zone[3])
+                    if inside and spot not in taken and self.placeable(spot):
+                        return self.claim_spot(layout, spot)
             return None
         bin_xy = st.get("shipping_bin")
         if not bin_xy:

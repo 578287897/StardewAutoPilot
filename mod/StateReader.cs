@@ -17,12 +17,13 @@ namespace StardewAutoPilot
     {
         public static Dictionary<string, object> GetState(ModEntry mod)
         {
-            if (!Context.IsWorldReady || Game1.showingEndOfNightStuff)
+            // the date flips to tomorrow early in the night, before the save: not ready until SMAPI's DayStarted
+            if (!Context.IsWorldReady || Game1.showingEndOfNightStuff || mod.DayStartedFor != Game1.Date.TotalDays)
             {
                 return new Dictionary<string, object>
                 {
                     ["ready"] = false,
-                    ["reason"] = Game1.activeClickableMenu is TitleMenu ? "title_screen" : "loading_or_saving",
+                    ["reason"] = Game1.activeClickableMenu is TitleMenu ? "title_screen" : Context.IsWorldReady ? "night_in_progress" : "loading_or_saving",
                     ["menu"] = Game1.activeClickableMenu == null ? null : MenuAutomation.Describe(mod, Game1.activeClickableMenu)
                 };
             }

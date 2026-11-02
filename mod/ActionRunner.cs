@@ -1042,9 +1042,11 @@ namespace StardewAutoPilot
             if (!loc.canFishHere())
                 throw new ActionFailed($"can't fish in {loc.NameOrUniqueName}");
             int added = Fishing.AddedDistance(P);
-            if (!Fishing.FindSpot(loc, P.TilePoint, added, out var path, out int dir, out float spotPower))
+            var badSpots = new HashSet<Point>();
+            if (!Fishing.FindSpot(loc, P.TilePoint, added, out var path, out int dir, out float spotPower, badSpots))
                 throw new ActionFailed($"no reachable fishing spot in {loc.NameOrUniqueName}");
             foreach (var o in this.WalkPath(path)) yield return o;
+            var misses = new List<string>();
 
             AttachTackle((FishingRod)P.Items[slot]);
             var caught = new List<string>();
@@ -1083,7 +1085,17 @@ namespace StardewAutoPilot
                     if (!rod.isFishing)
                     {
                         P.completelyStopAnimatingOrDoingAction();
-                        throw new ActionFailed("the cast did not land in fishable water");
+                        var stand = P.TilePoint;
+                        var aim = Fishing.Landing(P.StandingPixel, dir, power, added);
+                        misses.Add($"stood ({stand.X},{stand.Y}) facing {dir}, power {power:0.00}, aimed at ({aim.X},{aim.Y})");
+                        // try another spot instead of giving up on the whole action (this cast doesn't count)
+                        badSpots.Add(stand);
+                        if (misses.Count >= 3 || !Fishing.FindSpot(loc, stand, added, out path, out dir, out spotPower, badSpots))
+                            throw new ActionFailed("the cast did not land in fishable water: " + string.Join("; ", misses));
+                        for (int k = 0; k < 20; k++) yield return null;
+                        foreach (var o in this.WalkPath(path)) yield return o;
+                        c--;
+                        continue;
                     }
 
                     // wait for a bite (game time passes), then hook it
@@ -1659,7 +1671,15 @@ namespace StardewAutoPilot
                     break;
                 }
                 if (World.Chebyshev(P.TilePoint, t) > 1 || P.TilePoint == t)
+                {
+                    // a tile walled in by the house, a cliff or a fence is left for later instead of ending the whole run
+                    if (World.FindPath(farm, P.TilePoint, p => World.Chebyshev(p, t) == 1, 20000) == null)
+                    {
+                        skipped++;
+                        continue;
+                    }
                     foreach (var o in this.WalkTo(t, adjacent: true)) yield return o;
+                }
                 foreach (var o in this.EnsureFree()) yield return o;
                 if (c == 't')
                 {
@@ -1930,6 +1950,8 @@ namespace StardewAutoPilot
                 {
                     int slot = Machines.AcceptedSlot(machine, P, only);
                     if (slot < 0)
+                        slot = Machines.StockFromChests(machine, P, only);  // ore and coal usually sit in the chest
+                    if (slot < 0)
                         continue;
                     if (!ReferenceEquals(Game1.currentLocation, loc))
                         foreach (var o in this.GotoLocation(loc.NameOrUniqueName)) yield return o;
@@ -1945,11 +1967,11 @@ namespace StardewAutoPilot
                     loc.checkAction(new xTile.Dimensions.Location(tile.X, tile.Y), Game1.viewport, P);
                     for (int i = 0; i < 10; i++) yield return null;
                     if (machine.heldObject.Value != null)
-                        loaded.Add($"{name} -> {machine.DisplayName} ({machine.MinutesUntilReady / 60}h)");
+                        loaded.Add($"{name} -> {machine.DisplayName} (ready in {machine.MinutesUntilReady} min)");
                 }
             }
             J.Data["loaded"] = loaded;
-            J.Message = loaded.Count == 0 ? "no empty machine accepts anything in the backpack" : $"loaded: {string.Join(", ", loaded)}";
+            J.Message = loaded.Count == 0 ? "no empty machine accepts anything in the backpack or the farm chests" : $"loaded: {string.Join(", ", loaded)}";
         }
 
         private IEnumerable<object> Cook(string query, int count)

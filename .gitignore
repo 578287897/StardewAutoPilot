@@ -13,3 +13,6 @@ agent/memory/*/
 save-backups/
 __pycache__/
 *.pyc
+
+# generated promo video and stills (rebuild with: py promo/make_video.py)
+promo/out/

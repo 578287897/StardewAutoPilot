@@ -19,20 +19,20 @@ while (-not $AnyNight) {
 }
 # 2. wait until the new morning is loaded AND the save file was rewritten after bedtime
 #    (/state can still report the old day as ready for a few seconds after going to bed)
-$bed = Get-Date
-$oldDay = $null
-try { $oldDay = (Invoke-RestMethod http://localhost:8765/state -TimeoutSec 5).day } catch {}
+#    The game flips the date early in the night, before saving: so require the save FILE to be rewritten after
+#    this point, then the new day to be fully started (the mod reports ready only after SMAPI's DayStarted).
 $saveName = (Get-Content (Join-Path $agent "memory\$profileName\save_name.txt")).Trim()
 $saveFile = "$env:APPDATA\StardewValley\Saves\$saveName\$saveName"
+$saveBefore = (Get-Item $saveFile).LastWriteTime
 while ($true) {
     try {
         $s = Invoke-RestMethod http://localhost:8765/state -TimeoutSec 5
-        $saved = (Get-Item $saveFile).LastWriteTime -gt $bed.AddMinutes(-2)
-        if ($s.ready -and -not $s.menu -and $s.day -ne $oldDay -and $saved) { break }
+        $saved = (Get-Item $saveFile).LastWriteTime -gt $saveBefore
+        if ($saved -and $s.ready -and -not $s.menu -and $s.time -le 610) { break }
     } catch {}
     Start-Sleep 3
 }
-Start-Sleep 5
+Start-Sleep 10  # let the save file finish flushing
 "new morning: day $($s.day) $($s.time_str)"
 
 # 3. stop agent + game, deploy, restart

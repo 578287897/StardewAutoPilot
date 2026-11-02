@@ -80,14 +80,15 @@ namespace StardewAutoPilot
         public static Point TileCenterPixel(Point tile) => new Point(tile.X * 64 + 32, tile.Y * 64 + 32);
 
         /// <summary>A standing tile from which a cast lands in fishable water, the direction to face and the power.</summary>
-        public static bool FindSpot(GameLocation loc, Point from, int added, out System.Collections.Generic.List<Point> path, out int dir, out float power)
+        public static bool FindSpot(GameLocation loc, Point from, int added, out System.Collections.Generic.List<Point> path, out int dir, out float power,
+            System.Collections.Generic.ISet<Point> exclude = null)
         {
             int foundDir = -1;
             float foundPower = -1f;
             int maxReach = added + 5;
             bool IsSpot(Point p)
             {
-                if (loc.isWaterTile(p.X, p.Y))
+                if (loc.isWaterTile(p.X, p.Y) || exclude != null && exclude.Contains(p))
                     return false;
                 for (int d = 0; d < 4; d++)
                 {

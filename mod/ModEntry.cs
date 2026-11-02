@@ -17,6 +17,7 @@ namespace StardewAutoPilot
         internal MenuAutomation Menus;
         internal readonly MessageLog Log = new MessageLog(300);
         internal DateTime LastAgentContact = DateTime.MinValue;
+        internal int DayStartedFor = -1;  // Game1.Date.TotalDays of the last fully started day
 
         private readonly ConcurrentQueue<Action> mainThreadQueue = new ConcurrentQueue<Action>();
         private HttpServer server;
@@ -33,7 +34,12 @@ namespace StardewAutoPilot
             this.Menus = new MenuAutomation(this);
 
             helper.Events.GameLoop.UpdateTicked += this.OnUpdateTicked;
-            helper.Events.GameLoop.DayStarted += (_, _) => this.Log.Add("day", $"New day: {Game1.currentSeason} {Game1.dayOfMonth}, year {Game1.year}");
+            helper.Events.GameLoop.DayStarted += (_, _) =>
+            {
+                // DayStarted fires only after the night (and its save) is complete: until then the world isn't "ready"
+                this.DayStartedFor = Game1.Date.TotalDays;
+                this.Log.Add("day", $"New day: {Game1.currentSeason} {Game1.dayOfMonth}, year {Game1.year}");
+            };
             helper.Events.GameLoop.ReturnedToTitle += (_, _) => this.Runner.Cancel("returned to title");
             helper.Events.Display.MenuChanged += (_, e) =>
             {
