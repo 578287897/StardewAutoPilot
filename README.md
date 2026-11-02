@@ -62,6 +62,8 @@
 | `agent/memory/strategy.md` | 初始策略；每次游玩会在 `memory/<profile>/` 里自己改写 |
 | `redeploy_at_night.ps1` | 改了 mod 之后：等今晚存档完成再重启游戏并接着玩 |
 
+更新内容见 [CHANGELOG.md](CHANGELOG.md)。
+
 ## mod 接口（localhost:8765）
 
 `GET /state` `/map` `/crops` `/farm_grid` `/progress` `/crop_data` `/social` `/recipes` `/bundles` `/ranch` `/items` `/messages` …，`POST /act {"type": ...}` 执行动作（完整列表见 `agent/prompts.py` 的 `ACTIONS_DOC`）。

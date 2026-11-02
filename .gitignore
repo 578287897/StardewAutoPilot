@@ -16,3 +16,6 @@ __pycache__/
 
 # generated promo video and stills (rebuild with: py promo/make_video.py)
 promo/out/
+
+# local promo material (video generator, narration) - not published
+promo/
