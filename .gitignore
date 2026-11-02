@@ -1,0 +1,15 @@
+# build output
+mod/bin/
+mod/obj/
+*.user
+
+# local settings (copy agent/config.example.json to agent/config.json)
+agent/config.json
+
+# everything a playthrough produces: logs, learned memory, save backups
+agent/runs/
+agent/memory/*/
+!agent/memory/strategy.md
+save-backups/
+__pycache__/
+*.pyc
