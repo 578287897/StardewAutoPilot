@@ -37,7 +37,7 @@ namespace StardewAutoPilot
         {
             "move_to", "goto_location", "use_tool", "interact", "place", "select", "eat", "ship", "ship_produce",
             "open_shop", "buy", "dialog_answer", "dialog_advance", "menu_click", "choose_profession", "close_menu",
-            "wait", "sleep", "check_mail", "craft", "store", "take", "fish", "mine", "leave_mine", "fight", "donate", "build", "buy_animal", "care_animals", "clear_area", "load_machines", "collect_machines", "cook", "buy_backpack", "buy_weapon", "lay_path", "upgrade_tool", "festival", "water_crops", "harvest_crops", "clear_debris", "plant_seeds", "forage"
+            "wait", "sleep", "check_mail", "craft", "store", "take", "fish", "mine", "leave_mine", "fight", "donate", "build", "buy_animal", "care_animals", "clear_area", "load_machines", "collect_machines", "cook", "buy_backpack", "buy_weapon", "lay_path", "upgrade_tool", "upgrade_house", "festival", "water_crops", "harvest_crops", "clear_debris", "plant_seeds", "forage"
         };
 
         // categories sold by ship_produce: vegetable, fruit, flower, forage, fish, egg, milk, artisan, animal goods, mineral, gem, syrup, monster loot
@@ -179,6 +179,7 @@ namespace StardewAutoPilot
                 case "fight": return this.Fight(Math.Clamp(Int(a, "range", 6), 1, 15));
                 case "buy_weapon": return this.BuyWeapon();
                 case "upgrade_tool": return this.UpgradeTool(Str(a, "tool"));
+                case "upgrade_house": return this.UpgradeHouse();
                 case "festival": return this.Festival(Req(a, "activity"));
                 case "lay_path": return this.LayPath(TilesArg(a, "tiles"), Req(a, "item"));
                 case "craft": return this.CraftAction(Req(a, "item"), Math.Clamp(Int(a, "count", 1), 1, 99), OptXY(a));
@@ -1410,6 +1411,40 @@ namespace StardewAutoPilot
             J.Message = (collected.Count > 0 ? "collected " + string.Join(", ", collected) + "; " : "")
                         + $"Clint is upgrading to {upgrade.DisplayName} for {info.Price}g" + (barsNeeded > 0 ? $" + {barsNeeded}x {barName}" : "")
                         + ": ready in 2 days (come back with upgrade_tool to collect)";
+        }
+
+        /// <summary>
+        /// Robin's first house upgrade (kitchen): 10000g + 450 wood, 3 days — same costs as the carpenter menu.
+        /// Wood is taken from the backpack first, then farm chests.
+        /// </summary>
+        private IEnumerable<object> UpgradeHouse()
+        {
+            var home = Utility.getHomeOfFarmer(P) ?? throw new ActionFailed("no farmhouse");
+            if (home.upgradeLevel >= 1)
+                throw new ActionFailed($"house is already upgrade level {home.upgradeLevel}");
+            if (P.daysUntilHouseUpgrade.Value > 0)
+                throw new ActionFailed($"Robin is already upgrading the house ({P.daysUntilHouseUpgrade.Value} days left)");
+            if (Game1.currentLocation.Name != "ScienceHouse")
+                foreach (var o in this.GotoLocation("ScienceHouse")) yield return o;
+            if (!ShopkeeperHere("Robin") || Game1.timeOfDay >= 1700)
+                throw new ActionFailed("Robin isn't at her shop right now (open 9:00-17:00, not Tuesday)");
+            if (Game1.IsThereABuildingUnderConstruction("Robin"))
+                throw new ActionFailed("Robin is already building something");
+            const int cost = 10000, woodNeed = 450;
+            const string woodId = "(O)388";
+            if (P.Money < cost)
+                throw new ActionFailed($"house upgrade costs {cost}g, you have {P.Money}g");
+            int haveWood = P.Items.CountId(woodId) + Crafting.FarmChests().Sum(c => c.Items.CountId(woodId));
+            if (haveWood < woodNeed)
+                throw new ActionFailed($"house upgrade needs {woodNeed} wood, you have {haveWood} (backpack + chests)");
+            int left = woodNeed - P.Items.ReduceId(woodId, woodNeed);
+            foreach (var chest in Crafting.FarmChests())
+                if (left > 0)
+                    left -= chest.Items.ReduceId(woodId, left);
+            P.Money -= cost;
+            P.daysUntilHouseUpgrade.Value = 3;
+            J.Message = $"Robin will upgrade the house (kitchen) for {cost}g + {woodNeed} wood: ready in 3 days";
+            yield break;
         }
 
         /// <summary>

@@ -18,8 +18,11 @@ namespace StardewAutoPilot
     ///   GET  /map?radius=10        ASCII map around the player + legend
     ///   GET  /crops?location=Farm  crop summary (needs water / ready / growing)
     ///   GET  /messages?since=N     HUD / dialogue / menu log
+    ///   POST /new_game {name,...}  create a save from the title screen (POST only)
+    ///   POST /load_save {name}     load a save from the title screen (POST only)
     ///   POST /act   {type,...}     run one action and wait until it finishes
     ///   POST /cancel               cancel the running action
+    ///   Optional ApiToken in config.json: require Authorization Bearer / X-Api-Token
     /// </summary>
     internal class HttpServer
     {
@@ -50,14 +53,57 @@ namespace StardewAutoPilot
             }
         }
 
+        private bool Authorized(HttpListenerContext ctx)
+        {
+            string expected = this.mod.Config.ApiToken;
+            if (string.IsNullOrEmpty(expected))
+                return true;
+            string bearer = ctx.Request.Headers["Authorization"];
+            if (!string.IsNullOrEmpty(bearer) && bearer.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+                && bearer.Substring("Bearer ".Length) == expected)
+                return true;
+            return ctx.Request.Headers["X-Api-Token"] == expected;
+        }
+
+        private static async Task<JsonElement> ReadJsonBody(HttpListenerContext ctx)
+        {
+            using var reader = new StreamReader(ctx.Request.InputStream, Encoding.UTF8);
+            string body = await reader.ReadToEndAsync();
+            if (string.IsNullOrWhiteSpace(body))
+                return default;
+            return JsonDocument.Parse(body).RootElement.Clone();
+        }
+
+        private static string JsonStr(JsonElement el, string name, string fallback = null)
+        {
+            if (el.ValueKind == JsonValueKind.Object && el.TryGetProperty(name, out var p) && p.ValueKind == JsonValueKind.String)
+                return p.GetString();
+            return fallback;
+        }
+
+        private static int JsonInt(JsonElement el, string name, int fallback)
+        {
+            if (el.ValueKind == JsonValueKind.Object && el.TryGetProperty(name, out var p) && p.TryGetInt32(out var n))
+                return n;
+            return fallback;
+        }
+
         private async Task Handle(HttpListenerContext ctx)
         {
             object result;
             int status = 200;
             try
             {
+                if (!this.Authorized(ctx))
+                {
+                    status = 401;
+                    result = new { ok = false, message = "unauthorized: set Authorization Bearer or X-Api-Token" };
+                }
+                else
+                {
                 this.mod.LastAgentContact = DateTime.UtcNow;
                 string path = ctx.Request.Url.AbsolutePath.TrimEnd('/').ToLowerInvariant();
+                string method = ctx.Request.HttpMethod.ToUpperInvariant();
                 var q = ctx.Request.QueryString;
                 switch (path)
                 {
@@ -81,7 +127,12 @@ namespace StardewAutoPilot
                         result = await this.mod.OnMainThread(() => (object)StateReader.GetCrops(loc));
                         break;
                     case "/tile":
-                        int tx = int.Parse(q["x"]), ty = int.Parse(q["y"]);
+                        if (!int.TryParse(q["x"], out int tx) || !int.TryParse(q["y"], out int ty))
+                        {
+                            status = 400;
+                            result = new { ok = false, message = "tile requires integer query params x and y" };
+                            break;
+                        }
                         result = await this.mod.OnMainThread(() => (object)StateReader.GetTile(tx, ty));
                         break;
                     case "/items":
@@ -89,28 +140,39 @@ namespace StardewAutoPilot
                         result = await this.mod.OnMainThread(() => (object)ids.Select(id => ItemInfo.Describe(id)).ToList());
                         break;
                     case "/new_game":
-                        string pname = q["name"] ?? "AutoPilot", fname = q["farm"] ?? "AI", fav = q["favorite"] ?? "Parsnips";
-                        int farmType = int.TryParse(q["farm_type"], out var ft) ? ft : 0;
-                        result = await this.mod.OnMainThread(() =>
+                        if (method != "POST")
                         {
-                            if (Context.IsWorldReady)
-                                return (object)new { ok = false, message = "a save is already loaded" };
-                            if (Game1.activeClickableMenu is not StardewValley.Menus.TitleMenu title)
-                                return new { ok = false, message = "not on the title screen" };
-                            // same steps as the title menu's New button + character creator OK (with 'skip intro')
-                            Game1.resetPlayer();
-                            Game1.whichFarm = farmType;
-                            Game1.startingCabins = 0;
-                            Game1.multiplayerMode = 0;
-                            Game1.player.Name = pname;
-                            Game1.player.displayName = pname;
-                            Game1.player.farmName.Value = fname;
-                            Game1.player.favoriteThing.Value = fav;
-                            Game1.player.isCustomized.Value = true;
-                            Game1.player.ConvertClothingOverrideToClothesItems();
-                            title.createdNewCharacter(true);
-                            return new { ok = true, message = $"creating new game: {pname} / {fname} farm (type {farmType})" };
-                        });
+                            status = 405;
+                            result = new { ok = false, message = "use POST /new_game with JSON body {name,farm,favorite,farm_type}" };
+                            break;
+                        }
+                        {
+                            var jsonBody = await ReadJsonBody(ctx);
+                            string pname = JsonStr(jsonBody, "name", q["name"]) ?? "AutoPilot";
+                            string fname = JsonStr(jsonBody, "farm", q["farm"]) ?? "AI";
+                            string fav = JsonStr(jsonBody, "favorite", q["favorite"]) ?? "Parsnips";
+                            int farmType = JsonInt(jsonBody, "farm_type", int.TryParse(q["farm_type"], out var ft) ? ft : 0);
+                            result = await this.mod.OnMainThread(() =>
+                            {
+                                if (Context.IsWorldReady)
+                                    return (object)new { ok = false, message = "a save is already loaded" };
+                                if (Game1.activeClickableMenu is not StardewValley.Menus.TitleMenu title)
+                                    return new { ok = false, message = "not on the title screen" };
+                                // same steps as the title menu's New button + character creator OK (with 'skip intro')
+                                Game1.resetPlayer();
+                                Game1.whichFarm = farmType;
+                                Game1.startingCabins = 0;
+                                Game1.multiplayerMode = 0;
+                                Game1.player.Name = pname;
+                                Game1.player.displayName = pname;
+                                Game1.player.farmName.Value = fname;
+                                Game1.player.favoriteThing.Value = fav;
+                                Game1.player.isCustomized.Value = true;
+                                Game1.player.ConvertClothingOverrideToClothesItems();
+                                title.createdNewCharacter(true);
+                                return new { ok = true, message = $"creating new game: {pname} / {fname} farm (type {farmType})" };
+                            });
+                        }
                         break;
                     case "/plot_check":
                     case "/find_plot":
@@ -159,19 +221,28 @@ namespace StardewAutoPilot
                         result = new { saves = Directory.Exists(Constants.SavesPath) ? Directory.GetDirectories(Constants.SavesPath).Select(Path.GetFileName).ToArray() : Array.Empty<string>() };
                         break;
                     case "/load_save":
-                        string save = q["name"];
-                        result = await this.mod.OnMainThread(() =>
+                        if (method != "POST")
                         {
-                            if (Context.IsWorldReady)
-                                return (object)new { ok = false, message = "a save is already loaded" };
-                            if (!(Game1.activeClickableMenu is StardewValley.Menus.TitleMenu))
-                                return new { ok = false, message = "not on the title screen" };
-                            if (string.IsNullOrEmpty(save) || !Directory.Exists(Path.Combine(Constants.SavesPath, save)))
-                                return new { ok = false, message = "unknown save " + save };
-                            StardewValley.SaveGame.Load(save);
-                            Game1.exitActiveMenu();
-                            return new { ok = true, message = "loading " + save };
-                        });
+                            status = 405;
+                            result = new { ok = false, message = "use POST /load_save with JSON body {name}" };
+                            break;
+                        }
+                        {
+                            var jsonBody = await ReadJsonBody(ctx);
+                            string save = JsonStr(jsonBody, "name", q["name"]);
+                            result = await this.mod.OnMainThread(() =>
+                            {
+                                if (Context.IsWorldReady)
+                                    return (object)new { ok = false, message = "a save is already loaded" };
+                                if (!(Game1.activeClickableMenu is StardewValley.Menus.TitleMenu))
+                                    return new { ok = false, message = "not on the title screen" };
+                                if (string.IsNullOrEmpty(save) || !Directory.Exists(Path.Combine(Constants.SavesPath, save)))
+                                    return new { ok = false, message = "unknown save " + save };
+                                StardewValley.SaveGame.Load(save);
+                                Game1.exitActiveMenu();
+                                return new { ok = true, message = "loading " + save };
+                            });
+                        }
                         break;
                     case "/messages":
                         long since = long.TryParse(q["since"], out var s) ? s : 0;
@@ -200,6 +271,7 @@ namespace StardewAutoPilot
                         result = new { ok = false, message = "unknown endpoint " + path };
                         break;
                 }
+                } // Authorized
             }
             catch (Exception ex)
             {

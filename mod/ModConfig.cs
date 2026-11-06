@@ -1,9 +1,34 @@
+using StardewModdingAPI;
+
 namespace StardewAutoPilot
 {
     public class ModConfig
     {
         /// <summary>Local HTTP port the agent connects to (http://localhost:PORT/).</summary>
         public int Port { get; set; } = 8765;
+
+        /// <summary>
+        /// Optional shared secret. When non-empty, every request must send
+        /// Authorization: Bearer TOKEN or X-Api-Token: TOKEN. Leave empty for local-only use without auth.
+        /// </summary>
+        public string ApiToken { get; set; } = "";
+
+        // ----- LLM (read by the Python agent from this config.json) -----
+
+        /// <summary>OpenAI-compatible gateway, e.g. https://api.deepseek.com/v1</summary>
+        public string ApiBaseUrl { get; set; } = "https://api.deepseek.com/v1";
+
+        /// <summary>Model id on that gateway, e.g. deepseek-chat</summary>
+        public string Model { get; set; } = "deepseek-chat";
+
+        /// <summary>API key for the gateway. Stored in Mods/.../config.json (local only).</summary>
+        public string ApiKey { get; set; } = "";
+
+        /// <summary>Optional stronger/cheaper model for nightly review; empty = same as Model.</summary>
+        public string ReviewModel { get; set; } = "";
+
+        /// <summary>Key to open the built-in LLM settings menu (works on title screen and in-game).</summary>
+        public SButton OpenSettingsKey { get; set; } = SButton.F8;
 
         /// <summary>Freeze the in-game clock while the agent is connected but no action is running (i.e. while the LLM is thinking).</summary>
         public bool FreezeTimeWhileAgentThinks { get; set; } = true;

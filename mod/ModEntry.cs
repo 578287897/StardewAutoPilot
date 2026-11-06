@@ -34,11 +34,15 @@ namespace StardewAutoPilot
             this.Menus = new MenuAutomation(this);
 
             helper.Events.GameLoop.UpdateTicked += this.OnUpdateTicked;
+            helper.Events.GameLoop.GameLaunched += (_, _) => this.RegisterConfigMenu();
+            helper.Events.Input.ButtonPressed += this.OnButtonPressed;
             helper.Events.GameLoop.DayStarted += (_, _) =>
             {
                 // DayStarted fires only after the night (and its save) is complete: until then the world isn't "ready"
                 this.DayStartedFor = Game1.Date.TotalDays;
                 this.Log.Add("day", $"New day: {Game1.currentSeason} {Game1.dayOfMonth}, year {Game1.year}");
+                if (string.IsNullOrWhiteSpace(this.Config.ApiKey) || string.IsNullOrWhiteSpace(this.Config.ApiBaseUrl))
+                    Game1.addHUDMessage(new HUDMessage($"AutoPilot：进档后按 {this.Config.OpenSettingsKey} 填写网关与 API Key", 2));
             };
             helper.Events.GameLoop.ReturnedToTitle += (_, _) => this.Runner.Cancel("returned to title");
             helper.Events.Display.MenuChanged += (_, e) =>
@@ -52,11 +56,53 @@ namespace StardewAutoPilot
             {
                 this.server.Start();
                 this.Monitor.Log($"AutoPilot API listening on http://localhost:{this.Config.Port}/", LogLevel.Info);
+                this.Monitor.Log($"载入存档后按 {this.Config.OpenSettingsKey} 打开 LLM 网关/Key 设置（仅进档后可用）。", LogLevel.Info);
             }
             catch (Exception ex)
             {
                 this.Monitor.Log($"Failed to start HTTP server on port {this.Config.Port}: {ex.Message}", LogLevel.Error);
             }
+        }
+
+        private void OnButtonPressed(object sender, ButtonPressedEventArgs e)
+        {
+            if (e.Button != this.Config.OpenSettingsKey)
+                return;
+            // Only after the player has loaded a save — never on the title screen (so AI can't rush config / auto-pick saves)
+            if (!Context.IsWorldReady)
+            {
+                this.Helper.Input.Suppress(e.Button);
+                return;
+            }
+            if (Game1.activeClickableMenu is LlmSettingsMenu)
+                return;
+            if (Game1.activeClickableMenu != null || !Context.IsPlayerFree)
+                return;
+            this.Helper.Input.Suppress(e.Button);
+            Game1.activeClickableMenu = new LlmSettingsMenu(this, null);
+        }
+
+        private void RegisterConfigMenu()
+        {
+            var gmcm = this.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
+            if (gmcm == null)
+                return;
+            gmcm.Register(this.ModManifest, () => this.Config = new ModConfig(), () => this.Helper.WriteConfig(this.Config));
+            gmcm.AddSectionTitle(this.ModManifest, () => "LLM 网关");
+            gmcm.AddParagraph(this.ModManifest, () => "请先手动选档进入游戏，再按设置键或在此填写。代理默认不会在标题界面自动建档/读档。");
+            gmcm.AddTextOption(this.ModManifest, () => this.Config.ApiBaseUrl, v => this.Config.ApiBaseUrl = v, () => "网关 base_url", () => "OpenAI 兼容地址，例如 https://api.deepseek.com/v1");
+            gmcm.AddTextOption(this.ModManifest, () => this.Config.Model, v => this.Config.Model = v, () => "模型 model", () => "例如 deepseek-chat");
+            gmcm.AddTextOption(this.ModManifest, () => this.Config.ApiKey, v => this.Config.ApiKey = v, () => "API Key", () => "写入本机 Mods/.../config.json，不会上传");
+            gmcm.AddTextOption(this.ModManifest, () => this.Config.ReviewModel, v => this.Config.ReviewModel = v, () => "复盘模型（可空）", () => "夜间复盘用；留空则与主模型相同");
+            gmcm.AddKeybind(this.ModManifest, () => this.Config.OpenSettingsKey, v => this.Config.OpenSettingsKey = v, () => "打开内置设置界面", () => "仅进档后可用（默认 F8）");
+            gmcm.AddSectionTitle(this.ModManifest, () => "模组 / 代理");
+            gmcm.AddNumberOption(this.ModManifest, () => this.Config.Port, v => this.Config.Port = v, () => "HTTP 端口", () => "改完需重启游戏", 1024, 65535);
+            gmcm.AddTextOption(this.ModManifest, () => this.Config.ApiToken, v => this.Config.ApiToken = v, () => "可选 ApiToken", () => "非空时代理请求需带 Authorization Bearer");
+            gmcm.AddBoolOption(this.ModManifest, () => this.Config.FreezeTimeWhileAgentThinks, v => this.Config.FreezeTimeWhileAgentThinks = v, () => "思考时冻结时间");
+            gmcm.AddBoolOption(this.ModManifest, () => this.Config.AutoAdvanceDialogue, v => this.Config.AutoAdvanceDialogue = v, () => "自动点对话");
+            gmcm.AddBoolOption(this.ModManifest, () => this.Config.AutoSkipEvents, v => this.Config.AutoSkipEvents = v, () => "自动跳过可跳过过场");
+            gmcm.AddBoolOption(this.ModManifest, () => this.Config.PauseWhenAgentDisconnects, v => this.Config.PauseWhenAgentDisconnects = v, () => "代理断开时暂停");
+            this.Monitor.Log("Registered with Generic Mod Config Menu.", LogLevel.Trace);
         }
 
         // a long-running action (fishing, mining) means the agent is waiting on us, not gone

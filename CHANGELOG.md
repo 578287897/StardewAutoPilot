@@ -1,5 +1,42 @@
 # 更新记录
 
+## 2026-11-07 · 每日问题日志
+
+- 每晚复盘把「失败动作 + 模型归纳的问题」**直接写入当天游玩日志**同一文件的「⚠️ 今日问题」小节
+  - 路径：`AI游玩日志/<存档>/2026年11月7日/Y1_spring_xx.md`（按现实日期分文件夹）
+  - `memory/<profile>/problems.md` 仅作滚动摘要，供明天规划引用（不是给人单独看的副本）
+- 问题字段：做了什么、在哪里、错误原因、因此卡住什么。
+
+## 2026-11-07 · 游戏内 LLM 设置界面
+
+- **进档后**按 **F8**（`OpenSettingsKey` 可改）打开内置设置：网关 / 模型 / API Key / 复盘模型，带 DeepSeek、OpenAI、通义、Ollama 预设。标题画面不可开（避免代理抢配置/自动选档）。
+- 界面改为简易白底输入框 + 独立分行布局（标签 / 输入框 / Presets / 提示 / Save·Cancel），避免文字与按钮重叠。
+- 若安装了 Generic Mod Config Menu，也可在模组选项里改同一组字段。
+- Python 代理默认优先读取模组 `config.json` 里的 `ApiBaseUrl` / `Model` / `ApiKey`（可用 `llm.prefer_agent_config` 改回以 agent 文件为准）。
+- 代理默认 `auto_enter_save: false`：由用户手动选档进入后再填 Key；需要旧行为时可显式打开。
+
+## 2026-11-07 · 审查跟进
+
+### 房屋升级里程碑可执行
+- 新增 mod 动作 `upgrade_house`（罗宾：10000g + 450 木头，3 天）。
+- `milestones.house` 补上真实 `step` / `advances`；升级进行中时改推进日常产出，不再空转。
+- 铜工具「升级等待中」同样注入可推进动作，避免白天脚本被掏空。
+
+### 白天重写脚本也强制里程碑
+- `replan` 与夜间脚本一样调用 `enforce_milestone`。
+
+### HTTP 安全收紧
+- `/new_game`、`/load_save` 仅接受 **POST**（JSON body）；GET 返回 405。
+- `ModConfig.ApiToken` 可选：配置后需 `Authorization: Bearer …` 或 `X-Api-Token`。
+- agent 侧 `mod_api_token` 对应传递；`/tile` 坏参数返回 400。
+
+### 状态页默认不绑全网卡
+- `status_bind`：`lan`（默认）/ `localhost` / `0.0.0.0`。
+
+### 动作名单一来源（agent）
+- 新增 `agent/actions.py`；`KNOWN_ACTIONS` 从该处引用，并注明宏 vs mod 原语。
+- `agent/test_review_fixes.py`：clean_script / 里程碑注入 / JSON 解析冒烟测试。
+
 ## 2026-11-02 · 修复
 
 ### 冶金：AI 一直炼不出铜锭

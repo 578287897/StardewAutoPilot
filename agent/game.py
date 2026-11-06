@@ -10,13 +10,16 @@ class GameError(Exception):
 
 
 class Game:
-    def __init__(self, base_url="http://localhost:8765"):
+    def __init__(self, base_url="http://localhost:8765", api_token=""):
         self.base = base_url.rstrip("/")
+        self.api_token = api_token or ""
 
     def _request(self, method, path, body=None, timeout=330):
         data = json.dumps(body, ensure_ascii=False).encode("utf-8") if body is not None else None
-        req = urllib.request.Request(self.base + path, data=data, method=method,
-                                     headers={"Content-Type": "application/json"})
+        headers = {"Content-Type": "application/json"}
+        if self.api_token:
+            headers["Authorization"] = f"Bearer {self.api_token}"
+        req = urllib.request.Request(self.base + path, data=data, method=method, headers=headers)
         try:
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 return json.loads(resp.read().decode("utf-8"))
@@ -51,8 +54,8 @@ class Game:
         return self._request("GET", "/saves", timeout=30)
 
     def new_game(self, name, farm, favorite, farm_type=0):
-        q = urllib.parse.urlencode({"name": name, "farm": farm, "favorite": favorite, "farm_type": farm_type})
-        return self._request("GET", "/new_game?" + q, timeout=30)
+        return self._request("POST", "/new_game", {
+            "name": name, "farm": farm, "favorite": favorite, "farm_type": farm_type}, timeout=30)
 
     def plot_check(self, x, y, w, h):
         return self._request("GET", f"/plot_check?x={x}&y={y}&w={w}&h={h}", timeout=30)
@@ -88,7 +91,7 @@ class Game:
         return self._request("GET", "/recipes" + ("?cooking=1" if cooking else ""), timeout=30)
 
     def load_save(self, name):
-        return self._request("GET", f"/load_save?name={urllib.parse.quote(name)}", timeout=30)
+        return self._request("POST", "/load_save", {"name": name}, timeout=30)
 
     def act(self, action: dict):
         return self._request("POST", "/act", action)

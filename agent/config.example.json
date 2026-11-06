@@ -1,10 +1,14 @@
 {
   "game_path": "C:/Program Files (x86)/Steam/steamapps/common/Stardew Valley",
   "mod_url": "http://localhost:8765",
+  "mod_api_token": "",
+  "status_bind": "lan",
+  "auto_enter_save": false,
   "llm": {
+    "prefer_agent_config": false,
     "reuse_config_from": null,
-    "base_url": "https://api.deepseek.com/v1",
-    "model": "deepseek-chat",
+    "base_url": "",
+    "model": "",
     "api_key": "",
     "temperature": 0.4,
     "max_tokens": 800,

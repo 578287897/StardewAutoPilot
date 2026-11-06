@@ -83,7 +83,8 @@ def copper_tools(p):
             return {"missing": [f"克林特已经升级好 {up['tool']}，去铁匠铺取回（9:00-16:00）"],
                     "step": [{"type": "upgrade_tool"}], "advances": {"upgrade_tool"}}
         return {"missing": [f"克林特正在升级 {up['tool']}，还要 {up.get('days_left')} 天（一次只能升级一件）"],
-                "step": [], "advances": set()}
+                "step": [{"type": "ship_produce"}, {"type": "fish", "casts": 5}],
+                "advances": {"ship_produce", "fish", "mine", "clear_debris", "harvest_crops"}}
     tool = "axe" if have["axe"] < 1 else "pickaxe"   # the axe first: big stumps block the most farm space
     lack = _lack(p, {"Copper Bar": 5}) + ([f"金钱还差 {2000 - p.get('money', 0)}g"] if p.get("money", 0) < 2000 else [])
     if not lack:
@@ -200,9 +201,19 @@ def shed(p):
 def house(p):
     if p.get("house_level", 0) >= 1:
         return None
+    days = p.get("house_upgrade_days") or 0
+    if days > 0:
+        return {"missing": [f"罗宾正在升级房屋（厨房），还要 {days} 天"],
+                "step": [{"type": "ship_produce"}, {"type": "fish", "casts": 5}],
+                "advances": {"ship_produce", "fish", "mine", "clear_debris", "harvest_crops"}}
     short = 10000 - p.get("money", 0)
     lack = _lack(p, {"Wood": 450}) + ([f"金钱还差 {short}g"] if short > 0 else [])
-    return {"missing": lack or ["材料和钱都够了：找罗宾升级房屋（厨房）"], "step": [], "advances": set()}
+    if not lack:
+        return {"missing": ["材料和钱都够了：去罗宾处 upgrade_house（10000g + 450 木头，3 天）"],
+                "step": [{"type": "upgrade_house"}], "advances": {"upgrade_house"}}
+    step = [{"type": "clear_debris", "max": 20}] if _m(p, "Wood") < 450 else [{"type": "ship_produce"}, {"type": "fish", "casts": 5}]
+    return {"missing": lack, "step": step,
+            "advances": {"clear_debris", "ship_produce", "fish", "mine", "upgrade_house"}}
 
 
 ROADMAP = [

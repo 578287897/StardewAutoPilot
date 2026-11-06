@@ -47,7 +47,8 @@ def money_chart(rows):
 
 
 class StatusPage:
-    def __init__(self, port):
+    def __init__(self, port, bind="lan"):
+        """bind: 'lan' (default, only the Wi-Fi/LAN address), 'localhost', or '0.0.0.0' (all interfaces)."""
         self.port = port
         self.html = "<p>AutoPilot 正在启动…</p>"
         self.last_build = 0.0
@@ -69,9 +70,16 @@ class StatusPage:
             def log_message(self, *args):
                 pass
 
-        self.server = ThreadingHTTPServer(("0.0.0.0", port), Handler)
+        if bind in ("localhost", "127.0.0.1"):
+            host = "127.0.0.1"
+        elif bind in ("0.0.0.0", "all"):
+            host = "0.0.0.0"
+        else:
+            host = lan_ip()
+        self.server = ThreadingHTTPServer((host, port), Handler)
         threading.Thread(target=self.server.serve_forever, daemon=True).start()
-        self.url = f"http://{lan_ip()}:{port}/"
+        display = lan_ip() if host == "0.0.0.0" else host
+        self.url = f"http://{display}:{port}/"
 
     def document(self):
         return f"""<!doctype html><html lang=zh><head><meta charset=utf-8>

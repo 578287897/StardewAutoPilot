@@ -23,10 +23,12 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+import actions
 import cropplan
 import farmplan
 import journal
 import milestones
+import problems
 import status
 import prompts
 from game import Game, GameError
@@ -45,20 +47,78 @@ def log(msg):
 # config
 # ---------------------------------------------------------------------------
 
+def _mod_config_candidates(game_path):
+    """SMAPI writes Mods/<folder>/config.json next to the installed mod."""
+    mods = Path(game_path) / "Mods"
+    names = ("StardewAutoPilot", "Stardew AutoPilot", "578287897.StardewAutoPilot")
+    for name in names:
+        yield mods / name / "config.json"
+    if mods.is_dir():
+        for folder in mods.iterdir():
+            if folder.is_dir() and (folder / "manifest.json").exists():
+                try:
+                    man = json.loads((folder / "manifest.json").read_text(encoding="utf-8-sig"))
+                except (OSError, json.JSONDecodeError):
+                    continue
+                if man.get("UniqueID") == "578287897.StardewAutoPilot":
+                    yield folder / "config.json"
+
+
+def _read_json(path):
+    try:
+        return json.loads(Path(path).read_text(encoding="utf-8-sig"))
+    except (OSError, json.JSONDecodeError, UnicodeError):
+        try:
+            return json.loads(Path(path).read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return None
+
+
 def load_config(path):
-    cfg = json.loads(Path(path).read_text(encoding="utf-8")) if Path(path).exists() else {}
+    """Load agent config. LLM gateway/key prefer the in-game mod UI (Mods/.../config.json)."""
+    cfg = _read_json(path) or {}
     cfg["game_path"] = cfg.get("game_path") or os.environ.get("STARDEW_GAME_PATH") or str(journal.default_game_path())
+    agent_llm = dict(cfg.get("llm") or {})
     llm = cfg.setdefault("llm", {})
-    reuse = llm.get("reuse_config_from")
-    if reuse and not Path(reuse).is_absolute():
-        reuse = str(Path(cfg["game_path"]) / reuse)  # e.g. "Mods/SomeMod/config.json", relative to the game folder
-    if reuse and Path(reuse).exists():
-        other = json.loads(Path(reuse).read_text(encoding="utf-8-sig"))
-        llm["base_url"] = llm.get("base_url") or other.get("ApiBaseUrl")
-        llm["model"] = llm.get("model") or other.get("Model")
-        if not llm.get("api_key"):
-            llm["api_key"] = other.get("ApiKey")
+
+    mod_cfg = None
+    mod_path = None
+    reuse = agent_llm.get("reuse_config_from")
+    if reuse:
+        mod_path = reuse if Path(reuse).is_absolute() else str(Path(cfg["game_path"]) / reuse)
+        mod_cfg = _read_json(mod_path)
+    else:
+        for candidate in _mod_config_candidates(cfg["game_path"]):
+            if candidate.exists():
+                mod_cfg = _read_json(candidate)
+                if mod_cfg is not None:
+                    mod_path = str(candidate)
+                    break
+
+    # Priority: non-empty in-game mod fields → agent/config.json → env
+    prefer_agent = bool(agent_llm.get("prefer_agent_config"))
+    mod_vals = {
+        "base_url": (mod_cfg or {}).get("ApiBaseUrl") or "",
+        "model": (mod_cfg or {}).get("Model") or "",
+        "api_key": (mod_cfg or {}).get("ApiKey") or "",
+        "review_model": (mod_cfg or {}).get("ReviewModel") or "",
+    }
+    for key in ("base_url", "model", "api_key", "review_model"):
+        agent_val = agent_llm.get(key) or ""
+        mod_val = mod_vals.get(key) or ""
+        if prefer_agent:
+            llm[key] = agent_val or mod_val
+        else:
+            llm[key] = mod_val or agent_val
     llm["api_key"] = llm.get("api_key") or os.environ.get("STARDEW_LLM_API_KEY", "")
+    if mod_path and (mod_vals["base_url"] or mod_vals["api_key"] or mod_vals["model"]):
+        log(f"LLM 配置来自游戏内设置：{mod_path}")
+
+    if not cfg.get("mod_api_token") and mod_cfg and mod_cfg.get("ApiToken"):
+        cfg["mod_api_token"] = mod_cfg["ApiToken"]
+    if mod_cfg and mod_cfg.get("Port") and cfg.get("mod_url") in (None, "", "http://localhost:8765"):
+        cfg["mod_url"] = f"http://localhost:{int(mod_cfg['Port'])}"
+
     cfg.setdefault("mod_url", "http://localhost:8765")
     cfg.setdefault("profile", "default")
     cfg.setdefault("max_steps_per_day", 120)
@@ -79,6 +139,7 @@ class Memory:
         (self.dir / "history").mkdir(parents=True, exist_ok=True)
         self.strategy_path = self.dir / "strategy.md"
         self.lessons_path = self.dir / "lessons.md"
+        self.problems_path = self.dir / "problems.md"
         self.metrics_path = self.dir / "metrics.csv"
         self.save_name_path = self.dir / "save_name.txt"
         self.layout_path = self.dir / "layout.json"
@@ -212,7 +273,7 @@ class MockLLM:
         if "规划师" in system:
             return {"plan": ["收获", "浇水", "出货", "睡觉"], "reason": "mock"}
         if "复盘教练" in system:
-            return {"analysis": "mock", "strategy": prompts_strategy_passthrough(messages), "lessons": []}
+            return {"analysis": "mock", "strategy": prompts_strategy_passthrough(messages), "lessons": [], "problems": []}
         user = messages[-1]["content"]
         if '"is_question": true' in user:
             return {"thought": "回答问题", "action": {"type": "dialog_answer", "index": 0}}
@@ -234,29 +295,25 @@ def prompts_strategy_passthrough(messages):
 # ---------------------------------------------------------------------------
 
 class Agent:
-    def __init__(self, cfg, mock=False, no_save=False):
+    def __init__(self, cfg, mock=False, no_save=False, config_path=None):
         self.cfg = cfg
+        self.config_path = config_path or str(ROOT / "config.json")
         self.no_save = no_save
-        self.game = Game(cfg["mod_url"])
+        self.mock = mock
+        self.game = Game(cfg["mod_url"], api_token=cfg.get("mod_api_token") or "")
         self.mem = Memory(cfg.get("profile", "default"))
         self.status = None
         if cfg.get("status_port"):
             try:
-                self.status = status.StatusPage(int(cfg["status_port"]))
+                self.status = status.StatusPage(int(cfg["status_port"]), bind=cfg.get("status_bind", "lan"))
                 log(f"状态页：{self.status.url}（手机连同一个 Wi-Fi 打开）")
             except OSError as e:
                 log(f"状态页启动失败：{e}")
+        self.llm = self.review_llm = None
         if mock:
             self.llm = self.review_llm = MockLLM()
         else:
-            c = cfg["llm"]
-            if not (c.get("base_url") and c.get("model") and c.get("api_key")):
-                sys.exit("LLM 未配置：请在 config.json 中填写 llm.base_url / model / api_key（或设置环境变量 STARDEW_LLM_API_KEY）")
-            self.llm = LLM(c["base_url"], c["api_key"], c["model"], c.get("temperature", 0.4), c.get("max_tokens", 800),
-                           options=c.get("step_options"))
-            # plan + nightly review: fewer calls, worth a stronger model and/or reasoning
-            self.review_llm = LLM(c["base_url"], c["api_key"], c.get("review_model") or c["model"], c.get("temperature", 0.4),
-                                  4000, timeout=300, options=c.get("review_options"))
+            self.try_init_llm()  # may stay None until the player saves key in-game (F8)
         self.day = None
         self.day_key = None
         self.mode = cfg.get("mode", "script")  # "script": plan the day ahead; "step": ask the model every step
@@ -268,6 +325,23 @@ class Agent:
         self.item_cache = {}
         self.run_dir = RUNS / datetime.now().strftime("%Y%m%d_%H%M%S")
         self.run_dir.mkdir(parents=True, exist_ok=True)
+
+    def try_init_llm(self):
+        """(Re)load LLM settings from agent config + in-game mod config. Returns True when ready."""
+        if self.mock:
+            self.llm = self.review_llm = MockLLM()
+            return True
+        self.cfg = load_config(self.config_path)
+        self.game = Game(self.cfg["mod_url"], api_token=self.cfg.get("mod_api_token") or "")
+        c = self.cfg.get("llm") or {}
+        if not (c.get("base_url") and c.get("model") and c.get("api_key")):
+            self.llm = self.review_llm = None
+            return False
+        self.llm = LLM(c["base_url"], c["api_key"], c["model"], c.get("temperature", 0.4), c.get("max_tokens", 800),
+                       options=c.get("step_options"))
+        self.review_llm = LLM(c["base_url"], c["api_key"], c.get("review_model") or c["model"], c.get("temperature", 0.4),
+                              4000, timeout=300, options=c.get("review_options"))
+        return True
 
     # ---------------- main loop ----------------
 
@@ -288,19 +362,31 @@ class Agent:
                 reason = st.get("reason")
                 if reason == "title_screen":
                     self.leave_title_screen()
-                    time.sleep(10)
+                    time.sleep(5)
                     continue
                 if waiting_logged != reason:
-                    log("请在游戏里载入存档" if reason == "title_screen" else "游戏加载/保存中…")
+                    log("请在游戏里手动选择存档进入" if reason == "title_screen" else "游戏加载/保存中…")
                     waiting_logged = reason
                 time.sleep(2)
                 continue
+
+            # World is loaded: wait until the player has saved gateway/key in-game (F8)
+            if not self.mock and self.llm is None:
+                if self.try_init_llm():
+                    log(f"已读到 LLM 配置，模型 {self.cfg['llm']['model']}，开始游玩")
+                    waiting_logged = None
+                else:
+                    if waiting_logged != "llm":
+                        log("已进入存档。请在游戏内按 F8 填写网关与 API Key 并保存——保存后我会自动继续（不会自动选档）")
+                        waiting_logged = "llm"
+                    time.sleep(3)
+                    continue
             waiting_logged = None
 
             self.mem.set_save_name(st.get("save_name"))
             if self.journal is None and st.get("save_name"):
                 self.journal = journal.Journal(self.cfg.get("journal_dir") or Path(self.cfg["game_path"]) / "AI游玩日志", st["save_name"])
-                log(f"游玩日志：{self.journal.dir}")
+                log(f"游玩日志：{self.journal.dir}/<{problems.calendar_folder_name()}>/")
             key = (st["year"], st["season"], st["day"])
             if key != self.day_key:
                 if self.day is not None:
@@ -322,18 +408,25 @@ class Agent:
                 return
 
     def leave_title_screen(self):
+        """By default do nothing: the player must pick the save. Opt in with auto_enter_save=true."""
+        if not self.cfg.get("auto_enter_save"):
+            if not getattr(self, "_title_wait_logged", False):
+                log("在标题界面：请你手动选择存档进入游戏。代理不会自动新建或读取存档。"
+                    "（若确需自动进档，在 config.json 设 \"auto_enter_save\": true 并配置 save_name 或 new_game）")
+                self._title_wait_logged = True
+            return
         save = self.cfg.get("save_name") or self.mem.save_name()
         saves = self.safe(lambda: self.game.saves(), {}).get("saves", [])
         if save and save in saves:
             res = self.safe(lambda: self.game.load_save(save), {})
-            log(f"载入存档 {save}：{res.get('message')}")
+            log(f"自动载入存档 {save}：{res.get('message')}")
         elif self.cfg.get("new_game"):
             ng = self.cfg["new_game"]
             res = self.safe(lambda: self.game.new_game(ng.get("name", "AutoPilot"), ng.get("farm", "AI"),
                                                        ng.get("favorite", "Parsnips"), ng.get("farm_type", 0)), {})
-            log(f"创建新游戏（第1年春1日开始）：{res.get('message')}")
+            log(f"自动创建新游戏：{res.get('message')}")
         else:
-            log("在标题界面：config.json 里没有 save_name 也没有 new_game，请手动载入存档")
+            log("auto_enter_save 已开启，但没有 save_name / new_game，仍请手动载入存档")
 
     # ---------------- day lifecycle ----------------
 
@@ -453,21 +546,44 @@ class Agent:
         log_lines = [self.fmt_step(s, with_thought=True) for s in d.steps[-40:]]
         fail_counts = collections.Counter(f"{s['action'].get('type')}: {s['message']}" for s in fails)
         failures = "\n".join(f"{n}x {m}" for m, n in fail_counts.most_common(15)) or "无"
+        auto_problems = problems.from_failed_steps(fails)
         try:
             resp = self.review_llm.chat_json([
                 {"role": "system", "content": prompts.SYSTEM_REFLECT},
                 {"role": "user", "content": prompts.USER_REFLECT.format(
                     summary=summary, log="\n".join(log_lines) or "（无）", failures=failures,
-                    metrics=self.mem.recent_metrics(), strategy=self.mem.strategy(), lessons=self.mem.lessons())},
+                    metrics=self.mem.recent_metrics(), strategy=self.mem.strategy(), lessons=self.mem.lessons(),
+                    recent_problems=problems.recent_for_prompt(self.mem.problems_path))},
             ])
             if resp.get("strategy") and len(resp["strategy"]) > 50:
                 self.mem.save_strategy(resp["strategy"], d.tag)
             self.mem.add_lessons(resp.get("lessons") or [])
+            day_problems = problems.merge_llm_problems(auto_problems, resp.get("problems") or [])
             d.reflected = True
-            log("复盘：" + str(resp.get("analysis", ""))[:200])
-            self.write_run("reflection", {"day": d.tag, **resp})
+            log("复盘：" + str(resp.get("analysis", ""))[:200]
+                + (f"；问题 {len(day_problems)} 条" if day_problems else ""))
+            # reflection first, then problems section in the same 游玩日志 file
+            self.write_run("reflection", {"day": d.tag, "analysis": resp.get("analysis"),
+                                          "strategy": resp.get("strategy"), "lessons": resp.get("lessons")})
+            self.write_day_problems(d.tag, day_problems, analysis=str(resp.get("analysis") or ""))
         except LLMError as e:
+            # still keep auto-captured failures even if the model review fails
+            if auto_problems:
+                self.write_day_problems(d.tag, auto_problems, analysis=f"复盘失败：{e}")
             log(f"复盘失败（策略未更新）：{e}")
+
+    def write_day_problems(self, day_tag, entries, analysis=""):
+        """Merge today's problems into the play journal (same calendar-day Markdown file)."""
+        if not entries and not analysis:
+            return
+        # rolling file is only for tomorrow's planning prompts; human-readable copy lives in 游玩日志
+        problems.append_rolling(self.mem.problems_path, day_tag, entries, analysis=analysis)
+        self.write_run("problems", {
+            "day": day_tag, "calendar": problems.calendar_folder_name(),
+            "analysis": analysis, "problems": entries,
+        })
+        where = "游玩日志" if self.journal is not None else str(self.mem.problems_path)
+        log(f"问题已写入{where}（{day_tag}，{len(entries)} 条）")
 
     # ---------------- tonight: review today + script for tomorrow (background) ----------------
 
@@ -494,7 +610,8 @@ class Agent:
             quests=(milestones.describe(progress) + "\n\n" + cropplan.describe(self.safe(self.game.crop_data, []), season, day)
                     + "\n\n" + self.fmt_quests_mail(st) + "\n" + self.fmt_recipes() + "\n" + self.fmt_social(st, include_all=True)
                     + "\n" + self.fmt_bundles(st, detail=True) + "\n" + self.fmt_ranch()),
-            today="\n".join(self.fmt_step(s) for s in d.steps[-15:]) or "（无）")
+            today="\n".join(self.fmt_step(s) for s in d.steps[-15:]) or "（无）",
+            recent_problems=problems.recent_for_prompt(self.mem.problems_path))
         try:
             resp = self.review_llm.chat_json([
                 {"role": "system", "content": prompts.SYSTEM_SCRIPT.format(actions=prompts.ACTIONS_DOC, roadmap=prompts.ROADMAP)},
@@ -528,12 +645,7 @@ class Agent:
         log(f"里程碑「{name}」：模型的脚本里没有推进它的动作，强制加入 " + " → ".join(a["type"] for a in info["step"]))
         return script[:idx] + [dict(a) for a in info["step"]] + script[idx:]
 
-    KNOWN_ACTIONS = {
-        "move_to", "goto_location", "use_tool", "interact", "place", "select", "eat", "ship", "ship_produce",
-        "open_shop", "buy", "dialog_answer", "dialog_advance", "menu_click", "choose_profession", "close_menu",
-        "wait", "sleep", "check_mail", "water_crops", "harvest_crops", "clear_debris", "plant_seeds", "forage",
-        "craft", "store", "take", "store_items", "fish", "mine", "leave_mine", "fight", "donate",
-        "build", "buy_animal", "care_animals", "clear_area", "load_machines", "collect_machines", "cook", "buy_backpack", "buy_weapon", "build_road", "upgrade_tool", "decorate", "festival"}
+    KNOWN_ACTIONS = actions.KNOWN_ACTIONS
 
     def clean_script(self, script):
         if not isinstance(script, list):
@@ -616,7 +728,8 @@ class Agent:
         except LLMError as e:
             log(f"重写脚本失败：{e}")
             return False
-        script = self.clean_script(resp.get("script"))
+        progress = self.safe(self.game.progress, {})
+        script = self.enforce_milestone(self.clean_script(resp.get("script")), progress)
         if resp.get("plan"):
             self.day.plan = [str(p) for p in resp["plan"]][:8]
         self.set_script(script, f"重写#{self.day.replans}：{resp.get('reason', '')}"[:80], st.get("location"))
@@ -1572,8 +1685,10 @@ def main():
 
     if not args.mock_llm:
         ensure_single_instance()
-    agent = Agent(load_config(args.config), mock=args.mock_llm, no_save=args.no_save)
-    log(f"AutoPilot 启动，模型 {'mock' if args.mock_llm else agent.cfg['llm']['model']}，日志 {agent.run_dir}")
+    agent = Agent(load_config(args.config), mock=args.mock_llm, no_save=args.no_save, config_path=args.config)
+    model = "mock" if args.mock_llm else ((agent.cfg.get("llm") or {}).get("model") or "（进档后按 F8 配置）")
+    log(f"AutoPilot 启动，模型 {model}，日志 {agent.run_dir}")
+    log("流程：你先手动选档进游戏 → 按 F8 填网关/Key → 代理检测到后自动开始（默认不自动选档）")
     try:
         agent.run(max_days=args.days, max_steps=args.steps)
     except KeyboardInterrupt:

@@ -58,6 +58,7 @@ namespace StardewAutoPilot
                 ["recipes"] = Game1.player.craftingRecipes.Keys.Where(k => Machines.Contains(k)).ToList(),
                 ["buildings"] = farm.buildings.Select(b => b.buildingType.Value).Where(t => t != "Farmhouse" && t != "Shipping Bin" && t != "Pet Bowl").ToList(),
                 ["house_level"] = home?.upgradeLevel ?? 0,
+                ["house_upgrade_days"] = Game1.player.daysUntilHouseUpgrade.Value,
                 ["gear"] = Gear.Status(Game1.player),
                 ["tools"] = Game1.player.Items.OfType<Tool>().Where(t => t is StardewValley.Tools.Axe || t is StardewValley.Tools.Pickaxe || t is StardewValley.Tools.Hoe || t is StardewValley.Tools.WateringCan)
                     .GroupBy(t => t is StardewValley.Tools.Axe ? "axe" : t is StardewValley.Tools.Pickaxe ? "pickaxe" : t is StardewValley.Tools.Hoe ? "hoe" : "watering_can")

@@ -1,13 +1,16 @@
 """
-Human-readable play journal: one Markdown file per in-game day, e.g.
-    <Stardew Valley>/AI游玩日志/<save>/Y1_spring_03.md
+Human-readable play journal, filed by real calendar date, e.g.
+    <Stardew Valley>/AI游玩日志/<save>/2026年11月7日/Y1_spring_03.md
 
-The agent appends to it live; `py journal.py` rebuilds every day file from runs/*/log.jsonl.
+The agent appends to it live; `py journal.py` rebuilds day files from runs/*/log.jsonl.
 """
 import glob
 import json
 import sys
+from datetime import datetime
 from pathlib import Path
+
+import problems
 
 ROOT = Path(__file__).resolve().parent
 
@@ -79,12 +82,38 @@ def render(event):
                 f"- 出货估值：{event.get('shipped_value')}g　动作：{event.get('steps')} 个　失败：{event.get('failures')} 个\n"
                 f"- 模型调用：{event.get('llm_calls')} 次　tokens：{event.get('tokens')}\n")
     if kind == "reflection":
+        # problems are written as a dedicated ## 今日问题 section (kind=problems) in the same file
         lines = ["\n## 🧠 夜间复盘", str(event.get("analysis", ""))]
         if event.get("lessons"):
             lines.append("\n**新教训：**")
             lines += [f"- {l}" for l in event["lessons"]]
         if event.get("strategy"):
             lines.append("\n<details><summary>改写后的策略</summary>\n\n" + str(event["strategy"]) + "\n\n</details>")
+        return "\n".join(lines) + "\n"
+    if kind == "problems":
+        lines = ["\n## ⚠️ 今日问题"]
+        if event.get("analysis"):
+            lines.append(f"> {event['analysis']}")
+        probs = event.get("problems") or []
+        if not probs:
+            lines.append("- （无）")
+        for p in probs:
+            if not isinstance(p, dict):
+                lines.append(f"- {p}")
+                continue
+            bit = p.get("what") or p.get("action") or "问题"
+            if p.get("where") or p.get("location"):
+                bit += f" @ {p.get('where') or p.get('location')}"
+            if p.get("time"):
+                bit = f"{fmt_time(p.get('time'))} " + bit
+            if p.get("error"):
+                bit += f" — {p['error']}"
+            if p.get("blocked"):
+                bit += f"（做不了：{p['blocked']}）"
+            src = p.get("source")
+            if src:
+                bit += f" 〔{'自动' if src == 'auto' else '复盘'}〕"
+            lines.append(f"- {bit}")
         return "\n".join(lines) + "\n"
     if kind == "prepared_script":
         lines = [f"\n## 🌙 为明天（{event.get('day')}）准备的脚本"]
@@ -99,17 +128,31 @@ class Journal:
         self.dir = Path(base_dir) / (save_name or "unknown_save")
         self.dir.mkdir(parents=True, exist_ok=True)
 
-    def path(self, day_tag):
-        return self.dir / f"{day_tag}.md"
+    def path(self, day_tag, when=None):
+        """In-game day file under today's real-date folder: .../2026年11月7日/Y1_spring_03.md"""
+        return problems.calendar_dir(self.dir, when) / f"{day_tag}.md"
 
     def append(self, day_tag, event):
         text = render(event)
         if not text or not day_tag:
             return
-        p = self.path(day_tag)
+        when = None
+        ts = event.get("ts")
+        if ts:
+            try:
+                when = datetime.fromisoformat(ts)
+            except ValueError:
+                when = None
+        p = self.path(day_tag, when=when)
         if not p.exists():
-            year, season, day = day_tag.split("_")
-            p.write_text(f"# 第{year[1:]}年 {season} {int(day)} 日 — AI 游玩日志\n", encoding="utf-8")
+            parts = day_tag.split("_")
+            if len(parts) >= 3:
+                year, season, day = parts[0], parts[1], parts[2]
+                header = f"# 第{year[1:]}年 {season} {int(day)} 日 — AI 游玩日志\n"
+            else:
+                header = f"# {day_tag} — AI 游玩日志\n"
+            cal = problems.calendar_folder_name(when)
+            p.write_text(header + f"（写入日期：{cal}）\n", encoding="utf-8")
         with p.open("a", encoding="utf-8") as f:
             f.write(text)
 
@@ -134,10 +177,10 @@ def rebuild(base_dir=DEFAULT_DIR, save_name=None, runs_dir=ROOT / "runs", since_
                 pass
     events.sort(key=lambda e: e.get("ts", ""))
     j = Journal(base_dir, save_name)
-    # only regenerate days that have records; keep other notes (e.g. days nobody played)
+    # wipe regenerated day files under calendar folders (keep unrelated notes)
     for tag in {day_of(e) for e in events if day_of(e)}:
-        if j.path(tag).exists():
-            j.path(tag).unlink()
+        for old in j.dir.glob(f"*/{tag}.md"):
+            old.unlink(missing_ok=True)
     last_day = None
     for e in events:
         tag = day_of(e)

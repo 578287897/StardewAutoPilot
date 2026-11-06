@@ -32,18 +32,17 @@
    dotnet build -c Release
    ```
    游戏不在 Steam 默认位置时，按 [ModBuildConfig 说明](https://smapi.io/package/custom-game-path) 设置 `GamePath`。
-2. **配置代理**：把 `agent/config.example.json` 复制成 `agent/config.json`，填写：
-   - `game_path`：游戏目录
-   - `llm.base_url` / `llm.model` / `llm.api_key`：任何 OpenAI 兼容接口（DeepSeek、通义、Ollama、中转站……）。也可以不写 key、改用环境变量 `STARDEW_LLM_API_KEY`。
-   - `profile`：这次游玩的名字（记忆和存档名存在 `agent/memory/<profile>/`）
-   - `status_port`：手机状态页端口（不需要就删掉这一项）
-3. **用 SMAPI 启动游戏**，停在标题画面即可，然后：
+2. **你先手动选档进入游戏**（代理默认**不会**自动新建或读取存档）。
+3. **进档后按 F8** 打开「LLM 设置」：选网关预设 → 填 API Key → 保存。  
+   （标题画面不能打开；也可装 Generic Mod Config Menu 在模组选项里改。）
+4. **再运行代理**（也可先开着代理等你进档并保存 Key）：
    ```bash
    cd agent
-   py autopilot.py             # 一直玩下去（没有存档时会自动新建一个）
-   py autopilot.py --days 1    # 只玩一天
-   py autopilot.py --mock-llm  # 不调用模型，测试 mod
+   python autopilot.py             # 等你进档 + 填好 Key 后自动开始
+   python autopilot.py --days 1    # 只玩一天
+   python autopilot.py --mock-llm  # 不调用模型，测试 mod
    ```
+   `agent/config.json` 至少填 `game_path`。若确需标题界面自动进档，设 `"auto_enter_save": true` 并配置 `save_name` 或 `new_game`。
 
 > 建议用新存档。代理会自动推进时间和存档，请不要拿重要存档直接试。
 
@@ -67,6 +66,8 @@
 ## mod 接口（localhost:8765）
 
 `GET /state` `/map` `/crops` `/farm_grid` `/progress` `/crop_data` `/social` `/recipes` `/bundles` `/ranch` `/items` `/messages` …，`POST /act {"type": ...}` 执行动作（完整列表见 `agent/prompts.py` 的 `ACTIONS_DOC`）。
+
+副作用接口只用 POST：`POST /new_game`、`POST /load_save`（JSON body）。可选在 mod 的 `config.json` 里设 `ApiToken`，代理侧对应填 `mod_api_token`。状态页默认只绑局域网地址（`status_bind`: `lan` / `localhost` / `0.0.0.0`）。
 
 ## 说明
 
