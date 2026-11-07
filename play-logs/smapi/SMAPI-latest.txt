@@ -429,3 +429,43 @@
 [20:42:05 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops"}
 [20:42:05 TRACE Stardew AutoPilot] Action: {"type": "water_crops"}
 [20:42:06 TRACE Stardew AutoPilot] Action: {"type": "ship_produce"}
+[20:42:17 TRACE Stardew AutoPilot] Action: {"type": "donate"}
+[20:42:23 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[20:42:23 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "item": "Iron Ore"}
+[20:42:23 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Mountain"}
+[20:42:24 TRACE game] Warping to Farm
+[20:42:36 TRACE game] Warping to Backwoods
+[20:42:50 TRACE game] Warping to Mountain
+[20:42:51 TRACE Stardew AutoPilot] Action: {"type": "fish", "casts": 6}
+[20:45:25 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[20:45:25 TRACE Stardew AutoPilot] Action: {"type": "fish", "casts": 6}
+[20:47:29 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[20:47:29 TRACE Stardew AutoPilot] Action: {"type": "fish", "casts": 6}
+[20:49:54 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[20:49:54 TRACE Stardew AutoPilot] Action: {"type": "fish", "casts": 6}
+[20:51:49 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[20:51:49 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Farm"}
+[20:52:00 TRACE game] Warping to Backwoods
+[20:52:14 TRACE game] Warping to Farm
+[20:52:15 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[20:52:15 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "except": ["Copper Ore", "Coal", "Iron Ore", "Iron Bar", "Stone", "Sprinkler", "Garlic Seeds", "Potato Seeds", "Kale Seeds", "Rice Shoot", "Mixed Seeds", "Bait", "Fiberglass Rod"]}
+[20:52:26 TRACE Stardew AutoPilot] Action: {"type": "craft", "item": "Cobblestone Path", "count": 24}
+[20:52:26 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path"}
+[20:52:30 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 50}
+[20:53:05 TRACE Stardew AutoPilot] Action: {"type": "sleep"}
+[20:53:13 TRACE game] Warping to FarmHouse
+[20:53:19 TRACE SMAPI] Synchronizing 'NewDay' task...
+[20:53:19 TRACE game] Applied trigger action 'Mail_Tribune_UpAndComing' with actions [AddMail Current newsstory].
+[20:53:19 TRACE SMAPI]    task complete.
+[20:53:25 TRACE SMAPI] Context: before save.
+[20:53:25 TRACE game] SaveGame.Save() called.
+[20:53:25 TRACE SMAPI] Synchronizing 'Save' task...
+[20:53:25 TRACE game] Saving without compression...
+[20:53:25 TRACE SMAPI]    task complete.
+[20:53:25 TRACE game] SaveGame.Save() completed without exceptions.
+[20:53:27 TRACE SMAPI] Context: after save, starting spring 8 Y2.
+[20:53:31 TRACE Stardew AutoPilot] Action: {"type": "check_mail"}
+[20:53:33 TRACE game] Warping to Farm
+[20:53:36 TRACE Stardew AutoPilot] Action: {"type": "load_machines"}
+[20:53:36 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops"}
+[20:53:36 TRACE Stardew AutoPilot] Action: {"type": "water_crops"}
