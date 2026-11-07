@@ -469,3 +469,41 @@
 [20:53:36 TRACE Stardew AutoPilot] Action: {"type": "load_machines"}
 [20:53:36 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops"}
 [20:53:36 TRACE Stardew AutoPilot] Action: {"type": "water_crops"}
+[20:54:05 TRACE Stardew AutoPilot] Action: {"type": "ship_produce"}
+[20:54:05 TRACE Stardew AutoPilot] Action: {"type": "donate"}
+[20:54:10 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[20:54:10 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "item": "Iron Ore"}
+[20:54:10 TRACE Stardew AutoPilot] Action: {"type": "water_crops"}
+[20:54:10 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "except": ["Copper Ore", "Coal", "Iron Ore", "Iron Bar", "Stone", "Sprinkler", "Garlic Seeds", "Potato Seeds", "Kale Seeds", "Rice Shoot", "Mixed Seeds", "Bait", "Fiberglass Rod", "Green Algae", "River Jelly"]}
+[20:54:10 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Mountain"}
+[20:54:15 TRACE game] Warping to Backwoods
+[20:54:29 TRACE game] Warping to Mountain
+[20:54:30 TRACE Stardew AutoPilot] Action: {"type": "fish", "casts": 6}
+[20:56:34 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[20:56:34 TRACE Stardew AutoPilot] Action: {"type": "fish", "casts": 6}
+[20:58:23 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[20:58:23 TRACE Stardew AutoPilot] Action: {"type": "fish", "casts": 6}
+[21:00:24 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[21:00:24 TRACE Stardew AutoPilot] Action: {"type": "fish", "casts": 6}
+[21:02:30 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[21:02:30 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Farm"}
+[21:02:41 TRACE game] Warping to Backwoods
+[21:02:55 TRACE game] Warping to Farm
+[21:02:56 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[21:02:56 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "except": ["Copper Ore", "Coal", "Iron Ore", "Iron Bar", "Stone", "Sprinkler", "Garlic Seeds", "Potato Seeds", "Kale Seeds", "Rice Shoot", "Mixed Seeds", "Bait", "Fiberglass Rod"]}
+[21:03:07 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 80}
+[21:04:04 TRACE Stardew AutoPilot] Action: {"type": "sleep"}
+[21:04:06 TRACE game] Warping to FarmHouse
+[21:04:12 TRACE SMAPI] Synchronizing 'NewDay' task...
+[21:04:12 TRACE SMAPI]    task complete.
+[21:04:19 TRACE SMAPI] Context: before save.
+[21:04:19 TRACE game] SaveGame.Save() called.
+[21:04:19 TRACE SMAPI] Synchronizing 'Save' task...
+[21:04:19 TRACE game] Saving without compression...
+[21:04:19 TRACE SMAPI]    task complete.
+[21:04:19 TRACE game] SaveGame.Save() completed without exceptions.
+[21:04:21 TRACE SMAPI] Context: after save, starting spring 9 Y2.
+[21:04:25 TRACE Stardew AutoPilot] Action: {"type": "load_machines"}
+[21:04:25 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops"}
+[21:04:26 TRACE Stardew AutoPilot] Action: {"type": "water_crops"}
+[21:04:26 TRACE Stardew AutoPilot] Action: {"type": "ship_produce"}
