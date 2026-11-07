@@ -30,6 +30,7 @@ import journal
 import milestones
 import problems
 import status
+import needs
 import prompts
 import wikitext
 from game import Game, GameError
@@ -626,7 +627,9 @@ class Agent:
             resp = self.review_llm.chat_json([
                 {"role": "system", "content": prompts.SYSTEM_SCRIPT.format(actions=prompts.ACTIONS_DOC, roadmap=prompts.ROADMAP)},
                 {"role": "user", "content": user}])
-            script = self.enforce_milestone(self.clean_script(resp.get("script")), progress)
+            bundles = self.safe(self.game.bundles, {})
+            need = needs.immediate(progress, st, bundles, festival_in_days=1)
+            script = self.enforce_milestone(self.clean_script(resp.get("script")), progress, need)
             if script:
                 self.prepared = {"for": tag, "plan": [str(p) for p in resp.get("plan", [])][:8], "script": script}
                 log(f"明天（{tag}）的脚本已准备好：{len(script)} 个动作")
@@ -637,23 +640,33 @@ class Agent:
     # ---------------- scripts ----------------
 
     @staticmethod
-    def enforce_milestone(script, progress):
-        """Hard rule: tomorrow must contain at least one action that advances the current milestone."""
+    def enforce_milestone(script, progress, need=None):
+        """Do what the game is asking for, then the current milestone if the script ignored it."""
+        if not script:
+            return script
+        script = Agent._inject(script, need)
         cur = milestones.current(progress)
-        if not script or not cur:
+        if not cur:
             return script
         name, info = cur
-        if not info["step"] or any(a.get("type") in info["advances"] for a in script):
+        script = Agent._inject(script, {"name": name, "step": info.get("step") or [], "advances": info.get("advances") or set(), "at": "before_sleep"})
+        return script
+
+    @staticmethod
+    def _inject(script, need):
+        if not need or not need.get("step") or any(a.get("type") in need.get("advances", ()) for a in script):
             return script
-        # before the evening return home (or before sleep): the route normalizer keeps it on the way
+        steps = [dict(a) for a in need["step"]]
+        log(f"游戏要求「{need.get('name')}」：脚本里没有，加入 " + " → ".join(a["type"] for a in steps))
+        if need.get("at") == "start":
+            return steps + script
         idx = len(script)
         for i in range(len(script) - 1, -1, -1):
             if script[i].get("type") == "sleep" or (script[i].get("type") == "goto_location" and script[i].get("location") in ("Farm", "FarmHouse")):
                 idx = i
             else:
                 break
-        log(f"里程碑「{name}」：模型的脚本里没有推进它的动作，强制加入 " + " → ".join(a["type"] for a in info["step"]))
-        return script[:idx] + [dict(a) for a in info["step"]] + script[idx:]
+        return script[:idx] + steps + script[idx:]
 
     KNOWN_ACTIONS = actions.KNOWN_ACTIONS
 

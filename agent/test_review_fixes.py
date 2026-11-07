@@ -3,6 +3,7 @@ import unittest
 
 import actions
 import milestones
+import needs
 import prompts
 import wikitext
 from llm import parse_json
@@ -95,6 +96,16 @@ class TestActionsAndScripts(unittest.TestCase):
         types = [a["type"] for a in out]
         self.assertIn("upgrade_house", types)
         self.assertEqual(types[-1], "sleep")
+
+    def test_game_requirement_comes_before_the_roadmap(self):
+        progress = {"money": 2000, "tools": {"axe": 1, "pickaxe": 1, "watering_can": 0, "hoe": 0},
+                    "materials": {"Copper Bar": 5}, "placed": {"Furnace": 1}, "upgrading": None}
+        need = needs.immediate(progress, {"unread_mail": 1, "festivals": []})
+        self.assertEqual(need["step"][0]["type"], "check_mail")
+        fest = needs.immediate(progress, {"festivals": [{"in_days": 1, "name": "Luau", "location": "Beach"}]}, festival_in_days=1)
+        self.assertEqual(fest["step"][1]["activity"], "soup")
+        ready = needs.immediate(progress, {})
+        self.assertEqual(ready["step"], [{"type": "upgrade_tool", "tool": "watering_can"}])
 
     def test_tool_upgrade_one_step_when_the_cost_is_met(self):
         short = {"money": 1912, "tools": {"axe": 1, "pickaxe": 1, "watering_can": 0, "hoe": 0},
