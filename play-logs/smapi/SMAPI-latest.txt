@@ -87,3 +87,11 @@
 [19:02:32 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
 [19:02:32 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 50}
 [19:03:09 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Blacksmith"}
+[19:03:38 TRACE game] Warping to Blacksmith
+[19:03:40 TRACE Stardew AutoPilot] Action: {"type": "upgrade_tool", "tool": "watering_can"}
+[19:03:41 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Mountain"}
+[19:03:41 TRACE game] Warping to Town
+[19:04:09 TRACE game] Warping to Mountain
+[19:04:10 TRACE Stardew AutoPilot] Action: {"type": "fish", "casts": 6}
+[19:06:47 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[19:06:47 TRACE Stardew AutoPilot] Action: {"type": "fish", "casts": 6}
