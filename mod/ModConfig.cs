@@ -50,5 +50,11 @@ namespace StardewAutoPilot
 
         /// <summary>The agent counts as connected if it made a request within this many seconds.</summary>
         public int AgentTimeoutSeconds { get; set; } = 60;
+
+        /// <summary>
+        /// When the farmer is wedged (the same action keeps failing), ask the in-game LLM whether to restart.
+        /// Restart reloads the last save. Off means never restart automatically.
+        /// </summary>
+        public bool LlmDecidesGameRestart { get; set; } = true;
     }
 }

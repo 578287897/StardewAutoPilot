@@ -104,6 +104,7 @@ namespace StardewAutoPilot
             gmcm.AddBoolOption(this.ModManifest, () => this.Config.AutoAdvanceDialogue, v => this.Config.AutoAdvanceDialogue = v, () => "自动点对话");
             gmcm.AddBoolOption(this.ModManifest, () => this.Config.AutoSkipEvents, v => this.Config.AutoSkipEvents = v, () => "自动跳过可跳过过场");
             gmcm.AddBoolOption(this.ModManifest, () => this.Config.PauseWhenAgentDisconnects, v => this.Config.PauseWhenAgentDisconnects = v, () => "代理断开时暂停");
+            gmcm.AddBoolOption(this.ModManifest, () => this.Config.LlmDecidesGameRestart, v => this.Config.LlmDecidesGameRestart = v, () => "卡住时由模型决定是否重启", () => "用上面的模型判断。重启会读回上一夜的存档，今天没存的进度会丢。");
             this.Monitor.Log("Registered with Generic Mod Config Menu.", LogLevel.Trace);
         }
 

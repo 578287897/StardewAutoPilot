@@ -5,6 +5,7 @@ import actions
 import milestones
 import needs
 import prompts
+import restart_decision
 import wikitext
 from llm import parse_json
 from autopilot import Agent
@@ -96,6 +97,17 @@ class TestActionsAndScripts(unittest.TestCase):
         types = [a["type"] for a in out]
         self.assertIn("upgrade_house", types)
         self.assertEqual(types[-1], "sleep")
+
+    def test_restart_only_when_the_model_says_yes_and_the_farmer_is_wedged(self):
+        ok = {"ok": True, "action": {"type": "fish"}, "message": ""}
+        bad = {"ok": False, "action": {"type": "sleep"}, "message": "exit to FarmHouse did not open"}
+        self.assertFalse(restart_decision.wedged([bad, bad, ok]))
+        self.assertTrue(restart_decision.wedged([bad, bad, bad, bad]))
+        self.assertFalse(restart_decision.wants_restart({"restart": False}))
+        self.assertFalse(restart_decision.wants_restart({"restart": "true"}))
+        self.assertTrue(restart_decision.wants_restart({"restart": True}))
+        self.assertTrue(restart_decision.cooldown_active("100", now=100 + 60))
+        self.assertFalse(restart_decision.cooldown_active("100", now=100 + 1300))
 
     def test_game_requirement_comes_before_the_roadmap(self):
         progress = {"money": 2000, "tools": {"axe": 1, "pickaxe": 1, "watering_can": 0, "hoe": 0},

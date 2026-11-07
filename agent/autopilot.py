@@ -33,6 +33,7 @@ import problems
 import status
 import needs
 import prompts
+import restart_decision
 import wikitext
 from game import Game, GameError
 from llm import LLM, LLMError
@@ -114,6 +115,10 @@ def load_config(path):
         else:
             llm[key] = mod_val or agent_val
     llm["api_key"] = llm.get("api_key") or os.environ.get("STARDEW_LLM_API_KEY", "")
+    if mod_cfg and "LlmDecidesGameRestart" in mod_cfg:
+        cfg["llm_decides_restart"] = bool(mod_cfg.get("LlmDecidesGameRestart"))
+    else:
+        cfg["llm_decides_restart"] = True
     if mod_path and (mod_vals["base_url"] or mod_vals["api_key"] or mod_vals["model"]):
         log(f"LLM 配置来自游戏内设置：{mod_path}")
 
@@ -319,6 +324,7 @@ class Agent:
             self.llm = self.review_llm = MockLLM()
         else:
             self.try_init_llm()  # may stay None until the player saves key in-game (F8)
+        self.restart_declined = False
         self.day = None
         self.day_key = None
         self.mode = cfg.get("mode", "script")  # "script": plan the day ahead; "step": ask the model every step
@@ -1235,8 +1241,58 @@ class Agent:
         self.day.steps.append(entry)
         self.write_run("step", {"day": self.day.tag, **entry, "result": res})
         log(("✓ " if entry["ok"] else "✗ ") + self.fmt_step(entry, with_thought=True))
+        if entry["ok"]:
+            self.restart_declined = False
+        elif self.day is not None:
+            self.consider_restart(st)
         if self.status:
             self.status.refresh(self, self.safe(self.game.state, st))
+
+    def consider_restart(self, st):
+        """The model configured in-game decides. A no is remembered until something succeeds."""
+        if self.mock or self.llm is None or self.restart_declined:
+            return
+        self.cfg = load_config(self.config_path)
+        if not self.cfg.get("llm_decides_restart", True):
+            return
+        stamp = Path(os.environ.get("TEMP", ".")) / "stardew-restart-at.txt"
+        try:
+            if restart_decision.cooldown_active(stamp.read_text(encoding="utf-8")):
+                return
+        except OSError:
+            pass
+        steps = self.day.steps
+        if not restart_decision.wedged(steps):
+            return
+        try:
+            reply = self.llm.chat_json([
+                {"role": "system", "content": restart_decision.DECIDE_SYSTEM},
+                {"role": "user", "content": restart_decision.decision_prompt(steps)},
+            ])
+        except LLMError as e:
+            log(f"重启判断失败：{e}")
+            return
+        if not restart_decision.wants_restart(reply):
+            self.restart_declined = True
+            log("模型决定不重启：" + str(reply.get("reason", ""))[:120])
+            return
+        save = st.get("save_name") or "AI_453272148"
+        log("模型决定重启游戏：" + str(reply.get("reason", ""))[:120] + f"（读回存档 {save}）")
+        self.launch_restart(save)
+
+    def launch_restart(self, save_name):
+        script = str(ROOT.parent / "restart_game.ps1")
+        command = (
+            "powershell.exe -NoProfile -ExecutionPolicy Bypass -File "
+            f"\"{script}\" -SaveName {save_name} -AgentPid {os.getpid()}"
+        )
+        subprocess.run(
+            ["powershell", "-NoProfile", "-Command",
+             "Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments "
+             f"@{{ CommandLine = '{command}'; CurrentDirectory = '{ROOT.parent}' }} | Out-Null"],
+            timeout=30,
+        )
+        os._exit(0)
 
     SHOP_LOCATIONS = {loc: (shop_id, start) for shop_id, loc, start, _, _ in prompts.SHOP_HOURS}
 

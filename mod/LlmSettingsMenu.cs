@@ -12,7 +12,7 @@ namespace StardewAutoPilot
     internal class LlmSettingsMenu : IClickableMenu, IKeyboardSubscriber
     {
         private const int PanelW = 720;
-        private const int PanelH = 640;
+        private const int PanelH = 700;
         private const int BoxH = 38;
         private const int LabelGap = 4;
         private const int RowGap = 14;
@@ -35,6 +35,8 @@ namespace StardewAutoPilot
         private readonly List<ClickableComponent> presetButtons = new();
         private readonly ClickableComponent saveButton;
         private readonly ClickableComponent cancelButton;
+        private readonly ClickableComponent restartToggle;
+        private bool llmDecidesRestart;
         private readonly int presetsLabelY;
         private readonly int hintY;
         private Field focused;
@@ -87,6 +89,13 @@ namespace StardewAutoPilot
             }
             y += BtnH + 18;
 
+            this.llmDecidesRestart = mod.Config.LlmDecidesGameRestart;
+            this.restartToggle = new ClickableComponent(new Rectangle(left, y, width, BtnH), "restart")
+            {
+                label = this.RestartLabel()
+            };
+            y += BtnH + 12;
+
             // --- Hint ---
             this.hintY = y;
             y += (int)Math.Ceiling(Game1.smallFont.MeasureString("A").Y) + 14;
@@ -114,6 +123,11 @@ namespace StardewAutoPilot
             };
             y = boxY + BoxH + RowGap;
             return f;
+        }
+
+        private string RestartLabel()
+        {
+            return this.llmDecidesRestart ? "卡住时问模型要不要重启：开" : "卡住时问模型要不要重启：关";
         }
 
         private void CloseMenu()
@@ -173,6 +187,14 @@ namespace StardewAutoPilot
                 return;
             }
 
+            if (this.restartToggle.containsPoint(x, y))
+            {
+                this.llmDecidesRestart = !this.llmDecidesRestart;
+                this.restartToggle.label = this.RestartLabel();
+                Game1.playSound("dwop");
+                return;
+            }
+
             if (this.saveButton.containsPoint(x, y))
             {
                 this.Save();
@@ -193,6 +215,7 @@ namespace StardewAutoPilot
             this.mod.Config.Model = (this.model.Text ?? "").Trim();
             this.mod.Config.ReviewModel = (this.reviewModel.Text ?? "").Trim();
             this.mod.Config.ApiKey = (this.apiKey.Text ?? "").Trim();
+            this.mod.Config.LlmDecidesGameRestart = this.llmDecidesRestart;
             this.mod.Helper.WriteConfig(this.mod.Config);
             this.mod.Monitor.Log("LLM settings saved.", StardewModdingAPI.LogLevel.Info);
             Game1.addHUDMessage(new HUDMessage("AutoPilot: gateway & key saved", 2));
@@ -268,6 +291,8 @@ namespace StardewAutoPilot
 
             foreach (var btn in this.presetButtons)
                 DrawSimpleButton(b, btn, new Color(250, 245, 220));
+
+            DrawSimpleButton(b, this.restartToggle, this.llmDecidesRestart ? new Color(190, 230, 190) : new Color(230, 220, 210));
 
             b.DrawString(Game1.smallFont, "Save then the agent continues. Hotkey: F8",
                 new Vector2(this.xPositionOnScreen + 40, this.hintY), Game1.textColor * 0.75f);
