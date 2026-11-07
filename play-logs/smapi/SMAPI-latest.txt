@@ -1627,3 +1627,69 @@
 [23:47:51 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops"}
 [23:47:51 TRACE Stardew AutoPilot] Action: {"type": "water_crops"}
 [23:47:51 TRACE Stardew AutoPilot] Action: {"type": "ship_produce"}
+[23:48:00 TRACE Stardew AutoPilot] Action: {"type": "donate"}
+[23:48:04 TRACE Stardew AutoPilot] Action: {"type": "clear_debris", "radius": 10, "max": 20, "kinds": ["twig", "weed"]}
+[23:48:06 TRACE Stardew AutoPilot] Action: {"type": "craft", "item": "Preserves Jar", "count": 1}
+[23:48:17 TRACE Stardew AutoPilot] Action: {"type": "clear_debris", "radius": 10, "max": 20, "kinds": ["twig", "weed"]}
+[23:48:25 TRACE Stardew AutoPilot] Action: {"type": "use_tool", "tool": "axe", "x": 40, "y": 60, "times": 1, "until_cleared": true}
+[23:48:25 TRACE Stardew AutoPilot] Action: {"type": "use_tool", "tool": "axe", "x": 44, "y": 60, "times": 1, "until_cleared": true}
+[23:48:25 TRACE Stardew AutoPilot] Action: {"type": "use_tool", "tool": "axe", "x": 40, "y": 56, "times": 1, "until_cleared": true}
+[23:48:29 TRACE Stardew AutoPilot] Action: {"type": "use_tool", "tool": "axe", "x": 40, "y": 52, "times": 1, "until_cleared": true}
+[23:48:29 TRACE Stardew AutoPilot] Action: {"type": "use_tool", "tool": "axe", "x": 44, "y": 52, "times": 1, "until_cleared": true}
+[23:48:29 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Sprinkler", "x": 56, "y": 17}
+[23:48:29 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Sprinkler", "x": 56, "y": 17}
+[23:48:29 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "item": "Iron Ore"}
+[23:48:29 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Mine"}
+[23:48:40 TRACE game] Warping to Backwoods
+[23:48:54 TRACE game] Warping to Mountain
+[23:49:12 TRACE game] Warping to Mine
+[23:49:14 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 4}
+[23:49:14 TRACE game] Warping to UndergroundMine15
+[23:49:52 WARN  Stardew AutoPilot] Player stuck (usingTool=True, eating=False, fade=False, canMove=False); resetting.
+[23:49:56 TRACE game] Warping to UndergroundMine16
+[23:50:23 TRACE game] Warping to UndergroundMine17
+[23:51:51 TRACE game] Warping to UndergroundMine18
+[23:52:10 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[23:52:10 TRACE Stardew AutoPilot] Action: {"type": "fight", "range": 6}
+[23:52:10 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 3}
+[23:52:10 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 3}
+[23:52:10 TRACE Stardew AutoPilot] Action: {"type": "leave_mine"}
+[23:52:17 TRACE game] Warping to Mine
+[23:52:18 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "FishShop"}
+[23:52:20 TRACE game] Warping to Mountain
+[23:52:37 TRACE game] Warping to Town
+[23:53:08 TRACE game] Warping to Beach
+[23:53:21 TRACE game] Warping to FishShop
+[23:53:22 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[23:53:22 TRACE Stardew AutoPilot] Action: {"type": "open_shop", "shop_id": "FishShop"}
+[23:53:24 TRACE Stardew AutoPilot] Action: {"type": "buy", "item": "Bait", "count": 20}
+[23:53:26 TRACE Stardew AutoPilot] Action: {"type": "close_menu"}
+[23:53:26 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Farm"}
+[23:53:26 TRACE game] Warping to Beach
+[23:53:38 TRACE game] Warping to Town
+[23:54:04 TRACE game] Warping to BusStop
+[23:54:13 TRACE game] Warping to Farm
+[23:54:14 TRACE Stardew AutoPilot] Action: {"type": "buy", "item": "Bait", "count": 20}
+[23:54:14 TRACE Stardew AutoPilot] Action: {"type": "close_menu"}
+[23:54:14 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest"}
+[23:54:36 TRACE game] Warping to Forest
+[23:54:38 TRACE Stardew AutoPilot] Action: {"type": "fish", "casts": 4}
+[23:55:08 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Farm"}
+[23:55:16 TRACE game] Warping to Farm
+[23:55:18 TRACE Stardew AutoPilot] Action: {"type": "sleep"}
+[23:55:37 TRACE game] Warping to FarmHouse
+[23:55:42 TRACE SMAPI] Synchronizing 'NewDay' task...
+[23:55:42 TRACE SMAPI]    task complete.
+[23:55:50 TRACE game] Warping to FarmHouse
+[23:55:50 TRACE SMAPI] Context: before save.
+[23:55:50 TRACE game] SaveGame.Save() called.
+[23:55:50 TRACE SMAPI] Synchronizing 'Save' task...
+[23:55:50 TRACE game] Saving without compression...
+[23:55:50 TRACE SMAPI]    task complete.
+[23:55:50 TRACE game] SaveGame.Save() completed without exceptions.
+[23:55:52 TRACE SMAPI] Context: after save, starting spring 26 Y2.
+[23:55:52 TRACE Stardew AutoPilot] Action: {"type": "load_machines"}
+[23:55:54 TRACE game] Warping to Farm
+[23:56:04 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops"}
+[23:56:04 TRACE Stardew AutoPilot] Action: {"type": "water_crops"}
+[23:56:04 TRACE Stardew AutoPilot] Action: {"type": "ship_produce"}
