@@ -66,7 +66,13 @@ def scarecrow(p):
     lack = _lack(p, {"Wood": 50, "Coal": 1, "Fiber": 20})
     if not lack:
         return {"missing": [], "step": _craft_and_place("Scarecrow"), "advances": {"craft", "place"}}
-    step = [{"type": "mine", "floors": 3}] if _m(p, "Coal") < 1 else [{"type": "clear_debris", "max": 15}]
+    # Wood comes from twigs/trees; fiber from weeds; coal from the mine. Never inject craft until materials are ready.
+    if _m(p, "Coal") < 1:
+        step = [{"type": "mine", "floors": 3}]
+    elif _m(p, "Wood") < 50:
+        step = [{"type": "clear_debris", "max": 25, "kinds": ["twig", "weed"]}]
+    else:
+        step = [{"type": "clear_debris", "max": 20, "kinds": ["weed"]}]
     return {"missing": lack, "step": step, "advances": {"mine", "clear_debris"}}
 
 

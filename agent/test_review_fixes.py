@@ -3,6 +3,7 @@ import unittest
 
 import actions
 import milestones
+import prompts
 from llm import parse_json
 from autopilot import Agent
 
@@ -13,6 +14,7 @@ class FakeAgent:
     KNOWN_ACTIONS = actions.KNOWN_ACTIONS
     clean_script = Agent.clean_script
     enforce_milestone = staticmethod(Agent.enforce_milestone)
+    is_minor_failure = staticmethod(Agent.is_minor_failure)
 
 
 class TestActionsAndScripts(unittest.TestCase):
@@ -32,6 +34,37 @@ class TestActionsAndScripts(unittest.TestCase):
         ]
         out = a.clean_script(raw)
         self.assertEqual([x["type"] for x in out], ["fish", "upgrade_house"])
+
+    def test_clean_script_collapses_load_machines_spam(self):
+        a = FakeAgent()
+        raw = [
+            {"type": "load_machines"},
+            {"type": "load_machines"},
+            {"type": "load_machines"},
+            {"type": "fish", "casts": 2},
+            {"type": "load_machines"},
+        ]
+        out = a.clean_script(raw)
+        self.assertEqual([x["type"] for x in out], ["load_machines", "fish", "load_machines"])
+
+    def test_upgrade_and_weapon_are_not_minor_failures(self):
+        self.assertFalse(FakeAgent.is_minor_failure({"type": "upgrade_tool", "tool": "pickaxe"}))
+        self.assertFalse(FakeAgent.is_minor_failure({"type": "buy_weapon"}))
+        self.assertTrue(FakeAgent.is_minor_failure({"type": "load_machines"}))
+
+    def test_shop_hours_include_guild_and_saloon(self):
+        locs = {loc: start for _, loc, start, _, _ in prompts.SHOP_HOURS}
+        self.assertEqual(locs["Saloon"], 1200)
+        self.assertEqual(locs["AdventureGuild"], 1400)
+        self.assertEqual(locs["Blacksmith"], 900)
+
+    def test_scarecrow_milestone_gathers_wood_before_craft(self):
+        info = milestones.scarecrow({
+            "placed": {}, "recipes": ["Scarecrow"],
+            "materials": {"Wood": 20, "Coal": 5, "Fiber": 40},
+        })
+        self.assertEqual(info["step"][0]["type"], "clear_debris")
+        self.assertNotIn("craft", info["advances"])
 
     def test_enforce_milestone_injects_house_upgrade(self):
         script = [{"type": "fish", "casts": 2}, {"type": "sleep"}]

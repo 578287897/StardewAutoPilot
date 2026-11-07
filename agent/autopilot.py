@@ -231,6 +231,8 @@ class DayLog:
         self.junk_fishing = 0      # time-filler fishing rounds that caught only junk
         self.awaiting_script = False
         self.empty_debris_spots = set()
+        self.craft_blocked = set()  # items that already failed craft today (don't spam)
+        self.place_blocked = set()  # items with no tidy spot left today
         self.llm_calls_start, self.tokens_start = usage
 
 
@@ -451,7 +453,8 @@ class Agent:
         machines = st.get("machines") or []
         if any(m.get("ready") for m in machines):
             morning.append({"type": "collect_machines"})
-        if machines:
+        # Only try loading once in the morning; empty load now fails and sets load_failed (no all-day spam).
+        if any(not m.get("contains") for m in machines):
             morning.append({"type": "load_machines"})
 
         prepared = self.prepared
@@ -651,7 +654,32 @@ class Agent:
         if not isinstance(script, list):
             return []
         # dialog_advance is dropped: the mod advances plain dialogue itself, so a scripted one only ever fails
-        return [a for a in script if isinstance(a, dict) and a.get("type") in self.KNOWN_ACTIONS and a.get("type") != "dialog_advance"][:30]
+        out = [a for a in script if isinstance(a, dict) and a.get("type") in self.KNOWN_ACTIONS and a.get("type") != "dialog_advance"]
+        # Collapse consecutive load_machines (models love to spam them) to a single call.
+        cleaned = []
+        for a in out:
+            if a.get("type") == "load_machines" and cleaned and cleaned[-1].get("type") == "load_machines":
+                continue
+            cleaned.append(a)
+        return cleaned[:30]
+
+    def drop_pending(self, action_type, item=None):
+        """Remove remaining same-type spam from today's script (e.g. empty load_machines loops)."""
+        if not self.day or not self.day.script:
+            return
+        before = len(self.day.script)
+
+        def keep(a):
+            if a.get("type") != action_type:
+                return True
+            if item and str(a.get("item", "")).lower() != item.lower():
+                return True
+            return False
+
+        self.day.script = [a for a in self.day.script if keep(a)]
+        dropped = before - len(self.day.script)
+        if dropped:
+            log(f"去掉脚本里后续 {dropped} 个空转的 {action_type}")
 
     HOME = ("Farm", "FarmHouse")
     # actions that only make sense on the farm: done on the evening return instead of walking back mid-day
@@ -820,6 +848,15 @@ class Agent:
         n = self.day.script_total - len(self.day.script)
         res = self.execute(st, action)
         self.record(st, f"(脚本 {n}/{self.day.script_total})", action, res)
+        if action["type"] == "load_machines" and not res.get("ok"):
+            self.day.load_failed = True
+            self.drop_pending("load_machines")
+        if action["type"] == "craft" and not res.get("ok"):
+            item = str(action.get("item") or "")
+            msg = str(res.get("message", "")).lower()
+            if item and ("ingredient" in msg or "not enough" in msg):
+                self.day.craft_blocked.add(item.lower())
+                self.drop_pending("craft", item=item)
         if not res.get("ok") and self.is_minor_failure(action):
             return  # chatting/foraging/clearing that didn't pan out: just move on to the next scripted action
         if not res.get("ok") and not self.day.ended and self.mode == "script":
@@ -869,10 +906,16 @@ class Agent:
 
     @staticmethod
     def is_minor_failure(action):
-        """Failures that don't invalidate the rest of the day's plan."""
+        """Failures that don't invalidate the rest of the day's plan.
+
+        upgrade_tool / buy_weapon are NOT minor: a soft skip left copper tools and Silver Saber stuck for days.
+        load_machines empty-fail IS minor (continue the script) but sets load_failed so the time filler stops.
+        """
         t = action.get("type")
-        return (t == "interact" and "npc" in action) or t in ("forage", "clear_debris", "fight", "collect_machines", "care_animals",
-                                                               "buy_backpack", "buy_weapon", "place", "load_machines", "build_road", "upgrade_tool", "decorate", "festival")
+        return (t == "interact" and "npc" in action) or t in (
+            "forage", "clear_debris", "fight", "collect_machines", "care_animals",
+            "buy_backpack", "place", "load_machines", "build_road", "decorate", "festival",
+        )
 
     def llm_step(self, st):
         try:
@@ -925,6 +968,12 @@ class Agent:
         elif t == "wait":
             action = self.rewrite_wait(st, action)
             t = action.get("type")
+
+        # Shop / guild / blacksmith: wait until open instead of cascading locked-door failures.
+        gated = self.defer_until_open(st, action)
+        if gated is not None:
+            return gated
+
         if t == "mine":
             lim = self.mem.mine_limit(abs_day(st))
             if lim:
@@ -940,18 +989,71 @@ class Agent:
         if self.farm_plan() and on_farm and t in ("place", "build") and "x" in action and not planted:
             log(f"{t}：忽略模型给的坐标，按农场分区放置")
             action = {k: v for k, v in action.items() if k not in ("x", "y")}
+
+        # take: never trust model chest coords (journals kept hitting empty (74,15)); mod scans all farm chests.
+        if t == "take" and ("x" in action or "y" in action):
+            log(f"take：去掉错误箱子坐标 ({action.get('x')},{action.get('y')})，改扫全部农场箱子")
+            action = {k: v for k, v in action.items() if k not in ("x", "y")}
+
+        # craft: don't spam items that already failed for lack of materials today
+        if t == "craft":
+            item = str(action.get("item") or "")
+            if item.lower() in self.day.craft_blocked:
+                return {"ok": False, "message": f"already failed crafting {item} today (not enough ingredients); gather materials first (clear_debris / mine)"}
+            if "scarecrow" in item.lower() or item == "Scarecrow":
+                prog = self.safe(self.game.progress, {})
+                mats = prog.get("materials") or {}
+                need = {"Wood": 50, "Coal": 1, "Fiber": 20}
+                short = [f"{k} need {v}, have {mats.get(k, 0)}" for k, v in need.items() if mats.get(k, 0) < v]
+                if short:
+                    self.day.craft_blocked.add(item.lower())
+                    return {"ok": False, "message": "can't craft Scarecrow yet: " + "; ".join(short)}
+
         if t == "craft" and "x" in action and self.farm_plan() and on_farm and "chest" not in str(action.get("item", "")).lower():
             res = self.act_and_record(st, {k: v for k, v in action.items() if k not in ("x", "y")}, "(先做出来，再按分区摆放)")
             if not res.get("ok"):
                 return res
             st = self.safe(self.game.state, st)
             action, t = {"type": "place", "item": action.get("item", "")}, "place"
+
+        # NPC interact: shopkeepers must use dedicated actions (chatting never upgrades tools / buys weapons).
+        if t == "interact" and action.get("npc"):
+            npc = str(action["npc"])
+            key = npc.lower()
+            if key in ("clint",):
+                prog = self.safe(self.game.progress, {})
+                up = prog.get("upgrading") or {}
+                tools = prog.get("tools") or {}
+                if up and up.get("days_left", 1) <= 0:
+                    action, t = {"type": "upgrade_tool"}, "upgrade_tool"  # collect finished tool
+                else:
+                    tool = action.get("tool") or ("axe" if tools.get("axe", 0) < 1 else "pickaxe")
+                    action, t = {"type": "upgrade_tool", "tool": tool}, "upgrade_tool"
+                log(f"interact Clint → {action}（闲聊不能升级工具）")
+            elif key in ("marlon",):
+                log("interact Marlon → buy_weapon")
+                action, t = {"type": "buy_weapon"}, "buy_weapon"
+            elif key in ("pierre",) and action.get("intent") == "backpack":
+                action, t = {"type": "buy_backpack"}, "buy_backpack"
+
+        if t == "dialog_answer" and st.get("location") == "Blacksmith":
+            log("铁匠铺对话不能升级工具：关掉菜单，改用 upgrade_tool")
+            try:
+                self.game.act({"type": "close_menu"})
+            except GameError:
+                pass
+            return {"ok": False, "message": "chatting with Clint does not upgrade tools; use upgrade_tool (axe/pickaxe) after 9:00"}
+
         if t == "interact" and "x" in action and "npc" not in action:
             m = next((m for m in st.get("machines") or [] if (m["x"], m["y"]) == (action["x"], action["y"])), None)
             if m:
+                if self.day.load_failed and not m.get("ready"):
+                    return {"ok": False, "message": "load_machines already empty today; skip"}
                 action = {"type": "collect_machines"} if m.get("ready") else {"type": "load_machines"}
                 t = action["type"]
                 log(f"interact {m['name']} → 改成 {t}（机器要用 load_machines / collect_machines）")
+        if t == "load_machines" and self.day.load_failed:
+            return {"ok": False, "message": "no empty machine accepts anything (already tried today)"}
         if t == "build_road":
             return self.build_road(st)
         if t == "decorate":
@@ -969,11 +1071,15 @@ class Agent:
                 st = self.safe(self.game.state, st)
             action = {**action, "x": x, "y": y}
         if t == "place" and "x" not in action and st.get("location") == "Farm" and not planted:
-            spot = self.tidy_spot(st, action.get("item", ""))
+            item_name = str(action.get("item") or "")
+            if item_name.lower() in self.day.place_blocked:
+                return {"ok": False, "message": f"{item_name} 今天已确认分区无空位"}
+            spot = self.tidy_spot(st, item_name)
             if spot:
                 action = {**action, "x": spot[0], "y": spot[1]}
             elif self.farm_plan():
-                return {"ok": False, "message": f"{action.get('item')} 在规划的分区里没有空位了（不在分区外乱放）"}
+                self.day.place_blocked.add(item_name.lower())
+                return {"ok": False, "message": f"{item_name} 在规划的分区里没有空位了（不在分区外乱放）"}
         if t == "clear_debris" and "x" in action and (action.get("x"), action.get("y")) in self.day.empty_debris_spots:
             action = {k: v for k, v in action.items() if k not in ("x", "y")}
         if t == "plant_seeds" and self.farm_plan() and on_farm:
@@ -984,10 +1090,16 @@ class Agent:
                 action = {k: v for k, v in action.items() if k not in ("x", "y")}
                 action["plot"] = {k: plot[k] for k in ("x", "y", "w", "h")}
         crops = self.safe(lambda: self.game.crops("Farm"), {}) if t == "sleep" else None
+        claimed = (action.get("x"), action.get("y")) if t == "place" and "x" in action else None
         try:
             res = self.game.act(action)
         except GameError as e:
             res = {"ok": False, "message": str(e)}
+        # Roll back ghost occupancy so tomorrow (and later today) can reuse the tile.
+        if t == "place" and not res.get("ok") and claimed and claimed[0] is not None:
+            self.unclaim_spot(claimed)
+            if "没有空位" in str(res.get("message", "")) or "occupied" in str(res.get("message", "")).lower():
+                self.day.place_blocked.add(str(action.get("item") or "").lower())
         if t == "sleep" and res.get("ok"):
             self.day.ended = True
             self.on_went_to_sleep(st, crops)
@@ -1001,6 +1113,48 @@ class Agent:
             self.check_knocked_out(st, res)
         if t in ("ship_produce", "ship") and res.get("ok"):
             self.day.shipped_value += int(res.get("value", 0) or 0)
+        if t == "load_machines" and not res.get("ok"):
+            self.day.load_failed = True
+        return res
+
+    # Locations the agent commonly visits for shopping; values are open time in military hours.
+    SHOP_OPEN = {loc: start for _, loc, start, _, _ in prompts.SHOP_HOURS}
+    SHOP_OPEN.update({"AdventureGuild": 1400, "Saloon": 1200, "Blacksmith": 900, "SeedShop": 900})
+
+    def defer_until_open(self, st, action):
+        """If the next shop trip is before opening time, wait (and re-queue the action) instead of failing the chain."""
+        t = action.get("type")
+        target = None
+        if t == "goto_location":
+            target = action.get("location")
+        elif t == "open_shop":
+            sid = action.get("shop_id")
+            target = next((loc for shop_id, loc, *_ in prompts.SHOP_HOURS if shop_id == sid), st.get("location"))
+        elif t == "buy_weapon":
+            target = "AdventureGuild"
+        elif t == "upgrade_tool" or t == "buy_backpack":
+            target = "Blacksmith" if t == "upgrade_tool" else "SeedShop"
+        elif t == "buy":
+            # buy with no open menu usually means we jumped the gun; if we're standing at a known shop before open, wait
+            target = st.get("location") if st.get("location") in self.SHOP_OPEN else None
+        if not target or target not in self.SHOP_OPEN:
+            return None
+        opens = self.SHOP_OPEN[target]
+        now = st.get("time", 0)
+        if now >= opens:
+            return None
+        minutes = (opens // 100 * 60 + opens % 100) - (now // 100 * 60 + now % 100)
+        minutes = max(10, min(minutes, 120))
+        log(f"{target} {opens // 100}:00 才开门（现在 {now // 100}:{now % 100:02d}）：先等 {minutes} 分钟，再执行 {t}")
+        if self.day and self.day.script is not None:
+            self.day.script.insert(0, action)
+        wait = {"type": "wait", "minutes": minutes}
+        try:
+            res = self.game.act(wait)
+        except GameError as e:
+            res = {"ok": False, "message": str(e)}
+        if res.get("ok"):
+            res = {**res, "message": (res.get("message") or "") + f" (waiting for {target} to open at {opens // 100}:00)"}
         return res
 
     def check_knocked_out(self, st, res):
@@ -1119,12 +1273,22 @@ class Agent:
             return None
         if "scarecrow" in name or "稻草人" in name:
             zone = (layout.get("plan") or {}).get("zones", {}).get("crops")
+            candidates = []
             for plot in layout.get("plots", []):
                 mid_x, mid_y = plot["x"] + plot["w"] // 2, plot["y"] + plot["h"] // 2
-                for spot in ((plot["x"] + plot["w"], mid_y), (plot["x"] - 1, mid_y), (mid_x, plot["y"] + plot["h"]), (mid_x, plot["y"] - 1)):
-                    inside = not zone or (zone[0] <= spot[0] < zone[0] + zone[2] and zone[1] <= spot[1] < zone[1] + zone[3])
-                    if inside and spot not in taken and self.placeable(spot):
-                        return self.claim_spot(layout, spot)
+                # Prefer walkways beside/between plots (not inside crop tiles). More candidates than before —
+                # journals showed "分区没有空位" after a few ghost claims ate the 4 edge spots.
+                candidates.extend([
+                    (plot["x"] + plot["w"], mid_y), (plot["x"] - 1, mid_y),
+                    (mid_x, plot["y"] + plot["h"]), (mid_x, plot["y"] - 1),
+                    (plot["x"] + plot["w"], plot["y"]), (plot["x"] + plot["w"], plot["y"] + plot["h"] - 1),
+                    (plot["x"] - 1, plot["y"]), (plot["x"] - 1, plot["y"] + plot["h"] - 1),
+                    (plot["x"] + plot["w"] + 1, mid_y), (plot["x"] - 2, mid_y),
+                ])
+            for spot in candidates:
+                inside = not zone or (zone[0] <= spot[0] < zone[0] + zone[2] and zone[1] <= spot[1] < zone[1] + zone[3])
+                if inside and spot not in taken and self.placeable(spot):
+                    return self.claim_spot(layout, spot)
             return None
         bin_xy = st.get("shipping_bin")
         if not bin_xy:
@@ -1156,6 +1320,17 @@ class Agent:
         layout.setdefault("placed", []).append(list(spot))
         self.mem.save_layout(layout)
         return spot
+
+    def unclaim_spot(self, spot):
+        """Undo a tidy_spot reservation when place/craft failed (prevents ghost occupancy)."""
+        layout = self.mem.layout()
+        placed = layout.get("placed") or []
+        spot_t = (spot[0], spot[1])
+        new = [p for p in placed if tuple(p) != spot_t]
+        if len(new) != len(placed):
+            layout["placed"] = new
+            self.mem.save_layout(layout)
+            log(f"放置失败：释放占位 ({spot[0]},{spot[1]})")
 
     @staticmethod
     def fmt_villager(v):

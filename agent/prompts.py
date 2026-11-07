@@ -23,11 +23,12 @@ ACTIONS_DOC = """\
 - {"type":"ship_produce","except":["物品名"]}            走到出货箱，卖出所有农产品/采集物/鱼/矿物（次日早上到账）
 - {"type":"ship","item":"名称","count":5}               出货指定物品
 商店
-- {"type":"open_shop","shop_id":"SeedShop"}  需在对应地点且营业中。shop_id: SeedShop(皮埃尔,地点SeedShop,9-17点,周三休) Blacksmith AnimalShop Carpenter(地点ScienceHouse) FishShop(地点FishShop) Saloon Hospital Joja(地点JojaMart)
+- {"type":"open_shop","shop_id":"SeedShop"}  需在对应地点且营业中。shop_id: SeedShop(皮埃尔,地点SeedShop,9-17点,周三休) Blacksmith(9-16) AnimalShop Carpenter(地点ScienceHouse) FishShop Saloon(12-24点) AdventureGuild/AdventureShop(冒险家公会,14-22点) Hospital Joja(地点JojaMart)
 - {"type":"buy","item":"Parsnip Seeds","count":10}      商店打开时购买
 - {"type":"close_menu"}
+  硬规则：未开门绝不要 goto/open_shop/buy。Saloon 必须 ≥12:00；AdventureGuild 必须 ≥14:00；Blacksmith ≥9:00。未开门就先做别的事或 wait 到开门。
 对话 / 菜单
-- {"type":"dialog_answer","index":0}   回答问题对话框
+- {"type":"dialog_answer","index":0}   回答问题对话框（不要用对话「升级工具」——工具升级只用 upgrade_tool）
 - {"type":"dialog_advance"}            继续普通对话
 - {"type":"menu_click","index":N}      点击菜单组件
 - {"type":"choose_profession","side":"left|right"}  升级选职业
@@ -48,8 +49,9 @@ ACTIONS_DOC = """\
 - {"type":"build_road"}                 按农场规划铺下一段 2 格宽的主干道（自动做石砖路面、清杂草碎石，有路灯配方时立路灯）。
 - {"type":"upgrade_tool","tool":"axe"}   去铁匠铺(克林特 9-16 点)升级工具：axe/pickaxe/hoe/watering can。铜级 2000g+5 铜锭，钢级 5000g+5 铁锭；
                                        工具交给克林特 2 天，期间不能用。不写 tool = 取回已经升级好的工具。
+                                       禁止用 interact/dialog_answer 找克林特「聊天升级」——那只会寒暄，必须用本动作。
 - {"type":"upgrade_house"}              去罗宾家(ScienceHouse，9-17点，周二休)升级房屋到有厨房：10000g + 450 木头，3 天后完成。材料可从箱子扣。
-- {"type":"buy_weapon"}                去冒险家公会(Marlon)买一把比现在更强、买得起的武器。
+- {"type":"buy_weapon"}                去冒险家公会(AdventureGuild，Marlon，14:00-22:00)买一把比现在更强、买得起的武器。未到 14:00 不要去。
 - {"type":"leave_mine"}                从矿洞爬梯子出去（goto_location 去别处时也会自动先出矿）
 - {"type":"fight","range":6}           打附近的怪物
   矿石（铜/铁/金）用来升级工具、做洒水器；生命低于 35% 会自动吃东西，没食物就该离开。第一次进矿洞会拿到武器。
@@ -66,16 +68,17 @@ ACTIONS_DOC = """\
 加工机器与烹饪
 - {"type":"load_machines"}             把机器接受的东西放进所有空闲机器（熔炉、酿酒桶、罐头瓶、蛋黄酱机…）。背包里没有就自动从农场箱子里拿（熔炉要 5 块矿 + 1 块煤）。
                                        可加 "item":"Copper Ore" 只放某种。炼铜锭、加工都用它，不要用 interact 点机器。
+                                       若返回「没有可装」就立刻停，当天不要再反复调用（空转会浪费整天）。
 - {"type":"collect_machines"}          收取所有已完成机器的产品（铜锭 30 分钟、铁锭 2 小时出炉）。执行器每天早上和空闲时会自动收取并重新装料。
 - {"type":"cook","item":"Fried Egg","count":1}  在农舍厨房做菜（需要第一次房屋升级），食材可来自背包/冰箱/箱子
   机器用 craft 制作，再 place（不填 x,y 会整齐排成一排）；工匠品（果酒、果酱、奶酪）比原料值钱得多。
 制作与存储
 - {"type":"buy_backpack"}               在皮埃尔商店(9-17点,周三休)升级背包：12→24 格 2000g，24→36 格 10000g。会自动走去 SeedShop。
-- {"type":"craft","item":"Chest","count":1}   制作物品（可用箱子里的材料）。常用：Chest=50木材，Scarecrow 稻草人，Sprinkler 洒水器
+- {"type":"craft","item":"Chest","count":1}   制作物品（可用箱子里的材料）。常用：Chest=50木材，Scarecrow=50木+1煤+20纤维，Sprinkler 洒水器。材料不够时先砍树/清杂物，不要反复 craft。
 - {"type":"store_items"}                 把木材/石头/纤维/矿石等材料存进农场箱子；农场没箱子会自动做一个并整齐摆在出货箱旁
 - {"type":"store_items","items":["Wood"]}  只存指定物品
-- {"type":"take","item":"Wood","count":50}  从箱子取出
-- {"type":"place","item":"Scarecrow"}    放置箱子/稻草人等可以不填 x,y：执行器会摆到整齐的位置（箱子排成一排，稻草人放在地块上方走道中间）
+- {"type":"take","item":"Wood","count":50}  从箱子取出（尽量不写 x,y；写错坐标会扫全部农场箱子）
+- {"type":"place","item":"Scarecrow"}    放置箱子/稻草人等可以不填 x,y：执行器会摆到整齐的位置（箱子排成一排，稻草人放在地块旁走道）
 """
 
 # (shop_id, location, open, close, closed weekdays) — approximate vanilla hours; the game's own "locked" message is authoritative
@@ -86,6 +89,8 @@ SHOP_HOURS = [
     ("Carpenter", "ScienceHouse", 900, 1700, {"Tue"}),
     ("FishShop", "FishShop", 900, 1700, set()),
     ("Saloon", "Saloon", 1200, 2400, set()),
+    ("AdventureShop", "AdventureGuild", 1400, 2200, set()),
+    ("Hospital", "Hospital", 900, 1500, {"Tue"}),
     ("Joja", "JojaMart", 900, 2300, set()),
 ]
 

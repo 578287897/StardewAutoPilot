@@ -722,6 +722,10 @@ namespace StardewAutoPilot
         private IEnumerable<object> OpenShop(string shopId)
         {
             foreach (var o in this.EnsureFree()) yield return o;
+            // Pre-check known lock hours so the agent gets a clear "opens at" instead of a cascade of buy/close failures.
+            string loc = Game1.currentLocation?.NameOrUniqueName;
+            if (!string.IsNullOrEmpty(loc) && GameData.LockedNow(loc, out int opensAt))
+                throw new ActionFailed($"can't open shop '{shopId}': {loc} is locked until {opensAt / 100}:{opensAt % 100:00}");
             if (!Utility.TryOpenShopMenu(shopId, Game1.currentLocation, null, null, false, true, null))
                 throw new ActionFailed($"can't open shop '{shopId}' here (wrong location, closed, or shopkeeper absent)");
             for (int i = 0; i < 10; i++)
@@ -1015,11 +1019,53 @@ namespace StardewAutoPilot
 
         private IEnumerable<object> Take(string query, int count, Point? at)
         {
+            string q = query.ToLowerInvariant();
+            bool Match(Item i) => i != null && (i.DisplayName.ToLowerInvariant().Contains(q)
+                || i.Name.ToLowerInvariant().Contains(q) || i.QualifiedItemId.ToLowerInvariant() == q);
+
             StardewValley.Objects.Chest chest = null;
             Point tile = default;
-            foreach (var o in this.WalkToChest(at, (c, t) => { chest = c; tile = t; })) yield return o;
-            string q = query.ToLowerInvariant();
-            var item = chest.Items.FirstOrDefault(i => i != null && (i.DisplayName.ToLowerInvariant().Contains(q) || i.Name.ToLowerInvariant().Contains(q) || i.QualifiedItemId.ToLowerInvariant() == q))
+            // Prefer the requested tile, but if that chest lacks the item (wrong remembered coords),
+            // fall back to any farm/farmhouse chest — same scan craft/load_machines already use.
+            if (at != null)
+            {
+                var named = Crafting.NearestChest(Game1.currentLocation, P.TilePoint, at);
+                if (named != null && named.Items.Any(Match))
+                {
+                    foreach (var o in this.WalkToChest(at, (c, t) => { chest = c; tile = t; })) yield return o;
+                }
+            }
+            if (chest == null)
+            {
+                GameLocation foundLoc = null;
+                Point foundTile = default;
+                foreach (var loc in new GameLocation[] { Game1.getFarm(), Utility.getHomeOfFarmer(P) })
+                {
+                    if (loc == null) continue;
+                    foreach (var kv in loc.objects.Pairs)
+                    {
+                        if (kv.Value is not StardewValley.Objects.Chest c || c.giftbox.Value || !c.playerChest.Value)
+                            continue;
+                        if (!c.Items.Any(Match))
+                            continue;
+                        foundLoc = loc;
+                        foundTile = new Point((int)kv.Key.X, (int)kv.Key.Y);
+                        break;
+                    }
+                    if (foundLoc != null) break;
+                }
+                if (foundLoc == null)
+                {
+                    if (at != null)
+                        throw new ActionFailed($"'{query}' is not in the chest at ({at.Value.X},{at.Value.Y}) or any farm chest");
+                    throw new ActionFailed($"'{query}' is not in any farm chest");
+                }
+                if (!ReferenceEquals(Game1.currentLocation, foundLoc))
+                    foreach (var o in this.GotoLocation(foundLoc.NameOrUniqueName)) yield return o;
+                foreach (var o in this.WalkToChest(foundTile, (c, t) => { chest = c; tile = t; })) yield return o;
+            }
+
+            var item = chest.Items.FirstOrDefault(Match)
                        ?? throw new ActionFailed($"'{query}' is not in the chest at ({tile.X},{tile.Y})");
             int n = Math.Min(count, item.Stack);
             var part = item.getOne();
@@ -1357,10 +1403,12 @@ namespace StardewAutoPilot
         /// </summary>
         private IEnumerable<object> UpgradeTool(string query)
         {
+            if (GameData.LockedNow("Blacksmith", out int smithOpens))
+                throw new ActionFailed($"Blacksmith is locked until {smithOpens / 100}:{smithOpens % 100:00} (open 9:00-16:00); use upgrade_tool after it opens — do not interact/dialog with Clint");
             if (Game1.currentLocation.Name != "Blacksmith")
                 foreach (var o in this.GotoLocation("Blacksmith")) yield return o;
             if (!ShopkeeperHere("Clint"))
-                throw new ActionFailed("Clint isn't at the counter (open 9:00-16:00)");
+                throw new ActionFailed("Clint isn't at the counter (open 9:00-16:00); use upgrade_tool — chatting with interact does not upgrade tools");
             var collected = new List<string>();
             if (P.toolBeingUpgraded.Value != null && P.daysLeftForToolUpgrade.Value <= 0)
             {
@@ -1508,10 +1556,13 @@ namespace StardewAutoPilot
         /// <summary>Buy the strongest weapon Marlon sells that is better than the current one and affordable.</summary>
         private IEnumerable<object> BuyWeapon()
         {
+            // Guild door: LockedDoorWarp ~14:00–22:00 (vanilla). Fail early with opens_at instead of walking into a locked door.
+            if (GameData.LockedNow("AdventureGuild", out int guildOpens))
+                throw new ActionFailed($"Adventurer's Guild is locked until {guildOpens / 100}:{guildOpens % 100:00} (typically 14:00-22:00)");
             if (Game1.currentLocation.Name != "AdventureGuild")
                 foreach (var o in this.GotoLocation("AdventureGuild")) yield return o;
             if (!ShopkeeperHere("Marlon"))
-                throw new ActionFailed("Marlon isn't at the Adventurer's Guild counter right now");
+                throw new ActionFailed("Marlon isn't at the Adventurer's Guild counter right now (open ~14:00-22:00)");
             float have = Gear.WeaponPower(P);
             var stock = Gear.GuildWeapons();
             var pick = stock.FirstOrDefault(x => Gear.Power(x.weapon) > have && x.price <= P.Money);
@@ -2006,7 +2057,9 @@ namespace StardewAutoPilot
                 }
             }
             J.Data["loaded"] = loaded;
-            J.Message = loaded.Count == 0 ? "no empty machine accepts anything in the backpack or the farm chests" : $"loaded: {string.Join(", ", loaded)}";
+            if (loaded.Count == 0)
+                throw new ActionFailed("no empty machine accepts anything in the backpack or the farm chests");
+            J.Message = $"loaded: {string.Join(", ", loaded)}";
         }
 
         private IEnumerable<object> Cook(string query, int count)
