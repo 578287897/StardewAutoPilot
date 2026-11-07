@@ -8,6 +8,7 @@ import html
 import socket
 import threading
 import time
+from storage import LOCK
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import farmplan
@@ -140,11 +141,18 @@ pre{{overflow-x:auto;font:11px/1.15 "Cascadia Mono",Consolas,monospace;margin:0}
             out.append(f"<section><h2>里程碑</h2><p class=muted>已完成：{e('、'.join(done) or '无')}</p><ul>{items}</ul></section>")
 
         try:
-            with agent.mem.metrics_path.open(encoding="utf-8") as f:
-                rows = list(csv.DictReader(f))[-30:]
+            with LOCK:
+                with agent.mem.metrics_path.open(encoding="utf-8") as f:
+                    rows = list(csv.DictReader(f))[-30:]
         except OSError:
             rows = []
         out.append(f"<section><h2>金钱（每天早上）</h2>{money_chart(rows)}</section>")
+        if rows and rows[-1].get("work_attempts"):
+            latest = rows[-1]
+            details = " · ".join(e(f"{title}：{latest.get(key) or '—'}") for title, key in (
+                ("有效动作率", "effective_rate"), ("空转", "no_progress"), ("熔断跳过", "circuit_skips"),
+                ("失败耗时（秒）", "failure_seconds"), ("最深矿层", "deepest_mine")))
+            out.append(f"<section><h2>昨日执行效率</h2><p>{details}</p></section>")
 
         if d:
             fails = [s for s in d.steps if not s["ok"]][-8:]

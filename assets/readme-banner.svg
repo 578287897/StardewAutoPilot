@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="400" viewBox="0 0 1200 400" role="img" aria-labelledby="title desc">
+  <title id="title">Stardew AutoPilot</title>
+  <desc id="desc">An AI farm control room: plan by day, learn by night. A geometric farm with crops, a barn and connected planning nodes.</desc>
+  <defs>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#28483f" stroke-width="1"/></pattern>
+    <g id="crop"><path d="M0 0v-18" stroke="#cae9a0" stroke-width="3"/><path d="M0-8q-17 0-14-13Q0-22 0-8M0-14q15 1 14-12Q0-27 0-14" fill="#7fb970"/></g>
+  </defs>
+  <rect width="1200" height="400" rx="20" fill="#102d28"/>
+  <rect x="710" width="490" height="400" fill="url(#grid)"/>
+  <path d="M720 400V0" stroke="#36554a"/>
+  <circle cx="1090" cy="77" r="28" fill="#efce82"/>
+  <path d="M1030 78h-40m132 0h35" stroke="#789477" stroke-width="2"/>
+  <rect x="48" y="42" width="193" height="30" rx="15" fill="#254b3f"/>
+  <circle cx="66" cy="57" r="4" fill="#b5d889"/>
+  <text x="80" y="62" fill="#d5e5b9" font-family="Segoe UI,Arial,sans-serif" font-size="12" letter-spacing="2">AI FARM CONTROL</text>
+  <text x="46" y="151" fill="#f7f0d7" font-family="Segoe UI,Arial,sans-serif" font-size="62" font-weight="700" letter-spacing="-2">Stardew</text>
+  <text x="46" y="218" fill="#b7d88d" font-family="Segoe UI,Arial,sans-serif" font-size="62" font-weight="700" letter-spacing="-2">AutoPilot</text>
+  <text x="50" y="263" fill="#d2ddd0" font-family="Segoe UI,Arial,sans-serif" font-size="21">Plan by day. Learn by night.</text>
+  <path d="M50 297h590" stroke="#36554a"/>
+  <text x="50" y="331" fill="#a7bca8" font-family="Segoe UI,Arial,sans-serif" font-size="13" letter-spacing="2">SMAPI + PYTHON + LLM</text>
+  <text x="50" y="360" fill="#a7bca8" font-family="Segoe UI,Arial,sans-serif" font-size="13">Structured game state. Daily plans. Nightly reflection.</text>
+  <path d="M766 289l175-80 214 91-173 81z" fill="#294d37" stroke="#5b7b4b" stroke-width="2"/>
+  <path d="M790 290l146-65 188 77-142 63z" fill="#5a4933"/>
+  <path d="M832 279l183 77m-139-97l181 78m-138-96l180 77" stroke="#ac9357" stroke-width="8"/>
+  <g><use href="#crop" x="845" y="282"/><use href="#crop" x="882" y="297"/><use href="#crop" x="919" y="313"/><use href="#crop" x="956" y="329"/><use href="#crop" x="891" y="262"/><use href="#crop" x="928" y="278"/><use href="#crop" x="965" y="294"/><use href="#crop" x="1002" y="310"/><use href="#crop" x="938" y="243"/><use href="#crop" x="975" y="259"/><use href="#crop" x="1012" y="275"/><use href="#crop" x="1049" y="291"/></g>
+  <path d="M788 180v56l58 24 57-26v-55l-57-37z" fill="#c17e58"/>
+  <path d="M774 181l71-60 73 61-71 29z" fill="#e6b773"/>
+  <path d="M847 211v49l56-26v-55z" fill="#935d47"/>
+  <path d="M810 222v-29l21 9v29z" fill="#f4dfa4"/>
+  <path d="M869 249v-34l17-8v34z" fill="#263f36"/>
+  <path d="M933 164h56v-36h50" fill="none" stroke="#9fbe86" stroke-width="2" stroke-dasharray="5 6"/>
+  <rect x="938" y="151" width="99" height="32" rx="8" fill="#254b3f" stroke="#718e68"/>
+  <text x="958" y="172" fill="#e1edc6" font-family="Segoe UI,Arial,sans-serif" font-size="12" letter-spacing="1">OBSERVE</text>
+  <rect x="1040" y="111" width="101" height="32" rx="8" fill="#254b3f" stroke="#718e68"/>
+  <text x="1072" y="132" fill="#e1edc6" font-family="Segoe UI,Arial,sans-serif" font-size="12" letter-spacing="1">PLAN</text>
+  <path d="M1090 143v61h-54" fill="none" stroke="#9fbe86" stroke-width="2" stroke-dasharray="5 6"/>
+  <circle cx="1090" cy="204" r="4" fill="#efce82"/>
+</svg>

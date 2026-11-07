@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
@@ -30,6 +31,8 @@ namespace StardewAutoPilot
             public TaskCompletionSource<Dictionary<string, object>> Tcs;
             public string Message;
             public long StartSeq;
+            public string RequestId;
+            public int MoneyStart;
             public readonly Dictionary<string, object> Data = new();
         }
 
@@ -45,6 +48,10 @@ namespace StardewAutoPilot
 
         private readonly ModEntry mod;
         private Job job;
+        private ActionReceipts receipts;
+        public int FarmRevision { get; private set; }
+        public int RouteRevision { get; private set; }
+        private readonly Dictionary<string, Task<Dictionary<string, object>>> requests = new();
 
         public ActionRunner(ModEntry mod) { this.mod = mod; }
 
@@ -59,6 +66,22 @@ namespace StardewAutoPilot
         {
             var tcs = new TaskCompletionSource<Dictionary<string, object>>(TaskCreationOptions.RunContinuationsAsynchronously);
             string type = Str(args, "type") ?? "";
+            string requestId = Str(args, "request_id");
+            string scope = Constants.SaveFolderName ?? "title";
+            if (!string.IsNullOrEmpty(requestId))
+            {
+                this.receipts ??= new ActionReceipts(Path.Combine(this.mod.Helper.DirectoryPath, "data", "action-receipts.json"));
+                var old = this.receipts.Get(requestId);
+                if (old != null)
+                {
+                    if (old.Scope != scope || old.Payload != args.GetRawText())
+                        return Task.FromResult(Fail("request_id reused with a different save or payload"));
+                    if (old.Result != null) return Task.FromResult(old.Result);
+                    if (this.requests.TryGetValue(requestId, out var running)) return running;
+                    return Task.FromResult(new Dictionary<string, object> { ["ok"] = false,
+                        ["status"] = "ACTION_UNCERTAIN", ["message"] = "interrupted operation: inspect game state before resolving" });
+                }
+            }
             if (!Context.IsWorldReady)
                 tcs.SetResult(Fail("world not ready"));
             else if (this.job != null)
@@ -68,7 +91,11 @@ namespace StardewAutoPilot
                 try
                 {
                     var routine = this.Build(type, args);
-                    this.job = new Job { Type = type, Routine = routine.GetEnumerator(), Tcs = tcs, StartSeq = this.mod.Log.LastSeq };
+                    if (!string.IsNullOrEmpty(requestId))
+                        this.receipts.Begin(requestId, scope, args.GetRawText());
+                    this.job = new Job { Type = type, Routine = routine.GetEnumerator(), Tcs = tcs,
+                        RequestId = requestId, MoneyStart = P.Money, StartSeq = this.mod.Log.LastSeq };
+                    if (!string.IsNullOrEmpty(requestId)) this.requests[requestId] = tcs.Task;
                     this.mod.Monitor.Log($"Action: {args.GetRawText()}", LogLevel.Trace);
                 }
                 catch (ActionFailed ex)
@@ -77,6 +104,21 @@ namespace StardewAutoPilot
                 }
             }
             return tcs.Task;
+        }
+
+        public object RequestStatus(string id)
+        {
+            this.receipts ??= new ActionReceipts(Path.Combine(this.mod.Helper.DirectoryPath, "data", "action-receipts.json"));
+            var receipt = this.receipts.Get(id ?? "");
+            if (receipt == null) return new { state = "unknown" };
+            if (receipt.Scope != (Constants.SaveFolderName ?? "title")) return new { state = "wrong_save" };
+            if (receipt.Result != null) return new { state = "completed", result = receipt.Result };
+            return new { state = this.requests.ContainsKey(id) ? "pending" : "uncertain" };
+        }
+
+        public void CancelRequest(Task<Dictionary<string, object>> task, string reason)
+        {
+            if (this.job != null && this.job.Tcs.Task == task) this.Cancel(reason);
         }
 
         public void Tick()
@@ -112,6 +154,8 @@ namespace StardewAutoPilot
             try { P.Halt(); P.FarmerSprite.StopAnimation(); } catch { }
 
             var result = new Dictionary<string, object>(job.Data) { ["ok"] = ok, ["action"] = job.Type, ["message"] = message };
+            if (!ok && Context.IsWorldReady && P.Money < job.MoneyStart)
+                result["status"] = "ACTION_UNCERTAIN";
             // what the game said while this ran (NPC dialogue, HUD popups, letters), since dialogue is auto-advanced
             var said = this.mod.Log.Since(job.StartSeq, 40)
                 .Where(m => (string)m["kind"] is "dialogue" or "question" or "hud" or "mail" or "event")
@@ -134,6 +178,21 @@ namespace StardewAutoPilot
                 };
             }
             this.mod.Log.Add(ok ? "action_ok" : "action_fail", $"{job.Type}: {message}");
+            if (ok && new[] { "place", "craft", "build", "lay_path", "clear_area", "clear_debris", "plant_seeds", "harvest_crops" }.Contains(job.Type))
+                this.FarmRevision++;
+            if (ok && new[] { "place", "build", "clear_area", "clear_debris" }.Contains(job.Type))
+                this.RouteRevision++;
+            if (!string.IsNullOrEmpty(job.RequestId))
+            {
+                result["request_id"] = job.RequestId;
+                try { this.receipts.Complete(job.RequestId, result); }
+                catch (Exception ex)
+                {
+                    result = new Dictionary<string, object> { ["ok"] = false, ["status"] = "ACTION_UNCERTAIN",
+                        ["request_id"] = job.RequestId, ["message"] = "receipt could not be saved: " + ex.Message };
+                }
+                this.requests.Remove(job.RequestId);
+            }
             job.Tcs.TrySetResult(result);
         }
 
@@ -248,9 +307,7 @@ namespace StardewAutoPilot
                 {
                     // a tool swing or fade that never finished (seen after mining): reset it the way the game cancels an action
                     this.mod.Monitor.Log($"Player stuck (usingTool={P.UsingTool}, eating={P.isEating}, fade={Game1.fadeToBlack}, canMove={P.CanMove}); resetting.", LogLevel.Warn);
-                    P.completelyStopAnimatingOrDoingAction();
-                    P.UsingTool = false;
-                    P.CanMove = true;
+                    ReleaseStuckTool();
                     if (Game1.fadeToBlack && !Game1.isWarping)
                         Game1.fadeToBlack = false;
                 }
@@ -517,6 +574,20 @@ namespace StardewAutoPilot
             P.checkForExhaustion(oldStamina);
             for (int i = 0; i < 12; i++)
                 yield return null;
+            // The hit already landed. A swing that never ends made the next EnsureFree log "Player stuck"
+            // and stall the mine for several seconds per rock.
+            for (int i = 0; i < 40 && P.UsingTool; i++)
+                yield return null;
+            if (P.UsingTool && !P.isEating && !Game1.eventUp && !Game1.isWarping)
+                ReleaseStuckTool();
+        }
+
+        /// <summary>Cancel a tool animation the game did not finish. Does not touch fades or cutscenes.</summary>
+        private static void ReleaseStuckTool()
+        {
+            P.completelyStopAnimatingOrDoingAction();
+            P.UsingTool = false;
+            P.CanMove = true;
         }
 
         private IEnumerable<object> UseTool(string kind, Point target, int times, bool untilCleared)
@@ -1285,6 +1356,7 @@ namespace StardewAutoPilot
             int weapon = this.WeaponSlot();
             if (weapon < 0)
                 yield break;
+            int swing = 0;
             for (int t = 0; t < 60 * 60; t++)
             {
                 if (!ReferenceEquals(Game1.currentLocation, loc))
@@ -1304,9 +1376,15 @@ namespace StardewAutoPilot
                 }
                 if (P.UsingTool || !P.CanMove)
                 {
+                    // a normal weapon swing is well under a second; longer than that is the same stuck tool
+                    if (P.UsingTool && ++swing > 90 && !P.isEating && !Game1.eventUp)
+                        ReleaseStuckTool();
+                    else if (!P.UsingTool)
+                        swing = 0;
                     yield return null;
                     continue;
                 }
+                swing = 0;
                 var d = target.GetBoundingBox().Center - P.GetBoundingBox().Center;
                 int dir = Math.Abs(d.X) > Math.Abs(d.Y) ? (d.X > 0 ? 1 : 3) : (d.Y > 0 ? 2 : 0);
                 P.faceDirection(dir);
@@ -1333,6 +1411,8 @@ namespace StardewAutoPilot
 
         private IEnumerable<object> Mine(int floors, int maxFloor)
         {
+            if (Game1.currentLocation is not MineShaft && P.freeSpotsInInventory() < 5)
+                throw new ActionFailed("need at least 5 free backpack slots before mining; store_items first");
             var (safe, why) = Gear.SafeDepth(P);
             int cap = Math.Min(safe, maxFloor);
             string capReason = maxFloor < safe ? $"floor cap {maxFloor} (knocked out recently)" : why;
@@ -1357,6 +1437,12 @@ namespace StardewAutoPilot
                 if (P.health <= 0 || Game1.killScreen)
                     break;
                 var loc = Game1.currentLocation as MineShaft ?? throw new ActionFailed("left the mine unexpectedly");
+                if (P.freeSpotsInInventory() <= 1)
+                {
+                    retreat = true;
+                    stop = "backpack nearly full: store items before mining again";
+                    break;
+                }
                 if (P.Stamina < 15)
                 {
                     stop = "low stamina";
@@ -1505,14 +1591,22 @@ namespace StardewAutoPilot
                 int have = P.Items.CountId(info.TradeItem) + Crafting.FarmChests().Sum(c => c.Items.CountId(info.TradeItem));
                 if (have < barsNeeded)
                     throw new ActionFailed($"{upgrade.DisplayName} needs {barsNeeded}x {barName}, you have {have} (backpack + chests)");
+                J.Data["status"] = "ACTION_UNCERTAIN";
                 int left = barsNeeded - P.Items.ReduceId(info.TradeItem, barsNeeded);
                 foreach (var chest in Crafting.FarmChests())
                     if (left > 0)
                         left -= chest.Items.ReduceId(info.TradeItem, left);
             }
+            J.Data["status"] = "ACTION_UNCERTAIN";
             P.Money -= info.Price;
             upgrade.actionWhenPurchased("ClintUpgrade");
             for (int i = 0; i < 60; i++) yield return null;
+            var accepted = P.toolBeingUpgraded.Value;
+            if (accepted == null || accepted.GetType() != upgrade.GetType()
+                || accepted.UpgradeLevel != upgrade.UpgradeLevel || P.daysLeftForToolUpgrade.Value <= 0)
+                throw new ActionFailed("tool upgrade could not be verified after purchase; inspect toolBeingUpgraded, money and bars before retrying");
+            J.Data["upgrade_verified"] = true;
+            J.Data["status"] = "SUCCESS";
             J.Message = (collected.Count > 0 ? "collected " + string.Join(", ", collected) + "; " : "")
                         + $"Clint is upgrading to {upgrade.DisplayName} for {info.Price}g" + (barsNeeded > 0 ? $" + {barsNeeded}x {barName}" : "")
                         + ": ready in 2 days (come back with upgrade_tool to collect)";

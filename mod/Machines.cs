@@ -28,6 +28,7 @@ namespace StardewAutoPilot
             All().Select(m => new Dictionary<string, object>
             {
                 ["name"] = m.machine.DisplayName,
+                ["id"] = m.machine.QualifiedItemId,
                 ["location"] = m.loc.NameOrUniqueName,
                 ["x"] = m.tile.X,
                 ["y"] = m.tile.Y,

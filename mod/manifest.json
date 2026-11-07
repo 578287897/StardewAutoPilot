@@ -1,7 +1,7 @@
 {
   "Name": "Stardew AutoPilot",
   "Author": "578287897",
-  "Version": "0.2.8",
+  "Version": "0.2.11",
   "Description": "通过本地 HTTP 接口暴露结构化游戏状态并执行高层动作，供外部 AI 代理自动游玩（不使用图像识别）。",
   "UniqueID": "578287897.StardewAutoPilot",
   "EntryDll": "StardewAutoPilot.dll",

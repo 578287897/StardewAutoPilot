@@ -11,6 +11,7 @@ from __future__ import annotations
 import collections
 from datetime import datetime
 from pathlib import Path
+from storage import atomic_write, synchronized
 
 
 def calendar_folder_name(when=None):
@@ -117,6 +118,7 @@ def format_day_markdown(day_tag, entries, analysis=""):
     return "\n".join(lines)
 
 
+@synchronized
 def append_rolling(path: Path, day_tag: str, entries, analysis="", keep_days=60):
     """Append a short day section to the rolling problems.md; trim old days if too long."""
     path = Path(path)
@@ -135,17 +137,14 @@ def append_rolling(path: Path, day_tag: str, entries, analysis="", keep_days=60)
         if e.get("blocked"):
             bits.append(f"（卡住：{e['blocked'][:80]}）")
         block.append("- " + " ".join(bits) + "\n")
-    fresh = not path.exists() or path.stat().st_size == 0
-    with path.open("a", encoding="utf-8") as f:
-        if fresh:
-            f.write("# 问题日志（自动记录每天的失败与阻塞）\n")
-        f.write("".join(block))
+    text = path.read_text(encoding="utf-8") if path.exists() else "# 问题日志（自动记录每天的失败与阻塞）\n"
+    text += "".join(block)
     # trim: keep last keep_days "## Y" sections
-    text = path.read_text(encoding="utf-8")
     parts = text.split("\n## ")
     if len(parts) > keep_days + 1:
         head, rest = parts[0], parts[1:]
-        path.write_text(head + "\n## " + "\n## ".join(rest[-keep_days:]), encoding="utf-8")
+        text = head + "\n## " + "\n## ".join(rest[-keep_days:])
+    atomic_write(path, text)
 
 
 def recent_for_prompt(path: Path, n=12):

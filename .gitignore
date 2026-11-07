@@ -1,6 +1,11 @@
 # build output
 mod/bin/
 mod/obj/
+tests/**/bin/
+tests/**/obj/
+.test-*/
+artifacts/
+*.bak
 *.user
 
 # local settings (copy agent/config.example.json to agent/config.json)
