@@ -1333,6 +1333,8 @@ namespace StardewAutoPilot
 
         private IEnumerable<object> Mine(int floors, int maxFloor)
         {
+            if (Game1.currentLocation is not MineShaft && P.freeSpotsInInventory() < 5)
+                throw new ActionFailed("need at least 5 free backpack slots before mining; store_items first");
             var (safe, why) = Gear.SafeDepth(P);
             int cap = Math.Min(safe, maxFloor);
             string capReason = maxFloor < safe ? $"floor cap {maxFloor} (knocked out recently)" : why;
@@ -1357,6 +1359,12 @@ namespace StardewAutoPilot
                 if (P.health <= 0 || Game1.killScreen)
                     break;
                 var loc = Game1.currentLocation as MineShaft ?? throw new ActionFailed("left the mine unexpectedly");
+                if (P.freeSpotsInInventory() <= 1)
+                {
+                    retreat = true;
+                    stop = "backpack nearly full: store items before mining again";
+                    break;
+                }
                 if (P.Stamina < 15)
                 {
                     stop = "low stamina";
@@ -1513,6 +1521,11 @@ namespace StardewAutoPilot
             P.Money -= info.Price;
             upgrade.actionWhenPurchased("ClintUpgrade");
             for (int i = 0; i < 60; i++) yield return null;
+            var accepted = P.toolBeingUpgraded.Value;
+            if (accepted == null || accepted.GetType() != upgrade.GetType()
+                || accepted.UpgradeLevel != upgrade.UpgradeLevel || P.daysLeftForToolUpgrade.Value <= 0)
+                throw new ActionFailed("tool upgrade could not be verified after purchase; inspect toolBeingUpgraded, money and bars before retrying");
+            J.Data["upgrade_verified"] = true;
             J.Message = (collected.Count > 0 ? "collected " + string.Join(", ", collected) + "; " : "")
                         + $"Clint is upgrading to {upgrade.DisplayName} for {info.Price}g" + (barsNeeded > 0 ? $" + {barsNeeded}x {barName}" : "")
                         + ": ready in 2 days (come back with upgrade_tool to collect)";

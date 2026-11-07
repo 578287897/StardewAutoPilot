@@ -1,5 +1,7 @@
 # Stardew AutoPilot
 
+当前源码版本：**0.2.9**。本次增加重复无效动作熔断、工具升级确认和下矿背包保护，详见 [更新记录](CHANGELOG.md) 与 [审查及验证说明](REVIEW_AND_FIXES.md)。Python 32 项测试通过；C# 变更仍需编译及游戏内验证。
+
 让大模型自己玩《星露谷物语》——**不用截图、不用图像识别**。一个 SMAPI mod 直接从游戏内存读出状态、调用游戏 API 执行动作；一个 Python 代理用任意 OpenAI 兼容的大模型做计划，每晚复盘、改写自己的策略，一天天变强。
 
 *An LLM plays Stardew Valley with no screen reading: a SMAPI mod exposes game state and actions over a local HTTP API, and a Python agent plans each day with any OpenAI-compatible model, reviews the day at night, and rewrites its own strategy.*

@@ -25,6 +25,7 @@ from datetime import datetime
 from pathlib import Path
 
 import actions
+from execution_guard import ExecutionGuard
 import cropplan
 import farmplan
 import journal
@@ -232,15 +233,13 @@ class DayLog:
         self.reflected = False  # reviewed in the background right after going to sleep
         self.early_sleep_refused = False
         self.fish_failed = False   # time filler: no fishable water here, wait instead
-        self.road_failed = False   # time filler: no road tiles or materials left today
-        self.decor_failed = False  # time filler: nothing to decorate today
-        self.load_failed = False   # time filler: nothing (left) to put into the machines today
         self.road_skip = set()     # road tiles blocked today (trees, crops)
         self.junk_fishing = 0      # time-filler fishing rounds that caught only junk
         self.awaiting_script = False
         self.empty_debris_spots = set()
         self.craft_blocked = set()  # items that already failed craft today (don't spam)
         self.place_blocked = set()  # items with no tidy spot left today
+        self.execution_guard = ExecutionGuard()
         self.llm_calls_start, self.tokens_start = usage
 
 
@@ -462,7 +461,7 @@ class Agent:
         machines = st.get("machines") or []
         if any(m.get("ready") for m in machines):
             morning.append({"type": "collect_machines"})
-        # Only try loading once in the morning; empty load now fails and sets load_failed (no all-day spam).
+        # Try loading in the morning; the execution guard suppresses empty repeats.
         if any(not m.get("contains") for m in machines):
             morning.append({"type": "load_machines"})
 
@@ -835,6 +834,9 @@ class Agent:
     NIGHT_MENUS = ("ShippingMenu", "SaveGameMenu", "LevelUpMenu")
 
     def step(self, st):
+        if st.get("busy_action"):
+            time.sleep(1)  # a timed-out HTTP call may still be executing in the mod
+            return
         menu = (st.get("menu") or {}).get("type")
         if menu in self.NIGHT_MENUS and not (st.get("menu") or {}).get("is_profession_chooser"):
             time.sleep(2)  # end-of-night screens save the game; the mod confirms them, never close them
@@ -867,7 +869,7 @@ class Agent:
             self.llm_step(st)  # menus/questions need a decision
             return
         if not self.day.script and self.day.awaiting_script and self.prep_thread is not None:
-            self.prep_thread.join(timeout=120)
+            self.prep_thread.join(timeout=30)
             return
         if not self.day.script and self.mode == "script" and not self.day.awaiting_script:
             log("脚本执行完：回农场，按固定规则填满时间再睡觉（不叫模型、不乱跑）")
@@ -884,10 +886,6 @@ class Agent:
             self.record(st, "(脚本做完了，到 17:00 前固定做这个，不换地图)", action, res)
             if not res.get("ok") and action["type"] == "fish":
                 self.day.fish_failed = True
-            if not res.get("ok") and action["type"] == "build_road":
-                self.day.road_failed = True
-            if not res.get("ok") and action["type"] == "decorate":
-                self.day.decor_failed = True
             if action["type"] == "fish":
                 caught = res.get("caught") or []
                 if caught and all(c in self.JUNK for c in caught):
@@ -900,6 +898,8 @@ class Agent:
         n = self.day.script_total - len(self.day.script)
         res = self.execute(st, action)
         self.record(st, f"(脚本 {n}/{self.day.script_total})", action, res)
+        if res.get("status") in ("AGENT_UNAVAILABLE", "CIRCUIT_OPEN"):
+            return  # transport failures and suppressed work must not trigger a repair loop
         if action["type"] == "craft" and not res.get("ok"):
             item = str(action.get("item") or "")
             msg = str(res.get("message", "")).lower()
@@ -939,13 +939,14 @@ class Agent:
         """Fixed, model-free way to use the rest of the afternoon where the player already is."""
         p = st.get("player", {})
         machines = st.get("machines") or []
-        if any(m.get("ready") for m in machines):
+        eligible = lambda kind: not self.day.execution_guard.blocked(st, {"type": kind})
+        if any(m.get("ready") for m in machines) and eligible("collect_machines"):
             return {"type": "collect_machines"}
-        if not self.day.load_failed and any(not m.get("contains") for m in machines):
+        if eligible("load_machines") and any(not m.get("contains") for m in machines):
             return {"type": "load_machines"}
-        if not self.day.road_failed and self.farm_plan() and p.get("stamina", 0) >= 0.3 * p.get("max_stamina", 270):
+        if eligible("build_road") and self.farm_plan() and p.get("stamina", 0) >= 0.3 * p.get("max_stamina", 270):
             return {"type": "build_road"}
-        if not self.day.decor_failed and self.farm_plan():
+        if eligible("decorate") and self.farm_plan():
             return {"type": "decorate"}
         if not self.day.fish_failed and p.get("stamina", 0) >= 0.35 * p.get("max_stamina", 270):
             return {"type": "fish", "casts": 3}
@@ -958,7 +959,7 @@ class Agent:
         """Failures that don't invalidate the rest of the day's plan.
 
         upgrade_tool / buy_weapon are NOT minor: a soft skip left copper tools and Silver Saber stuck for days.
-        load_machines empty-fail IS minor (continue the script) but sets load_failed so the time filler stops.
+        load_machines empty-fail IS minor; the execution guard prevents empty repeats.
         """
         t = action.get("type")
         return (t == "interact" and "npc" in action) or t in (
@@ -1000,6 +1001,22 @@ class Agent:
                 break
 
     def execute(self, st, action, forced=False):
+        guard = self.day.execution_guard
+        if guard.blocked(st, action):
+            return {"ok": False, "status": "CIRCUIT_OPEN",
+                    "message": "repeated ineffective action suppressed until game state changes"}
+        try:
+            res = self._execute(st, action, forced)
+        except GameError as e:
+            res = {"ok": False, "status": "AGENT_UNAVAILABLE", "message": str(e)}
+        res.setdefault("status", "SUCCESS" if res.get("ok") else "ACTION_FAILED")
+        if guard.observe(st, action, res):
+            res = {**res, "ok": False, "status": "NO_PROGRESS"}
+        if res.get("ok") and action.get("type") in ("craft", "take", "store", "store_items", "place", "build"):
+            guard.invalidate()  # these can change chest contents or the farm layout
+        return res
+
+    def _execute(self, st, action, forced=False):
         t = action.get("type")
         if t == "sleep":
             if self.no_save:
@@ -1079,9 +1096,11 @@ class Agent:
                     tool = action.get("tool") or ("axe" if tools.get("axe", 0) < 1 else "pickaxe")
                     action, t = {"type": "upgrade_tool", "tool": tool}, "upgrade_tool"
                 log(f"interact Clint → {action}（闲聊不能升级工具）")
+                return self.execute(st, action, forced)
             elif key in ("marlon",):
                 log("interact Marlon → buy_weapon")
                 action, t = {"type": "buy_weapon"}, "buy_weapon"
+                return self.execute(st, action, forced)
             elif key in ("pierre",) and action.get("intent") == "backpack":
                 action, t = {"type": "buy_backpack"}, "buy_backpack"
 
@@ -1096,11 +1115,10 @@ class Agent:
         if t == "interact" and "x" in action and "npc" not in action:
             m = next((m for m in st.get("machines") or [] if (m["x"], m["y"]) == (action["x"], action["y"])), None)
             if m:
-                if self.day.load_failed and not m.get("ready"):
-                    return {"ok": False, "message": "load_machines already empty today; skip"}
                 action = {"type": "collect_machines"} if m.get("ready") else {"type": "load_machines"}
                 t = action["type"]
                 log(f"interact {m['name']} → 改成 {t}（机器要用 load_machines / collect_machines）")
+                return self.execute(st, action, forced)
         if t == "build_road":
             return self.build_road(st)
         if t == "decorate":
@@ -1141,7 +1159,7 @@ class Agent:
         try:
             res = self.game.act(action)
         except GameError as e:
-            res = {"ok": False, "message": str(e)}
+            res = {"ok": False, "status": "AGENT_UNAVAILABLE", "message": str(e)}
         # Roll back ghost occupancy so tomorrow (and later today) can reuse the tile.
         if t == "place" and not res.get("ok") and claimed and claimed[0] is not None:
             self.unclaim_spot(claimed)
@@ -1160,11 +1178,6 @@ class Agent:
             self.check_knocked_out(st, res)
         if t in ("ship_produce", "ship") and res.get("ok"):
             self.day.shipped_value += int(res.get("value", 0) or 0)
-        if t == "load_machines":
-            if res.get("ok"):
-                self.day.load_failed = False
-            elif self.load_failure_blocks_filler(res.get("message")):
-                self.day.load_failed = True
         return res
 
     @staticmethod
@@ -1213,7 +1226,7 @@ class Agent:
         try:
             res = self.game.act(wait)
         except GameError as e:
-            res = {"ok": False, "message": str(e)}
+            res = {"ok": False, "status": "AGENT_UNAVAILABLE", "message": str(e)}
         if res.get("ok"):
             res = {**res, "message": (res.get("message") or "") + f" (waiting for {target} to open at {opens // 100}:00)"}
         return res
@@ -1237,13 +1250,14 @@ class Agent:
         if res.get("game_messages"):
             msg += " | 游戏消息: " + " / ".join(res["game_messages"])
         entry = {"time": st.get("time"), "location": st.get("location"), "thought": thought, "action": action,
-                 "ok": bool(res.get("ok")), "message": msg[:400]}
+                 "ok": bool(res.get("ok")), "message": msg[:400],
+                 "status": res.get("status", "SUCCESS" if res.get("ok") else "ACTION_FAILED")}
         self.day.steps.append(entry)
         self.write_run("step", {"day": self.day.tag, **entry, "result": res})
         log(("✓ " if entry["ok"] else "✗ ") + self.fmt_step(entry, with_thought=True))
         if entry["ok"]:
             self.restart_declined = False
-        elif self.day is not None:
+        elif self.day is not None and res.get("status") not in ("AGENT_UNAVAILABLE", "CIRCUIT_OPEN"):
             self.consider_restart(st)
         if self.status:
             self.status.refresh(self, self.safe(self.game.state, st))
@@ -1319,7 +1333,7 @@ class Agent:
         try:
             res = self.game.act(action)
         except GameError as e:
-            res = {"ok": False, "message": str(e)}
+            res = {"ok": False, "status": "AGENT_UNAVAILABLE", "message": str(e)}
         self.record(st, thought, action, res)
         return res
 
@@ -1649,7 +1663,7 @@ class Agent:
         try:
             res = self.game.act({"type": "lay_path", "tiles": [list(t) for t in todo], "item": item})
         except GameError as e:
-            res = {"ok": False, "message": str(e)}
+            res = {"ok": False, "status": "AGENT_UNAVAILABLE", "message": str(e)}
         after = self.safe(self.game.farm_grid, {})
         if isinstance(after, dict) and "rows" in after:
             self.day.road_skip |= {t for t in todo if after["rows"][t[1]][t[0]] != "p"}
