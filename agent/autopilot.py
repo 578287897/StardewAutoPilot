@@ -1848,8 +1848,9 @@ def ensure_single_instance():
     if lock.exists():
         pid = lock.read_text().strip()
         if pid.isdigit() and int(pid) != os.getpid():
-            out = subprocess.run(["tasklist", "/FI", f"PID eq {pid}", "/NH"], capture_output=True, text=True).stdout
-            if "python" in out.lower():
+            # tasklist speaks the console code page. Decoding it as text can fail and leave stdout None.
+            out = subprocess.run(["tasklist", "/FI", f"PID eq {pid}", "/NH"], capture_output=True).stdout or b""
+            if b"python" in out.lower():
                 sys.exit(f"另一个 AutoPilot 代理正在运行（PID {pid}）。请先停止它（或删除 {lock}）。")
     RUNS.mkdir(exist_ok=True)
     lock.write_text(str(os.getpid()))
