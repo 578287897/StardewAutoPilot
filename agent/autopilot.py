@@ -17,6 +17,7 @@ import json
 import os
 import shutil
 import re
+import subprocess
 import sys
 import threading
 import time
@@ -539,6 +540,7 @@ class Agent:
             f"模型调用 {row['llm_calls']} 次 / {row['tokens']} tokens")
         if not d.reflected and not reviewing:  # e.g. passed out instead of going to bed
             self.reflect(d, f"金钱 {d.money_start} -> {money_now}（{row['income']:+}g，含出货收入）")
+            self.sync_play_logs()
 
     def reflect(self, d, money_text):
         fails = [s for s in d.steps if not s["ok"]]
@@ -602,7 +604,32 @@ class Agent:
         cur = milestones.current(progress) if isinstance(progress, dict) else None
         return wikitext.consult([cur[0]] if cur else [])
 
+    def sync_play_logs(self):
+        """Push SMAPI and play journals after the night review. Does not start another agent."""
+        script = ROOT.parent / "sync_logs.ps1"
+        if not script.is_file():
+            log("没有 sync_logs.ps1，跳过日志上传")
+            return
+        try:
+            proc = subprocess.run(
+                ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(script)],
+                cwd=str(ROOT.parent), capture_output=True, timeout=180)
+            text = ((proc.stdout or b"") + b"\n" + (proc.stderr or b"")).decode("utf-8", "replace").strip()
+            last = text.splitlines()[-1] if text else ""
+            if proc.returncode == 0:
+                log("今晚复盘的日志已上传" + (f"：{last}" if last else ""))
+            else:
+                log(f"日志上传失败：{last or proc.returncode}")
+        except Exception as e:
+            log(f"日志上传失败：{e}")
+
     def prepare_next_day(self, d, st, crops):
+        try:
+            self._prepare_next_day(d, st, crops)
+        finally:
+            self.sync_play_logs()
+
+    def _prepare_next_day(self, d, st, crops):
         self.write_farm_map()
         self.reflect(d, f"金钱 {d.money_start} -> {st['player']['money']}（出货收入明早才到账）")
         if self.mode != "script":
