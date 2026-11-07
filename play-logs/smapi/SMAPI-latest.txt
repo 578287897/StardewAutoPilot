@@ -1000,3 +1000,67 @@
 [05:13:06 TRACE SMAPI] Context: after save, starting summer 22 Y2.
 [05:13:11 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "b0eb7fe59ae0482fa17eae9e2ea3736a"}
 [05:13:12 TRACE game] Warping to Farm
+[05:13:28 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "8abefb0e7f914d39806c46676bec34c7"}
+[05:13:28 TRACE Stardew AutoPilot] Action: {"type": "store", "items": [], "request_id": "3b8df66237b448ab80ea10f2cb95a10d"}
+[05:13:42 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops", "request_id": "9e781e65fde54d8d81f2057bf5f4845d"}
+[05:13:57 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "ccad33f48403450fb2b746225e706117"}
+[05:13:58 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "68f9ac556bc94de78cb12e156816311a"}
+[05:14:07 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "d03c9f9b07d24963b64804a522c3bbcc"}
+[05:14:11 TRACE Stardew AutoPilot] Action: {"type": "store", "items": ["Stone", "Geode", "Dwarf Scroll I", "Refined Quartz", "Bamboo Pole", "Silver Saber", "Garlic Seeds", "Rice Shoot", "Coffee Bean"], "request_id": "903d5e54616c4648a89873602b2b5123"}
+[05:14:12 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Mine", "request_id": "aef84d4d8b4b4862b6e206af1c7b2052"}
+[05:14:23 TRACE game] Warping to Backwoods
+[05:14:37 TRACE game] Warping to Mountain
+[05:14:55 TRACE game] Warping to Mine
+[05:14:57 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 10, "request_id": "2be1f081aa27402390c418ad82e2ca5c"}
+[05:14:57 TRACE game] Warping to UndergroundMine35
+[05:15:02 TRACE game] Warping to UndergroundMine36
+[05:15:07 TRACE game] Warping to UndergroundMine37
+[05:15:09 TRACE game] Warping to UndergroundMine38
+[05:15:13 TRACE game] Warping to UndergroundMine39
+[05:15:15 TRACE Stardew AutoPilot] Action: {"type": "fight", "range": 6, "request_id": "14a1f48821cc4d82921d3315b975dba9"}
+[05:15:15 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 10, "request_id": "9711a252d7264a67958a69dd60c18856"}
+[05:15:15 TRACE Stardew AutoPilot] Action: {"type": "leave_mine", "request_id": "775fe5cb3b8f4f00a22699a4c435b388"}
+[05:15:16 TRACE game] Warping to Mine
+[05:15:17 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Farm", "request_id": "8f753efb56784f35aa31f8378a7d9410"}
+[05:15:19 TRACE game] Warping to Mountain
+[05:15:37 TRACE game] Warping to Backwoods
+[05:15:51 TRACE game] Warping to Farm
+[05:15:53 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "item": "Iron Ore", "request_id": "25ce55cdb67b4cc49082423905e58fe3"}
+[05:15:53 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "8b89fa9563d24e4da02efba3f6b8be4d"}
+[05:16:00 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "0c3ec1e55ef74f7fa7690eb13130cf9c"}
+[05:16:01 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "f95aa92edcb74b45b00b147f0458e1d5"}
+[05:16:04 TRACE Stardew AutoPilot] Action: {"type": "craft", "item": "Cobblestone Path", "count": 24, "request_id": "5ca7b8f83d0d4a8a9b2e6b98c90eee8e"}
+[05:16:05 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "3122525a237a46f086af69531b7956e9"}
+[05:16:11 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[78, 7], [78, 8], [78, 9], [78, 10], [78, 11], [78, 12], [78, 13], [78, 14], [59, 9], [59, 8], [59, 7], [57, 6], [59, 7], [60, 7], [61, 7], [62, 7], [63, 7], [64, 7], [65, 7], [66, 7], [67, 7], [68, 7], [69, 5], [70, 5]], "item": "Cobblestone Path", "request_id": "14b34e3971fe40dcb7ac6e7ca1372f5b"}
+[05:16:24 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "845bd83262444ef8ae91afcaaebd85b4"}
+[05:16:40 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "e247b094e8be4f8e950c538e82c45a4e"}
+[05:16:40 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "5f5a726c56cd44fa9fdf05c6775f6e02"}
+[05:16:41 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[71, 5], [72, 5], [73, 7], [74, 7], [75, 7], [76, 7], [77, 7], [79, 6], [79, 7], [79, 8], [79, 9], [79, 10], [79, 11], [79, 12], [79, 13], [79, 14], [64, 62], [64, 63], [63, 63], [62, 63], [61, 63], [60, 63], [59, 63], [58, 63]], "item": "Cobblestone Path", "request_id": "28e936970e3f448d91af109e27a1c774"}
+[05:17:09 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "d6e6ef9efa384c9fa7fd44c2087a8ea7"}
+[05:17:29 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "2223e57461274627be6176a8fef5a489"}
+[05:17:34 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "3b99dd190f9e44d9b45c13569e0f37ca"}
+[05:17:38 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[57, 63], [56, 63], [55, 63], [54, 63], [53, 63], [52, 63], [51, 63], [50, 63], [49, 63], [48, 63], [47, 63], [46, 63], [45, 63], [44, 63], [43, 63], [42, 63], [65, 62], [65, 63], [63, 64], [62, 64], [61, 64], [60, 64], [59, 64], [58, 64]], "item": "Cobblestone Path", "request_id": "b037ffd478e140a9927ac85d4d05fcfe"}
+[05:18:04 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "ec99372d96ef40cab83de433e943a57c"}
+[05:18:32 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "4a7179cf8c564baca94f51d8c9804fcd"}
+[05:18:32 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[57, 64], [56, 64], [55, 64], [54, 64], [53, 64], [52, 64], [51, 64], [50, 64], [49, 64], [48, 64], [47, 64], [46, 64], [45, 64], [44, 64], [43, 64], [42, 64], [58, 5], [58, 4], [58, 3], [58, 2], [58, 1], [58, 0], [57, 0], [56, 0]], "item": "Cobblestone Path", "request_id": "165cdae6072e4a0db6e604e3ebd21613"}
+[05:18:51 TRACE Stardew AutoPilot] Action: {"type": "fish", "casts": 3, "request_id": "b3a3577c6d5c48e89d005c23d15244a5"}
+[05:19:18 TRACE Stardew AutoPilot] Action: {"type": "ship", "item": "Joja Cola", "count": 1, "request_id": "a1319f9c49d74162a33ecf4525537aec"}
+[05:19:38 TRACE Stardew AutoPilot] Action: {"type": "ship", "item": "Soggy Newspaper", "count": 2, "request_id": "da7066cca20a42e799fe6788ba4948b7"}
+[05:19:38 TRACE Stardew AutoPilot] Action: {"type": "fish", "casts": 3, "request_id": "c6f58f827ef249b28fd3562e5c14e706"}
+[05:20:16 TRACE Stardew AutoPilot] Action: {"type": "ship", "item": "Broken CD", "count": 2, "request_id": "1acc8b81f8234c76b62e0fc61315f69e"}
+[05:20:19 TRACE Stardew AutoPilot] Action: {"type": "ship", "item": "Joja Cola", "count": 1, "request_id": "3f51d481797b4ff5b360e7d041a5149b"}
+[05:20:19 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120, "request_id": "8c5f4fa96a8c42f1a8af591b71b6b1e5"}
+[05:21:41 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[05:21:41 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "70967a6c53554acf8fe8aef44f908728"}
+[05:21:43 TRACE game] Warping to FarmHouse
+[05:21:50 TRACE SMAPI] Synchronizing 'NewDay' task...
+[05:21:50 TRACE SMAPI]    task complete.
+[05:21:57 TRACE SMAPI] Context: before save.
+[05:21:57 TRACE game] SaveGame.Save() called.
+[05:21:57 TRACE SMAPI] Synchronizing 'Save' task...
+[05:21:57 TRACE game] Saving without compression...
+[05:21:58 TRACE SMAPI]    task complete.
+[05:21:58 TRACE game] SaveGame.Save() completed without exceptions.
+[05:21:59 TRACE SMAPI] Context: after save, starting summer 23 Y2.
+[05:22:04 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "d1c202f2ea52418eaf84ba22f657464d"}
+[05:22:05 TRACE game] Warping to Farm
