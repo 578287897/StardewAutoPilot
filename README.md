@@ -59,13 +59,23 @@
 | `agent/status.py` | 手机状态页 |
 | `agent/journal.py` | 人能读的每日游玩日志 |
 | `agent/memory/strategy.md` | 初始策略；每次游玩会在 `memory/<profile>/` 里自己改写 |
+| `agent/mcp_game.py` | MCP：实时状态、日志、本地资料库、单步接管 |
+| `agent/wikitext.py` | 读取 `mod/wiki.txt` |
 | `redeploy_at_night.ps1` | 改了 mod 之后：等今晚存档完成再重启游戏并接着玩 |
 
 更新内容见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## mod 接口（localhost:8765）
 
-`GET /state` `/map` `/crops` `/farm_grid` `/progress` `/crop_data` `/social` `/recipes` `/bundles` `/ranch` `/items` `/messages` …，`POST /act {"type": ...}` 执行动作（完整列表见 `agent/prompts.py` 的 `ACTIONS_DOC`）。
+`GET /state` `/map` `/crops` `/farm_grid` `/progress` `/crop_data` `/social` `/recipes` `/bundles` `/ranch` `/items` `/wiki?q=` `/messages` …，`POST /act {"type": ...}` 执行动作（完整列表见 `agent/prompts.py` 的 `ACTIONS_DOC`）。`/wiki` 只查随模组发布的 `wiki.txt`。
+
+实时监控用 MCP（stdio，不另开端口）：
+
+```bash
+python agent/mcp_game.py
+```
+
+工具：`status`、`problems`、`journal`、`wiki`、`act`、`cancel`。`autopilot.py` 正在跑时，`act` 会和它抢同一个动作队列，只在它卡住时用。
 
 副作用接口只用 POST：`POST /new_game`、`POST /load_save`（JSON body）。可选在 mod 的 `config.json` 里设 `ApiToken`，代理侧对应填 `mod_api_token`。状态页默认只绑局域网地址（`status_bind`: `lan` / `localhost` / `0.0.0.0`）。
 

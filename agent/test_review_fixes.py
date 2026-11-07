@@ -4,6 +4,7 @@ import unittest
 import actions
 import milestones
 import prompts
+import wikitext
 from llm import parse_json
 from autopilot import Agent
 
@@ -102,6 +103,36 @@ class TestActionsAndScripts(unittest.TestCase):
     def test_parse_json_tolerates_fence(self):
         self.assertEqual(parse_json('```json\n{"a": 1}\n```')["a"], 1)
         self.assertEqual(parse_json('noise {"script":[]} trailing')["script"], [])
+
+
+SAMPLE = """\
+# comment
+items\tcopper-pickaxe\t铜十字镐\tCopper Pickaxe\t矿井敲石头\t升级费用=2000g\t所需材料=铜锭（5）
+items\tsteel-axe\t钢斧头\tSteel Axe\t清大圆木\t升级费用=5000g\t所需材料=铁锭（5）
+items\tcopper-axe\t铜斧头\tCopper Axe\t清大树桩\t升级费用=2000g\t所需材料=铜锭（5）
+"""
+
+
+class TestWikiText(unittest.TestCase):
+    def test_pickaxe_does_not_match_axe(self):
+        rows = wikitext.parse(SAMPLE)
+        pick = wikitext.search(rows, "pickaxe", limit=3)
+        self.assertEqual([row["en"] for row in pick], ["Copper Pickaxe"])
+        axe = wikitext.search(rows, "axe", limit=3)
+        self.assertEqual([row["en"] for row in axe], ["Steel Axe", "Copper Axe"])
+
+    def test_chinese_pickaxe_name_finds_copper_pickaxe(self):
+        rows = wikitext.parse(SAMPLE)
+        hit = wikitext.search(rows, "铜镐", limit=2)
+        self.assertEqual(hit[0]["zh"], "铜十字镐")
+        self.assertNotIn("斧", hit[0]["zh"])
+
+    def test_downloaded_file_has_the_catalog(self):
+        rows = wikitext.load()
+        self.assertGreater(len(rows), 3000)
+        copper = wikitext.search(rows, "Copper Pickaxe", limit=1)
+        self.assertEqual(copper[0]["attrs"]["升级费用"], "2000g")
+        self.assertIn("铜锭", copper[0]["attrs"]["所需材料"])
 
 
 if __name__ == "__main__":

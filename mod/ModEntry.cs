@@ -30,6 +30,8 @@ namespace StardewAutoPilot
         {
             Instance = this;
             this.Config = helper.ReadConfig<ModConfig>();
+            WikiText.Load(helper.DirectoryPath);
+            this.Monitor.Log($"Wiki text: {WikiText.Count} entries from wiki.txt", LogLevel.Trace);
             this.Runner = new ActionRunner(this);
             this.Menus = new MenuAutomation(this);
 

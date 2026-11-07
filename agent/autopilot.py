@@ -31,6 +31,7 @@ import milestones
 import problems
 import status
 import prompts
+import wikitext
 from game import Game, GameError
 from llm import LLM, LLMError
 
@@ -595,6 +596,11 @@ class Agent:
         self.prep_thread.start()
         log("已睡觉：后台开始复盘今天并生成明天的脚本…")
 
+    def wiki_notes(self, progress):
+        """Facts from the downloaded wiki text for the current milestone. No network."""
+        cur = milestones.current(progress) if isinstance(progress, dict) else None
+        return wikitext.consult([cur[0]] if cur else [])
+
     def prepare_next_day(self, d, st, crops):
         self.write_farm_map()
         self.reflect(d, f"金钱 {d.money_start} -> {st['player']['money']}（出货收入明早才到账）")
@@ -614,7 +620,8 @@ class Agent:
                     + "\n\n" + self.fmt_quests_mail(st) + "\n" + self.fmt_recipes() + "\n" + self.fmt_social(st, include_all=True)
                     + "\n" + self.fmt_bundles(st, detail=True) + "\n" + self.fmt_ranch()),
             today="\n".join(self.fmt_step(s) for s in d.steps[-15:]) or "（无）",
-            recent_problems=problems.recent_for_prompt(self.mem.problems_path))
+            recent_problems=problems.recent_for_prompt(self.mem.problems_path),
+            wiki=self.wiki_notes(progress))
         try:
             resp = self.review_llm.chat_json([
                 {"role": "system", "content": prompts.SYSTEM_SCRIPT.format(actions=prompts.ACTIONS_DOC, roadmap=prompts.ROADMAP)},
@@ -751,7 +758,8 @@ class Agent:
                 {"role": "system", "content": prompts.SYSTEM_SCRIPT.format(actions=prompts.ACTIONS_DOC, roadmap=prompts.ROADMAP)},
                 {"role": "user", "content": prompts.USER_SCRIPT_REPAIR.format(
                     reason=reason, strategy=self.mem.strategy(), lessons=self.mem.lessons(),
-                    failed=failed_txt, remaining=remaining, observation=self.observation(st))},
+                    failed=failed_txt, remaining=remaining, observation=self.observation(st),
+                    wiki=wikitext.consult([failed_txt, reason]))},
             ], max_tokens=2500)
         except LLMError as e:
             log(f"重写脚本失败：{e}")

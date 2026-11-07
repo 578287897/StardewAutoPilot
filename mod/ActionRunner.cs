@@ -1397,6 +1397,20 @@ namespace StardewAutoPilot
                 throw new ActionFailed($"health low ({P.health}/{P.maxHealth}) and no food: stopped fighting; leave_mine");
         }
 
+        /// <summary>Pickaxe before axe: the query "pickaxe" also contains the letters "axe".</summary>
+        private static bool ToolQueryMatches(Tool tool, string q)
+        {
+            if (q.Contains("pick") || q.Contains("镐"))
+                return tool is Pickaxe;
+            if (q.Contains("water") || q.Contains("壶"))
+                return tool is WateringCan;
+            if (q.Contains("hoe") || q.Contains("锄"))
+                return tool is Hoe;
+            if (q.Contains("axe") || q.Contains("斧"))
+                return tool is Axe;
+            return (tool.Name ?? "").ToLowerInvariant().Replace(" ", "").Contains(q);
+        }
+
         /// <summary>
         /// Clint's tool upgrade, done like the game's "ClintUpgrade" shop: pay gold + bars (backpack first, then farm chests),
         /// then Tool.actionWhenPurchased takes the old tool and starts the 2-day timer. Also collects a finished upgrade.
@@ -1433,9 +1447,8 @@ namespace StardewAutoPilot
                 throw new ActionFailed($"Clint is still working on {P.toolBeingUpgraded.Value.DisplayName} ({P.daysLeftForToolUpgrade.Value} days); one upgrade at a time");
             string q = query.ToLowerInvariant().Replace(" ", "");
             var stock = StardewValley.Internal.ShopBuilder.GetShopStock("ClintUpgrade");
-            var match = stock.FirstOrDefault(kv => kv.Key is Tool t && (t.Name.ToLowerInvariant().Replace(" ", "").Contains(q)
-                                                   || q.Contains("axe") && t is Axe || q.Contains("pick") && t is Pickaxe
-                                                   || q.Contains("hoe") && t is Hoe || q.Contains("water") && t is WateringCan));
+            // "pickaxe" contains "axe"; match the tool kind before the name, or a pickaxe query buys a Steel Axe.
+            var match = stock.FirstOrDefault(kv => kv.Key is Tool t && ToolQueryMatches(t, q));
             if (match.Key is not Tool upgrade)
                 throw new ActionFailed($"Clint has no upgrade for '{query}' right now (already the best, or you don't have that tool)");
             var info = match.Value;

@@ -18,6 +18,7 @@ namespace StardewAutoPilot
     ///   GET  /map?radius=10        ASCII map around the player + legend
     ///   GET  /crops?location=Farm  crop summary (needs water / ready / growing)
     ///   GET  /messages?since=N     HUD / dialogue / menu log
+    ///   GET  /wiki?q=铜镐          lookup the downloaded wiki.txt (no network)
     ///   POST /new_game {name,...}  create a save from the title screen (POST only)
     ///   POST /load_save {name}     load a save from the title screen (POST only)
     ///   POST /act   {type,...}     run one action and wait until it finishes
@@ -138,6 +139,19 @@ namespace StardewAutoPilot
                     case "/items":
                         var ids = (q["ids"] ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                         result = await this.mod.OnMainThread(() => (object)ids.Select(id => ItemInfo.Describe(id)).ToList());
+                        break;
+                    case "/wiki":
+                        {
+                            string wikiQuery = q["q"] ?? "";
+                            int wikiLimit = int.TryParse(q["limit"], out var wl) ? wl : 5;
+                            var hits = WikiText.Find(wikiQuery, wikiLimit);
+                            result = new Dictionary<string, object>
+                            {
+                                ["ok"] = true,
+                                ["count"] = WikiText.Count,
+                                ["hits"] = hits
+                            };
+                        }
                         break;
                     case "/new_game":
                         if (method != "POST")
