@@ -113,6 +113,17 @@ namespace StardewAutoPilot
                 ["birthdays_today"] = Utility.getAllVillagers().Where(n => n.isBirthday()).Select(n => n.Name).ToList(),
                 ["save_name"] = Constants.SaveFolderName,
                 ["busy_action"] = mod.Runner.CurrentType,
+                ["farm_revision"] = mod.Runner.FarmRevision,
+                ["route_revision"] = mod.Runner.RouteRevision,
+                ["farm_resources"] = p.Items.Concat(Crafting.FarmChests().SelectMany(c => c.Items))
+                    .Where(i => i != null && i is not Tool)
+                    .GroupBy(i => i.QualifiedItemId).ToDictionary(g => g.Key, g => g.Sum(i => i.Stack)),
+                ["upgrading"] = p.toolBeingUpgraded.Value == null ? null : new Dictionary<string, object>
+                {
+                    ["name"] = p.toolBeingUpgraded.Value.Name,
+                    ["level"] = p.toolBeingUpgraded.Value.UpgradeLevel,
+                    ["days_left"] = p.daysLeftForToolUpgrade.Value
+                },
                 ["last_message_seq"] = mod.Log.LastSeq
             };
 

@@ -1,50 +1,74 @@
-"""Daily circuit breakers for repeated work in an unchanged game state."""
+"""Reason-specific daily circuit breakers; unrelated actions never clear all failures."""
 import json
 
 
 class ExecutionGuard:
-    TRACKED = {"load_machines", "collect_machines", "build_road", "decorate",
-               "upgrade_tool", "buy_weapon", "goto_location", "open_shop"}
-    TIMED = {"upgrade_tool", "buy_weapon", "goto_location", "open_shop"}
+    TRACKED = {"load_machines", "collect_machines", "build_road", "decorate", "lay_path",
+               "upgrade_tool", "buy_weapon", "goto_location", "open_shop", "buy", "craft", "place"}
+    TIMED = {"upgrade_tool", "buy_weapon", "open_shop", "buy"}
+    TRANSPORT = {"AGENT_UNAVAILABLE", "ACTION_UNCERTAIN", "ACTION_RECOVERED"}
 
     def __init__(self):
         self.failures = {}
 
-    def key(self, state, action):
+    @staticmethod
+    def identity(action):
+        return json.dumps({k: v for k, v in action.items() if k not in
+                           ("request_id", "thought", "reason", "filler")}, sort_keys=True, ensure_ascii=False)
+
+    def key(self, state, action, timed=False):
         kind = action.get("type")
         if kind not in self.TRACKED:
             return None
-        # Countdown changes don't mean a machine can be used again. Readiness does.
-        machines = [{k: v for k, v in m.items() if k != "minutes_left"}
-                    for m in state.get("machines") or []]
-        context = {"inventory": state.get("inventory"), "machines": machines,
-                   "location": state.get("location"),
-                   "money": state.get("player", {}).get("money")}
-        if kind in self.TIMED:
+        context = {}
+        inventory = [{k: i.get(k) for k in ("id", "stack", "quality", "tool_level")}
+                     for i in state.get("inventory", []) if i]
+        inventory.sort(key=lambda value: json.dumps(value, sort_keys=True))
+        resources = state.get("farm_resources", inventory)
+        if kind in ("load_machines", "collect_machines"):
+            context["machines"] = [{k: v for k, v in m.items() if k != "minutes_left"}
+                                   for m in state.get("machines") or []]
+            context["machines"].sort(key=lambda value: json.dumps(value, sort_keys=True))
+            if kind == "load_machines":
+                machines = state.get("machines") or []
+                if machines and all(m.get("id") == "(BC)13" for m in machines) and isinstance(resources, dict):
+                    inputs = {"(O)" + str(n) for n in (378, 380, 384, 386, 909, 382, 80, 82)}
+                    resources = {k: v for k, v in resources.items() if k in inputs}
+                context["resources"] = resources
+        elif kind == "goto_location":
+            context.update(location=state.get("location"), exits=state.get("exits"),
+                           revision=state.get("route_revision", 0))
+        elif kind in ("upgrade_tool", "buy_weapon", "buy", "open_shop"):
+            context.update(location=state.get("location"), money=state.get("player", {}).get("money"),
+                           resources=resources, upgrading=state.get("upgrading"))
+        else:
+            context.update(resources=resources, revision=state.get("farm_revision", 0))
+        if timed:
             context["hour"] = state.get("time", 0) // 100
-        return json.dumps([action, context], sort_keys=True, ensure_ascii=False)
+        return json.dumps(context, sort_keys=True, ensure_ascii=False)
 
     def blocked(self, state, action):
-        return self.failures.get(self.key(state, action), 0) >= 2
+        entry = self.failures.get(self.identity(action))
+        return bool(entry and entry["count"] >= 2
+                    and entry["state"] == self.key(state, action, entry["timed"]))
 
     def observe(self, state, action, result):
-        key = self.key(state, action)
-        if key is None or result.get("status") == "AGENT_UNAVAILABLE":
-            return
         kind = action.get("type")
+        if kind not in self.TRACKED or result.get("status") in self.TRANSPORT:
+            return False
+        identity = self.identity(action)
         msg = str(result.get("message", "")).lower()
         empty = ((kind == "load_machines" and any(s in msg for s in
                   ("no empty machine accepts", "no machines", "all machines are busy")))
                  or (kind == "collect_machines" and "no machine has finished output" in msg)
-                 or (kind == "build_road" and "laid 0 " in msg))
-        if empty:
-            self.failures[key] = 2
-        elif not result.get("ok"):
-            self.failures[key] = self.failures.get(key, 0) + 1
-        else:
-            self.failures.pop(key, None)
+                 or (kind in ("build_road", "lay_path") and "laid 0 " in msg))
+        if result.get("ok") and not empty:
+            self.failures.pop(identity, None)
+            return False
+        timed = kind in self.TIMED or (kind == "goto_location" and any(s in msg for s in
+                    ("locked", "closed", "open at", "opens", "festival")))
+        key = self.key(state, action, timed)
+        previous = self.failures.get(identity, {})
+        count = previous.get("count", 0) if previous.get("state") == key else 0
+        self.failures[identity] = {"state": key, "timed": timed, "count": 2 if empty else count + 1}
         return empty
-
-    def invalidate(self):
-        """A successful world/resource mutation can make previously empty work useful."""
-        self.failures.clear()

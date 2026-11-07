@@ -13,6 +13,7 @@ Usage:
 import argparse
 import collections
 import csv
+import io
 import json
 import os
 import shutil
@@ -26,6 +27,7 @@ from pathlib import Path
 
 import actions
 from execution_guard import ExecutionGuard
+from storage import atomic_write, synchronized, read_json
 import cropplan
 import farmplan
 import journal
@@ -36,8 +38,14 @@ import needs
 import prompts
 import restart_decision
 import wikitext
+import telemetry
 from game import Game, GameError
 from llm import LLM, LLMError
+
+
+class ActionInterrupted(Exception):
+    def __init__(self, result):
+        self.result = result
 
 ROOT = Path(__file__).resolve().parent
 MEM = ROOT / "memory"
@@ -143,6 +151,7 @@ def load_config(path):
 class Memory:
     """Long-term memory of one playthrough (profile). New profiles start from memory/strategy.md."""
 
+    @synchronized
     def __init__(self, profile):
         self.dir = MEM / profile
         (self.dir / "history").mkdir(parents=True, exist_ok=True)
@@ -153,63 +162,106 @@ class Memory:
         self.save_name_path = self.dir / "save_name.txt"
         self.layout_path = self.dir / "layout.json"
         self.mine_limit_path = self.dir / "mine_limit.json"
+        self.review_commit_path = self.dir / "review_commit.json"
         if not self.strategy_path.exists() and (MEM / "strategy.md").exists():
-            self.strategy_path.write_text((MEM / "strategy.md").read_text(encoding="utf-8"), encoding="utf-8")
+            atomic_write(self.strategy_path, (MEM / "strategy.md").read_text(encoding="utf-8"))
+        self._recover_review()
 
+    @synchronized
+    def _recover_review(self):
+        commit = read_json(self.review_commit_path)
+        if commit:
+            self.save_strategy(commit["strategy"], commit["tag"])
+            atomic_write(self.lessons_path, commit["lessons"])
+            atomic_write(self.review_commit_path, "null")
+
+    @synchronized
     def layout(self):
         if self.layout_path.exists():
-            return json.loads(self.layout_path.read_text(encoding="utf-8"))
+            return read_json(self.layout_path)
         return {"plots": [], "plot_size": [6, 4], "anchor": None}
 
+    @synchronized
     def save_layout(self, layout):
-        self.layout_path.write_text(json.dumps(layout, ensure_ascii=False, indent=2), encoding="utf-8")
+        atomic_write(self.layout_path, json.dumps(layout, ensure_ascii=False, indent=2))
 
+    @synchronized
     def mine_limit(self, today):
         """{"floor": n, "until": abs_day} while a knock-out cap is active, else None."""
         if not self.mine_limit_path.exists():
             return None
-        lim = json.loads(self.mine_limit_path.read_text(encoding="utf-8"))
+        lim = read_json(self.mine_limit_path)
         return lim if lim.get("until", 0) >= today else None
 
+    @synchronized
     def set_mine_limit(self, floor, until):
-        self.mine_limit_path.write_text(json.dumps({"floor": floor, "until": until}), encoding="utf-8")
+        atomic_write(self.mine_limit_path, json.dumps({"floor": floor, "until": until}))
 
+    @synchronized
     def save_name(self):
         return self.save_name_path.read_text(encoding="utf-8").strip() if self.save_name_path.exists() else None
 
+    @synchronized
     def set_save_name(self, name):
         if name and name != self.save_name():
-            self.save_name_path.write_text(name, encoding="utf-8")
+            atomic_write(self.save_name_path, name)
 
+    @synchronized
     def strategy(self):
         return self.strategy_path.read_text(encoding="utf-8") if self.strategy_path.exists() else "（暂无）"
 
+    @synchronized
     def lessons(self):
         return self.lessons_path.read_text(encoding="utf-8") if self.lessons_path.exists() else "（暂无）"
 
+    @synchronized
     def save_strategy(self, text, tag):
-        if self.strategy_path.exists():
-            (self.dir / "history" / f"strategy_{tag}.md").write_text(self.strategy(), encoding="utf-8")
-        self.strategy_path.write_text(text.strip() + "\n", encoding="utf-8")
+        if self.strategy_path.exists() and not (self.dir / "history" / f"strategy_{tag}.md").exists():
+            atomic_write(self.dir / "history" / f"strategy_{tag}.md", self.strategy())
+        atomic_write(self.strategy_path, text.strip() + "\n")
 
+    @synchronized
     def add_lessons(self, new, keep=30):
         old = [l[2:].strip() for l in self.lessons().splitlines() if l.startswith("- ")]
         for l in new:
             l = str(l).strip()
             if l and l not in old:
                 old.append(l)
-        self.lessons_path.write_text("\n".join("- " + l for l in old[-keep:]) + "\n", encoding="utf-8")
+        atomic_write(self.lessons_path, "\n".join("- " + l for l in old[-keep:]) + "\n")
+
+    @synchronized
+    def snapshot(self):
+        self._recover_review()
+        return {"strategy": self.strategy(), "lessons": self.lessons()}
+
+    @synchronized
+    def save_review(self, strategy, lessons, tag):
+        self._recover_review()
+        old = [line[2:].strip() for line in self.lessons().splitlines() if line.startswith("- ")]
+        for lesson in lessons:
+            text = str(lesson).strip()
+            if text and text not in old:
+                old.append(text)
+        commit = {"tag": tag, "strategy": strategy if strategy and len(strategy) > 50 else self.strategy(),
+                  "lessons": "\n".join("- " + lesson for lesson in old[-30:]) + "\n"}
+        atomic_write(self.review_commit_path, json.dumps(commit, ensure_ascii=False))
+        self._recover_review()
 
     FIELDS = ["date", "money_start", "money_next_morning", "income", "shipped_value", "steps", "failures", "llm_calls", "tokens"]
 
+    @synchronized
     def add_metrics(self, row):
-        new = not self.metrics_path.exists()
-        with self.metrics_path.open("a", newline="", encoding="utf-8") as f:
-            w = csv.DictWriter(f, fieldnames=self.FIELDS)
-            if new:
-                w.writeheader()
-            w.writerow(row)
+        rows = []
+        if self.metrics_path.exists():
+            rows = list(csv.DictReader(io.StringIO(self.metrics_path.read_text(encoding="utf-8"))))
+        fields = list(dict.fromkeys(self.FIELDS + [k for old in rows for k in old] + list(row)))
+        out = io.StringIO(newline="")
+        writer = csv.DictWriter(out, fieldnames=fields)
+        writer.writeheader()
+        writer.writerows(rows + [row])
+        atomic_write(self.metrics_path, out.getvalue())
 
+    @synchronized
     def recent_metrics(self, n=7):
         if not self.metrics_path.exists():
             return "（暂无）"
@@ -240,6 +292,7 @@ class DayLog:
         self.craft_blocked = set()  # items that already failed craft today (don't spam)
         self.place_blocked = set()  # items with no tidy spot left today
         self.execution_guard = ExecutionGuard()
+        self.progress_start = {}
         self.llm_calls_start, self.tokens_start = usage
 
 
@@ -309,7 +362,8 @@ class Agent:
         self.config_path = config_path or str(ROOT / "config.json")
         self.no_save = no_save
         self.mock = mock
-        self.game = Game(cfg["mod_url"], api_token=cfg.get("mod_api_token") or "")
+        self.game = Game(cfg["mod_url"], api_token=cfg.get("mod_api_token") or "",
+                         pending_path=MEM / cfg.get("profile", "default") / "pending_action.json")
         self.mem = Memory(cfg.get("profile", "default"))
         self.status = None
         if cfg.get("status_port"):
@@ -342,7 +396,8 @@ class Agent:
             self.llm = self.review_llm = MockLLM()
             return True
         self.cfg = load_config(self.config_path)
-        self.game = Game(self.cfg["mod_url"], api_token=self.cfg.get("mod_api_token") or "")
+        self.game = Game(self.cfg["mod_url"], api_token=self.cfg.get("mod_api_token") or "",
+                         pending_path=MEM / self.cfg.get("profile", "default") / "pending_action.json")
         c = self.cfg.get("llm") or {}
         if not (c.get("base_url") and c.get("model") and c.get("api_key")):
             self.llm = self.review_llm = None
@@ -446,6 +501,7 @@ class Agent:
     def start_day(self, key, st):
         self.day_key = key
         self.day = DayLog(key, st, self.usage())
+        self.day.progress_start = self.safe(self.game.progress, {})
         log(f"===== 新的一天：第{key[0]}年 {key[1]} {key[2]} 日，{st['weather']}，金钱 {st['player']['money']}g =====")
         self.backup_save(st)
         self.ensure_farm_plan()
@@ -516,7 +572,7 @@ class Agent:
             resp = self.review_llm.chat_json([
                 {"role": "system", "content": prompts.SYSTEM_PLAN},
                 {"role": "user", "content": prompts.USER_PLAN.format(
-                    strategy=self.mem.strategy(), lessons=self.mem.lessons(),
+                    **self.mem.snapshot(),
                     year=st["year"], season=st["season"], day=st["day"], weekday=st["weekday"],
                     weather=st["weather"], tomorrow=st.get("weather_tomorrow"), luck=st.get("luck"),
                     money=st["player"]["money"], stamina=st["player"]["stamina"], max_stamina=st["player"]["max_stamina"],
@@ -539,6 +595,19 @@ class Agent:
             "steps": len(d.steps), "failures": len(fails),
             "llm_calls": calls - d.llm_calls_start, "tokens": tokens - d.tokens_start,
         }
+        row.update(telemetry.summarize(d.steps))
+        progress = self.safe(self.game.progress, {})
+        start = d.progress_start
+        row["deepest_mine"] = progress.get("deepest_mine")
+        row["mine_floors_gained"] = (progress["deepest_mine"] - start["deepest_mine"]
+                                     if "deepest_mine" in start and "deepest_mine" in progress else None)
+        if "materials" in progress and "materials" in start:
+            done, _ = milestones.evaluate(progress)
+            prior, _ = milestones.evaluate(start)
+            row["milestones_done"] = len(done)
+            row["milestones_completed_today"] = "; ".join(n for n in done if n not in prior)
+        row["play_day"] = abs_day(st) - 1
+        row["replans"] = d.replans
         self.mem.add_metrics(row)
         self.write_run("day_summary", {"day": d.tag, **row})
         log(f"昨日结算：收入 {row['income']:+}g，出货估值 {d.shipped_value}g，{len(d.steps)} 步，失败 {len(fails)}，"
@@ -564,12 +633,10 @@ class Agent:
                 {"role": "system", "content": prompts.SYSTEM_REFLECT},
                 {"role": "user", "content": prompts.USER_REFLECT.format(
                     summary=summary, log="\n".join(log_lines) or "（无）", failures=failures,
-                    metrics=self.mem.recent_metrics(), strategy=self.mem.strategy(), lessons=self.mem.lessons(),
+                    metrics=self.mem.recent_metrics(), **self.mem.snapshot(),
                     recent_problems=problems.recent_for_prompt(self.mem.problems_path))},
             ])
-            if resp.get("strategy") and len(resp["strategy"]) > 50:
-                self.mem.save_strategy(resp["strategy"], d.tag)
-            self.mem.add_lessons(resp.get("lessons") or [])
+            self.mem.save_review(resp.get("strategy"), resp.get("lessons") or [], d.tag)
             day_problems = problems.merge_llm_problems(auto_problems, resp.get("problems") or [])
             d.reflected = True
             log("复盘：" + str(resp.get("analysis", ""))[:200]
@@ -644,7 +711,7 @@ class Agent:
         poi = [f"{p['kind']}@({p['x']},{p['y']}) {p['note']}" for p in st.get("points_of_interest", [])]
         progress = self.safe(self.game.progress, {})
         user = prompts.USER_SCRIPT_NEXT_DAY.format(
-            strategy=self.mem.strategy(), lessons=self.mem.lessons(),
+            **self.mem.snapshot(),
             year=year, season=season, day=day, weekday=weekday, weather=st.get("weather_tomorrow"), days_left=28 - day,
             shops=prompts.shop_status(900, weekday) + "（9:00 时）",
             max_stamina=st["player"]["max_stamina"], money=st["player"]["money"], shipped=d.shipped_value,
@@ -802,7 +869,7 @@ class Agent:
             resp = self.llm.chat_json([
                 {"role": "system", "content": prompts.SYSTEM_SCRIPT.format(actions=prompts.ACTIONS_DOC, roadmap=prompts.ROADMAP)},
                 {"role": "user", "content": prompts.USER_SCRIPT_REPAIR.format(
-                    reason=reason, strategy=self.mem.strategy(), lessons=self.mem.lessons(),
+                    reason=reason, **self.mem.snapshot(),
                     failed=failed_txt, remaining=remaining, observation=self.observation(st),
                     wiki=wikitext.consult([failed_txt, reason]))},
             ], max_tokens=2500)
@@ -834,6 +901,19 @@ class Agent:
     NIGHT_MENUS = ("ShippingMenu", "SaveGameMenu", "LevelUpMenu")
 
     def step(self, st):
+        if getattr(getattr(self, "game", None), "pending", None):
+            try:
+                recovery = self.game.recover_pending()
+            except GameError as e:
+                log(f"等待未确认动作的结果：{e}")
+                time.sleep(5)
+                return
+            if recovery.get("state") == "completed":
+                self.record(st, "(查询先前动作的实际结果，不重放)", recovery["action"], recovery["result"])
+            else:
+                log(f"动作尚未确认（{recovery.get('state')}），暂停派发；操作编号保存在 pending_action.json")
+                time.sleep(5)
+            return
         if st.get("busy_action"):
             time.sleep(1)  # a timed-out HTTP call may still be executing in the mod
             return
@@ -898,7 +978,7 @@ class Agent:
         n = self.day.script_total - len(self.day.script)
         res = self.execute(st, action)
         self.record(st, f"(脚本 {n}/{self.day.script_total})", action, res)
-        if res.get("status") in ("AGENT_UNAVAILABLE", "CIRCUIT_OPEN"):
+        if res.get("status") in ("AGENT_UNAVAILABLE", "ACTION_UNCERTAIN", "CIRCUIT_OPEN"):
             return  # transport failures and suppressed work must not trigger a repair loop
         if action["type"] == "craft" and not res.get("ok"):
             item = str(action.get("item") or "")
@@ -1007,13 +1087,41 @@ class Agent:
                     "message": "repeated ineffective action suppressed until game state changes"}
         try:
             res = self._execute(st, action, forced)
+        except ActionInterrupted as e:
+            res = e.result
         except GameError as e:
             res = {"ok": False, "status": "AGENT_UNAVAILABLE", "message": str(e)}
         res.setdefault("status", "SUCCESS" if res.get("ok") else "ACTION_FAILED")
-        if guard.observe(st, action, res):
+        observed = res.pop("_guard_observed", False)
+        if (not observed or action.get("type") in ("build_road", "decorate")) and guard.observe(st, action, res):
             res = {**res, "ok": False, "status": "NO_PROGRESS"}
-        if res.get("ok") and action.get("type") in ("craft", "take", "store", "store_items", "place", "build"):
-            guard.invalidate()  # these can change chest contents or the farm layout
+        return res
+
+    def dispatch(self, st, action):
+        """Only mutation gateway, including every child action inside a macro."""
+        started = time.monotonic()
+        try:
+            fresh = self.game.state()
+            if not fresh.get("ready") or fresh.get("busy_action"):
+                return {"ok": False, "status": "AGENT_UNAVAILABLE", "message": "Mod not ready or still busy"}
+            guard = self.day.execution_guard
+            if guard.blocked(fresh, action):
+                return {"ok": False, "status": "CIRCUIT_OPEN", "message": "unchanged failed action suppressed"}
+            res = self.game.act(action)
+            if guard.observe(fresh, action, res):
+                res = {**res, "ok": False, "status": "NO_PROGRESS"}
+            res["_guard_observed"] = True
+        except GameError as e:
+            res = {"ok": False, "status": "AGENT_UNAVAILABLE", "message": str(e)}
+        res.setdefault("status", "SUCCESS" if res.get("ok") else "ACTION_FAILED")
+        res["elapsed_seconds"] = round(time.monotonic() - started, 3)
+        pending = getattr(self.game, "pending", None)
+        if isinstance(pending, dict):
+            res.setdefault("request_id", pending["action"]["request_id"])
+        if "fresh" in locals() and (res.get("after") or {}).get("time") is not None:
+            minutes = lambda value: value // 100 * 60 + value % 100
+            res["game_minutes"] = max(0, minutes(res["after"]["time"]) - minutes(fresh.get("time", 0)))
+        res["dispatched"] = True
         return res
 
     def _execute(self, st, action, forced=False):
@@ -1107,7 +1215,9 @@ class Agent:
         if t == "dialog_answer" and st.get("location") == "Blacksmith":
             log("铁匠铺对话不能升级工具：关掉菜单，改用 upgrade_tool")
             try:
-                self.game.act({"type": "close_menu"})
+                closed = self.dispatch(st, {"type": "close_menu"})
+                if closed.get("status") in ("AGENT_UNAVAILABLE", "ACTION_UNCERTAIN"):
+                    return closed
             except GameError:
                 pass
             return {"ok": False, "message": "chatting with Clint does not upgrade tools; use upgrade_tool (axe/pickaxe) after 9:00"}
@@ -1157,10 +1267,12 @@ class Agent:
         crops = self.safe(lambda: self.game.crops("Farm"), {}) if t == "sleep" else None
         claimed = (action.get("x"), action.get("y")) if t == "place" and "x" in action else None
         try:
-            res = self.game.act(action)
+            res = self.dispatch(st, action)
         except GameError as e:
             res = {"ok": False, "status": "AGENT_UNAVAILABLE", "message": str(e)}
         # Roll back ghost occupancy so tomorrow (and later today) can reuse the tile.
+        if res.get("status") in ("AGENT_UNAVAILABLE", "ACTION_UNCERTAIN"):
+            return res  # completion is unknown: don't undo reservations or infer game failure
         if t == "place" and not res.get("ok") and claimed and claimed[0] is not None:
             self.unclaim_spot(claimed)
             if "没有空位" in str(res.get("message", "")) or "occupied" in str(res.get("message", "")).lower():
@@ -1224,7 +1336,7 @@ class Agent:
             self.day.script.insert(0, action)
         wait = {"type": "wait", "minutes": minutes}
         try:
-            res = self.game.act(wait)
+            res = self.dispatch(st, wait)
         except GameError as e:
             res = {"ok": False, "status": "AGENT_UNAVAILABLE", "message": str(e)}
         if res.get("ok"):
@@ -1252,12 +1364,13 @@ class Agent:
         entry = {"time": st.get("time"), "location": st.get("location"), "thought": thought, "action": action,
                  "ok": bool(res.get("ok")), "message": msg[:400],
                  "status": res.get("status", "SUCCESS" if res.get("ok") else "ACTION_FAILED")}
+        entry.update({k: res[k] for k in ("request_id", "elapsed_seconds", "game_minutes") if k in res})
         self.day.steps.append(entry)
         self.write_run("step", {"day": self.day.tag, **entry, "result": res})
         log(("✓ " if entry["ok"] else "✗ ") + self.fmt_step(entry, with_thought=True))
         if entry["ok"]:
             self.restart_declined = False
-        elif self.day is not None and res.get("status") not in ("AGENT_UNAVAILABLE", "CIRCUIT_OPEN"):
+        elif self.day is not None and res.get("status") not in ("AGENT_UNAVAILABLE", "ACTION_UNCERTAIN", "CIRCUIT_OPEN"):
             self.consider_restart(st)
         if self.status:
             self.status.refresh(self, self.safe(self.game.state, st))
@@ -1331,10 +1444,12 @@ class Agent:
 
     def act_and_record(self, st, action, thought):
         try:
-            res = self.game.act(action)
+            res = self.dispatch(st, action)
         except GameError as e:
             res = {"ok": False, "status": "AGENT_UNAVAILABLE", "message": str(e)}
         self.record(st, thought, action, res)
+        if res.get("status") in ("AGENT_UNAVAILABLE", "ACTION_UNCERTAIN"):
+            raise ActionInterrupted(res)
         return res
 
     def store_items(self, st, action):
@@ -1368,7 +1483,7 @@ class Agent:
         store = {"type": "store", "items": items}
         if target:
             store.update({"x": target[0], "y": target[1]})
-        return self.game.act(store)
+        return self.dispatch(st, store)
 
     def tidy_spot(self, st, item_name):
         """Where a placeable goes so the farm stays tidy: chests etc. in one row by the shipping bin,
@@ -1661,7 +1776,7 @@ class Agent:
             if not res.get("ok"):
                 return res
         try:
-            res = self.game.act({"type": "lay_path", "tiles": [list(t) for t in todo], "item": item})
+            res = self.dispatch(st, {"type": "lay_path", "tiles": [list(t) for t in todo], "item": item})
         except GameError as e:
             res = {"ok": False, "status": "AGENT_UNAVAILABLE", "message": str(e)}
         after = self.safe(self.game.farm_grid, {})
@@ -1805,7 +1920,7 @@ class Agent:
 
     def system_prompt(self):
         return prompts.SYSTEM_STEP.format(actions=prompts.ACTIONS_DOC, map_help=prompts.MAP_HELP,
-                                          strategy=self.mem.strategy(), lessons=self.mem.lessons())
+                                          **self.mem.snapshot())
 
     def observation(self, st):
         m = self.safe(lambda: self.game.map(self.cfg["map_radius"]), {})
@@ -1945,6 +2060,7 @@ class Agent:
         except GameError:
             return default
 
+    @synchronized
     def write_run(self, kind, data):
         event = {"kind": kind, "ts": datetime.now().isoformat(timespec="seconds"), **data}
         with (self.run_dir / "log.jsonl").open("a", encoding="utf-8") as f:

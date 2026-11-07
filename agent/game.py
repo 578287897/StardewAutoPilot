@@ -1,8 +1,11 @@
 """HTTP client for the StardewAutoPilot SMAPI mod."""
 import json
+from pathlib import Path
+import uuid
 import urllib.error
 import urllib.parse
 import urllib.request
+from storage import atomic_write
 
 
 class GameError(Exception):
@@ -10,9 +13,14 @@ class GameError(Exception):
 
 
 class Game:
-    def __init__(self, base_url="http://localhost:8765", api_token=""):
+    def __init__(self, base_url="http://localhost:8765", api_token="", pending_path=None):
         self.base = base_url.rstrip("/")
         self.api_token = api_token or ""
+        self.pending_path = Path(pending_path) if pending_path else None
+        self.pending = None
+        self.receipts_supported = False
+        if self.pending_path and self.pending_path.exists():
+            self.pending = json.loads(self.pending_path.read_text(encoding="utf-8"))
 
     def _request(self, method, path, body=None, timeout=330):
         data = json.dumps(body, ensure_ascii=False).encode("utf-8") if body is not None else None
@@ -94,7 +102,48 @@ class Game:
         return self._request("POST", "/load_save", {"name": name}, timeout=30)
 
     def act(self, action: dict):
-        return self._request("POST", "/act", action)
+        if self.pending:
+            return {"ok": False, "status": "ACTION_UNCERTAIN",
+                    "message": "previous operation unresolved; query action_status before sending another action"}
+        if not self.receipts_supported:
+            self.receipts_supported = self.ping().get("action_receipts") is True
+            if not self.receipts_supported:
+                return {"ok": False, "status": "AGENT_UNAVAILABLE",
+                        "message": "update the Mod: durable action receipts are required"}
+        body = {**action, "request_id": uuid.uuid4().hex}
+        self.pending = {"base": self.base, "action": body}
+        self._save_pending()
+        try:
+            result = self._request("POST", "/act", body)
+        except GameError:
+            # Never re-POST an ambiguous mutation, even after restarting the Python agent.
+            raise
+        if result.get("request_id") != body["request_id"]:
+            return {"ok": False, "status": "ACTION_UNCERTAIN", "message": "missing operation receipt; query actual result",
+                    "request_id": body["request_id"]}
+        if result.get("status") != "ACTION_UNCERTAIN":
+            self.pending = None
+            self._save_pending()
+        return result
+
+    def _save_pending(self):
+        if self.pending_path:
+            atomic_write(self.pending_path, json.dumps(self.pending, ensure_ascii=False))
+
+    def recover_pending(self):
+        if not self.pending:
+            return None
+        if self.pending["base"] != self.base:
+            return {"state": "wrong_server", "message": "pending operation belongs to another Mod URL"}
+        request_id = self.pending["action"]["request_id"]
+        result = self._request("GET", "/action_status?request_id=" + urllib.parse.quote(request_id), timeout=30)
+        result["action"] = self.pending["action"]
+        if result.get("state") == "completed" and result.get("result", {}).get("status") == "ACTION_UNCERTAIN":
+            result["state"] = "uncertain"
+        if result.get("state") == "completed":
+            self.pending = None
+            self._save_pending()
+        return result
 
     def cancel(self):
         return self._request("POST", "/cancel", {}, timeout=30)

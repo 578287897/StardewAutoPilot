@@ -106,6 +106,8 @@ class TestExecutionGuard(unittest.TestCase):
         agent.execute(self.state, self.load)
         agent._execute.return_value = {"ok": True}
         agent.execute(self.state, {"type": "take", "item": "Coal"})
+        self.assertTrue(self.guard.blocked(self.state, self.load))
+        self.state["farm_resources"] = {"(O)382": 5}
         self.assertFalse(self.guard.blocked(self.state, self.load))
 
     def test_blocked_step_does_not_trigger_replan(self):

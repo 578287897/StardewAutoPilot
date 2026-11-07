@@ -69,6 +69,10 @@ def render(event):
         result = event.get("result") or {}
         msg = result.get("message") or event.get("message", "")
         lines.append(f"  - 结果：{msg}")
+        if event.get("status"):
+            lines.append(f"  - 执行状态：{event['status']}" + (f" · 操作编号：{event['request_id']}" if event.get("request_id") else ""))
+        if event.get("elapsed_seconds") is not None:
+            lines.append(f"  - 耗时：{event['elapsed_seconds']} 秒 / 游戏 {event.get('game_minutes', 0)} 分钟")
         for m in result.get("game_messages", []) or []:
             lines.append(f"  - 🗨️ {m}")
         shown = " ".join(result.get("game_messages", []) or [])
@@ -80,7 +84,11 @@ def render(event):
         return (f"\n## 📊 当天结算（第二天早上统计）\n"
                 f"- 金钱：{event.get('money_start')} → {event.get('money_next_morning')}（{event.get('income', 0):+}g）\n"
                 f"- 出货估值：{event.get('shipped_value')}g　动作：{event.get('steps')} 个　失败：{event.get('failures')} 个\n"
-                f"- 模型调用：{event.get('llm_calls')} 次　tokens：{event.get('tokens')}\n")
+                f"- 模型调用：{event.get('llm_calls')} 次　tokens：{event.get('tokens')}\n"
+                f"- 有效动作率：{event.get('effective_rate', '未统计')}　空转：{event.get('no_progress', '未统计')}　熔断跳过：{event.get('circuit_skips', '未统计')}\n"
+                f"- 失败耗时：{event.get('failure_seconds', '未统计')} 秒 / 游戏 {event.get('failed_game_minutes', '未统计')} 分钟\n"
+                f"- 最深矿层：{event.get('deepest_mine', '未统计')}　新增矿层：{event.get('mine_floors_gained', '未统计')}\n"
+                f"- 今日完成里程碑：{event.get('milestones_completed_today') or '无新增或未统计'}\n")
     if kind == "reflection":
         # problems are written as a dedicated ## 今日问题 section (kind=problems) in the same file
         lines = ["\n## 🧠 夜间复盘", str(event.get("analysis", ""))]

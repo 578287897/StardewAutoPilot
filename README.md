@@ -8,12 +8,12 @@
 
 基于真实游戏状态的《星露谷物语》AI 自动驾驶系统
 
-[![Version](https://img.shields.io/badge/version-0.2.9-b7d88d?style=flat-square&labelColor=102d28)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.2.10-b7d88d?style=flat-square&labelColor=102d28)](CHANGELOG.md)
 [![SMAPI](https://img.shields.io/badge/SMAPI-4.x-efce82?style=flat-square&labelColor=102d28)](https://smapi.io/)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-9cc8c1?style=flat-square&labelColor=102d28)](agent/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-d2ddd0?style=flat-square&labelColor=102d28)](LICENSE)
 
-[快速开始](#快速开始) · [核心能力](#核心能力) · [运行流程](#运行流程) · [更新记录](CHANGELOG.md) · [游玩日志](play-logs/journal/) · [问题反馈](https://github.com/578287897/StardewAutoPilot/issues)
+[快速开始](#快速开始) · [核心能力](#核心能力) · [运行流程](#运行流程) · [更新记录](CHANGELOG.md) · [验收与恢复](RELIABILITY.md) · [游玩日志](play-logs/journal/) · [问题反馈](https://github.com/578287897/StardewAutoPilot/issues)
 
 *An LLM-powered Stardew Valley agent with structured game state, daily planning and nightly reflection.*
 
@@ -25,7 +25,7 @@
 
 SMAPI Mod 直接读取游戏状态并执行动作，Python 代理负责计划、调度和复盘。代理通过 OpenAI 兼容 API 调用模型，围绕每日脚本完成种植、采集、钓鱼、下矿与经营，并将策略与教训保存下来，供后续计划参考。无需截图或图像识别。
 
-> **当前源码：0.2.9** · 32 项 Python 测试通过。新增执行熔断、工具升级确认与背包保护；C# 变更尚待编译及游戏内验证。详见 [更新记录](CHANGELOG.md) 和 [验证说明](REVIEW_AND_FIXES.md)。
+> **当前源码：0.2.10** · 56 项 Python 测试、11 项 C# 操作凭据检查及完整 Mod Release 构建通过。新增统一调度、持久化操作确认和可恢复记忆保存；游戏内验收待新日志确认。详见 [更新记录](CHANGELOG.md) 和 [可靠性与验收说明](RELIABILITY.md)。
 
 ## 核心能力
 
@@ -107,6 +107,9 @@ flowchart LR
 | 路径 | 内容 |
 |---|---|
 | `mod/` | SMAPI mod：HTTP 接口、动作执行（寻路、工具、钓鱼、下矿、商店、建造……）、菜单自动处理 |
+| `agent/game.py` | 操作编号、待确认请求持久化、结果查询 |
+| `agent/storage.py` | 原子文件保存与备份恢复 |
+| `agent/analyze_logs.py` | 分析上传日志、比较执行质量 |
 | `agent/execution_guard.py` | 根据游戏状态抑制重复无效动作 |
 | `agent/autopilot.py` | 主循环：每日脚本、路线整理、规则、复盘、记忆 |
 | `agent/prompts.py` | 动作说明、长期路线图、提示词 |

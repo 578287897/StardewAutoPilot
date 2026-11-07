@@ -113,6 +113,7 @@ namespace StardewAutoPilot
                         {
                             ["ok"] = true,
                             ["mod"] = "StardewAutoPilot",
+                            ["action_receipts"] = true,
                             ["world_ready"] = Context.IsWorldReady
                         });
                         break;
@@ -263,6 +264,7 @@ namespace StardewAutoPilot
                         result = new Dictionary<string, object> { ["last_seq"] = this.mod.Log.LastSeq, ["messages"] = this.mod.Log.Since(since) };
                         break;
                     case "/act":
+                        if (method != "POST") { status = 405; result = ActionRunner.Fail("POST required"); break; }
                         string body;
                         using (var reader = new StreamReader(ctx.Request.InputStream, Encoding.UTF8))
                             body = await reader.ReadToEndAsync();
@@ -271,11 +273,14 @@ namespace StardewAutoPilot
                         var done = await Task.WhenAny(job, Task.Delay(TimeSpan.FromMinutes(5)));
                         if (done != job)
                         {
-                            await this.mod.OnMainThread(() => { this.mod.Runner.Cancel("HTTP timeout"); return 0; });
-                            result = ActionRunner.Fail("action timed out after 5 minutes");
+                            await this.mod.OnMainThread(() => { this.mod.Runner.CancelRequest(job, "HTTP timeout"); return 0; });
+                            result = await job;
                         }
                         else
                             result = job.Result;
+                        break;
+                    case "/action_status":
+                        result = await this.mod.OnMainThread(() => this.mod.Runner.RequestStatus(q["request_id"]));
                         break;
                     case "/cancel":
                         result = await this.mod.OnMainThread(() => { this.mod.Runner.Cancel("cancelled by agent"); return (object)new { ok = true }; });
