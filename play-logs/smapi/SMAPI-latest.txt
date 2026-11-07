@@ -987,3 +987,179 @@
 [22:35:35 TRACE SMAPI] Context: after save, starting spring 18 Y2.
 [22:35:39 TRACE Stardew AutoPilot] Action: {"type": "load_machines"}
 [22:35:41 TRACE game] Warping to Farm
+[22:35:50 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops"}
+[22:35:51 TRACE Stardew AutoPilot] Action: {"type": "water_crops"}
+[22:36:01 TRACE Stardew AutoPilot] Action: {"type": "ship_produce"}
+[22:36:01 TRACE Stardew AutoPilot] Action: {"type": "donate"}
+[22:36:04 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:36:04 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "item": "Iron Ore"}
+[22:36:05 TRACE Stardew AutoPilot] Action: {"type": "take", "item": "Driftwood", "count": 10}
+[22:36:10 TRACE Stardew AutoPilot] Action: {"type": "craft", "item": "Preserves Jar", "count": 1}
+[22:36:13 TRACE Stardew AutoPilot] Action: {"type": "take", "item": "Driftwood", "count": 10}
+[22:36:17 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Sprinkler", "x": 53, "y": 17}
+[22:36:22 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Mine"}
+[22:36:30 TRACE game] Warping to Backwoods
+[22:36:44 TRACE game] Warping to Mountain
+[22:37:02 TRACE game] Warping to Mine
+[22:37:04 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 4}
+[22:37:04 TRACE game] Warping to UndergroundMine45
+[22:37:26 TRACE game] Warping to UndergroundMine46
+[22:37:31 TRACE game] Warping to UndergroundMine47
+[22:37:53 TRACE game] Warping to UndergroundMine48
+[22:38:25 TRACE game] Warping to UndergroundMine49
+[22:38:26 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[22:38:26 TRACE Stardew AutoPilot] Action: {"type": "leave_mine"}
+[22:38:27 TRACE game] Warping to Mine
+[22:38:28 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Farm"}
+[22:38:30 TRACE game] Warping to Mountain
+[22:38:50 TRACE game] Warping to Backwoods
+[22:39:04 TRACE game] Warping to Farm
+[22:39:05 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:05 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "item": "Iron Ore"}
+[22:39:05 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:05 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:05 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:06 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:06 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:06 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:06 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:06 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:06 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:06 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:06 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:06 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:06 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:06 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:06 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:06 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:06 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:07 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:07 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:07 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:07 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:07 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:07 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:07 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:07 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:07 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:07 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:07 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:07 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:07 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:07 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:07 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:08 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:08 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:08 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:08 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:08 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:08 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:08 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:08 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:08 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:08 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:08 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:08 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:08 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:08 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:09 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:09 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:09 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:09 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:09 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:09 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:09 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:09 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:09 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:09 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:09 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:09 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:09 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:09 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:10 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:10 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:10 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:10 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:10 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:10 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:10 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:10 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:10 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:10 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:10 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:10 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:10 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:10 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:10 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:11 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:11 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:11 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:11 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:11 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:11 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:11 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:11 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:11 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:11 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:11 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:11 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:11 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:11 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:12 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:12 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:12 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:12 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:12 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:12 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:12 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:12 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:12 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:12 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:12 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:12 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:12 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:12 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:12 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:13 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:13 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:13 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:13 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:13 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:13 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:13 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:13 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:13 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:13 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:13 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:13 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:13 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:13 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:13 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:14 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:14 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:14 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:14 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:14 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:14 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:14 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:14 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:14 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:14 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:14 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:14 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:14 TRACE Stardew AutoPilot] Action: {"type": "sleep"}
+[22:39:24 TRACE game] Warping to FarmHouse
+[22:39:30 TRACE SMAPI] Synchronizing 'NewDay' task...
+[22:39:30 TRACE SMAPI]    task complete.
+[22:39:31 TRACE SMAPI] Context: before save.
+[22:39:31 TRACE game] SaveGame.Save() called.
+[22:39:31 TRACE SMAPI] Synchronizing 'Save' task...
+[22:39:31 TRACE game] Saving without compression...
+[22:39:31 TRACE SMAPI]    task complete.
+[22:39:31 TRACE game] SaveGame.Save() completed without exceptions.
+[22:39:33 TRACE SMAPI] Context: after save, starting spring 19 Y2.
+[22:39:33 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:39:35 TRACE game] Warping to Farm
+[22:39:36 TRACE Stardew AutoPilot] Action: {"type": "store", "items": []}
+[22:39:39 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops"}
+[22:39:39 TRACE Stardew AutoPilot] Action: {"type": "water_crops"}
