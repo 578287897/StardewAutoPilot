@@ -1,0 +1,88 @@
+[19:00:23 INFO  SMAPI] SMAPI 4.5.2 with Stardew Valley 1.6.15 build 24356 on Windows 10 (10.0.20348.0)
+[19:00:23 INFO  SMAPI] Mods go here: F:\steam\steamapps\common\Stardew Valley\Mods
+[19:00:23 TRACE SMAPI] Log started at 2026-11-07T11:00:23 UTC
+[19:00:30 DEBUG SMAPI] Waiting for game to launch...
+[19:00:31 TRACE game] Instance_Initialize() finished, elapsed = '00:00:00.6583845'
+[19:00:31 TRACE SMAPI] Scanning for malicious files...
+[19:00:31 DEBUG SMAPI] Loading mod metadata...
+[19:00:32 DEBUG SMAPI] Loading mods...
+[19:00:32 TRACE SMAPI]    Console Commands (from Mods\ConsoleCommands\ConsoleCommands.dll, ID: SMAPI.ConsoleCommands, assembly version: 4.5.2)...
+[19:00:32 TRACE SMAPI]    Save Backup (from Mods\SaveBackup\SaveBackup.dll, ID: SMAPI.SaveBackup, assembly version: 4.5.2)...
+[19:00:32 TRACE SMAPI]       Detected direct console access (System.Console type) in assembly SaveBackup.dll.
+[19:00:32 TRACE SMAPI]    Stardew AutoPilot (from Mods\StardewAutoPilot\StardewAutoPilot.dll, ID: 578287897.StardewAutoPilot, assembly version: 0.2.6)...
+[19:00:32 INFO  SMAPI] Loaded 3 mods:
+[19:00:32 INFO  SMAPI]    Console Commands 4.5.2 by SMAPI | Adds SMAPI console commands that let you manipulate the game.
+[19:00:32 INFO  SMAPI]    Save Backup 4.5.2 by SMAPI | Automatically backs up all your saves once per day into its folder.
+[19:00:32 INFO  SMAPI]    Stardew AutoPilot 0.2.6 by 578287897 | 通过本地 HTTP 接口暴露结构化游戏状态并执行高层动作，供外部 AI 代理自动游玩（不使用图像识别）。
+
+[19:00:32 TRACE SMAPI]    Direct console access
+[19:00:32 TRACE SMAPI]    --------------------------------------------------
+[19:00:32 TRACE SMAPI]       These mods access the SMAPI console window directly. This is more fragile, and their output may not
+[19:00:32 TRACE SMAPI]       be logged by SMAPI.
+
+[19:00:32 TRACE SMAPI]       - Save Backup
+
+[19:00:32 DEBUG SMAPI]    No update keys
+[19:00:32 DEBUG SMAPI]    --------------------------------------------------
+[19:00:32 DEBUG SMAPI]       These mods have no update keys in their manifest. SMAPI may not notify you about updates for these
+[19:00:32 DEBUG SMAPI]       mods. Consider notifying the mod authors about this problem.
+
+[19:00:32 DEBUG SMAPI]       - Stardew AutoPilot
+
+[19:00:32 DEBUG SMAPI] Launching mods...
+[19:00:32 TRACE Save Backup] Already backed up today.
+[19:00:32 TRACE Stardew AutoPilot] Wiki text: 3333 entries from wiki.txt
+[19:00:32 INFO  Stardew AutoPilot] AutoPilot API listening on http://localhost:8765/
+[19:00:32 INFO  Stardew AutoPilot] 载入存档后按 F8 打开 LLM 网关/Key 设置（仅进档后可用）。
+[19:00:32 DEBUG SMAPI] Mods loaded and ready!
+[19:00:32 TRACE SMAPI] Checking for known software conflicts...
+[19:00:32 TRACE SMAPI]    None found!
+[19:00:32 TRACE SMAPI] Checking for updates...
+[19:00:33 TRACE game] setGameMode( 'titleScreenGameMode (0)' )
+[19:00:33 TRACE SMAPI] Running on GPU: NVIDIA GeForce GTX 1660 SUPER/PCIe/SSE2
+[19:00:33 TRACE game] Instance_LoadContent() finished, elapsed = '00:00:02.1201777'
+[19:00:34 TRACE game] Steam logged on: True
+[19:00:34 TRACE game] Initializing GalaxySDK
+[19:00:34 TRACE game] Requesting Steam app ticket
+[19:00:35 INFO  SMAPI] Type 'help' for help, or 'help <cmd>' for a command's usage
+[19:00:35 TRACE game] Signing into GalaxySDK
+[19:00:35 TRACE game] Window_ClientSizeChanged(); Window.ClientBounds={X:320 Y:180 Width:1280 Height:720}
+[19:00:35 TRACE game] gameMode was 'titleScreenGameMode (0)', set to 'loadingMode (6)'.
+[19:00:35 TRACE SMAPI] Game loader synchronizing...
+[19:00:35 TRACE game] getLoadEnumerator('AI_453272148')
+[19:00:35 TRACE SMAPI] Synchronizing 'Load_ReadSave' task...
+[19:00:37 TRACE game] Successfully loaded ContentHashes.json containing 3560 file(s);
+[19:00:37 TRACE game] EnsureManifestInitialized() finished, elapsed = '00:00:00.0095792'
+[19:00:39 TRACE SMAPI]    SMAPI okay.
+[19:00:39 TRACE SMAPI]    Checking for updates to 1 mods...
+[19:00:39 TRACE SMAPI]    task complete.
+[19:00:39 TRACE SMAPI] Synchronizing 'Load_LoadForNewGame' task...
+[19:00:39 TRACE SMAPI]    All mods up to date.
+[19:00:40 TRACE SMAPI]    task complete.
+[19:00:40 TRACE SMAPI] Synchronizing 'Load_Farmer' task...
+[19:00:40 TRACE SMAPI]    task complete.
+[19:00:40 TRACE SMAPI] Synchronizing 'Load_Locations' task...
+[19:00:41 TRACE SMAPI]    task complete.
+[19:00:41 TRACE game] gameMode was 'loadingMode (6)', set to 'playingGameMode (3)'.
+[19:00:41 TRACE SMAPI]    Mod blacklist OK.
+[19:00:41 TRACE game] getLoadEnumerator() exited, elapsed = '00:00:05.4343663'
+[19:00:41 TRACE game] setGameMode( 'playingGameMode (3)' )
+[19:00:41 TRACE SMAPI] Game loader done.
+[19:00:41 TRACE game] Galaxy auth success
+[19:00:41 TRACE game] Galaxy signed in
+[19:00:41 TRACE game] Galaxy logged on
+[19:00:41 TRACE SMAPI] Context: loaded save 'AI_453272148', starting winter 28 Y1, locale set to . Single-player.
+[19:00:41 TRACE game] Window_ClientSizeChanged(); Window.ClientBounds={X:320 Y:180 Width:1280 Height:720}
+[19:00:41 TRACE game] Vsync toggled: False
+[19:00:43 TRACE game] Successfully set GOG Galaxy profile name.
+[19:00:53 TRACE Stardew AutoPilot] Action: {"type": "load_machines"}
+[19:00:53 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[19:00:53 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "item": "Iron Ore"}
+[19:00:53 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "except": ["Copper Ore", "Coal", "Iron Ore", "Copper Bar", "Iron Bar", "Stone", "Frozen Geode", "Omni Geode", "Mixed Seeds", "Rice Shoot", "Cobblestone Path"]}
+[19:00:55 TRACE game] Warping to Farm
+[19:00:59 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Town"}
+[19:01:01 TRACE game] Warping to BusStop
+[19:01:09 TRACE game] Warping to Town
+[19:01:10 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120}
+[19:02:32 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[19:02:32 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 50}
