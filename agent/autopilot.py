@@ -842,9 +842,7 @@ class Agent:
                 self.day.road_failed = True
             if not res.get("ok") and action["type"] == "decorate":
                 self.day.decor_failed = True
-            if action["type"] == "load_machines" and not res.get("ok"):
-                self.day.load_failed = True  # nothing left to put in; try again tomorrow
-            elif action["type"] == "fish":
+            if action["type"] == "fish":
                 caught = res.get("caught") or []
                 if caught and all(c in self.JUNK for c in caught):
                     self.day.junk_fishing += 1
@@ -856,9 +854,6 @@ class Agent:
         n = self.day.script_total - len(self.day.script)
         res = self.execute(st, action)
         self.record(st, f"(脚本 {n}/{self.day.script_total})", action, res)
-        if action["type"] == "load_machines" and not res.get("ok"):
-            self.day.load_failed = True
-            self.drop_pending("load_machines")
         if action["type"] == "craft" and not res.get("ok"):
             item = str(action.get("item") or "")
             msg = str(res.get("message", "")).lower()
@@ -1060,8 +1055,6 @@ class Agent:
                 action = {"type": "collect_machines"} if m.get("ready") else {"type": "load_machines"}
                 t = action["type"]
                 log(f"interact {m['name']} → 改成 {t}（机器要用 load_machines / collect_machines）")
-        if t == "load_machines" and self.day.load_failed:
-            return {"ok": False, "message": "no empty machine accepts anything (already tried today)"}
         if t == "build_road":
             return self.build_road(st)
         if t == "decorate":
@@ -1121,9 +1114,23 @@ class Agent:
             self.check_knocked_out(st, res)
         if t in ("ship_produce", "ship") and res.get("ok"):
             self.day.shipped_value += int(res.get("value", 0) or 0)
-        if t == "load_machines" and not res.get("ok"):
-            self.day.load_failed = True
+        if t == "load_machines":
+            if res.get("ok"):
+                self.day.load_failed = False
+            elif self.load_failure_blocks_filler(res.get("message")):
+                self.day.load_failed = True
         return res
+
+    @staticmethod
+    def load_failure_blocks_filler(message):
+        """True only when nothing on the farm can be processed, not when a furnace is still busy.
+
+        A busy furnace used to latch the whole day, so Iron Ore never went in after the copper bar finished.
+        """
+        msg = str(message or "").lower()
+        if "busy" in msg or "when they finish" in msg:
+            return False
+        return "no empty machine accepts anything" in msg or "no machines" in msg
 
     # Locations the agent commonly visits for shopping; values are open time in military hours.
     SHOP_OPEN = {loc: start for _, loc, start, _, _ in prompts.SHOP_HOURS}

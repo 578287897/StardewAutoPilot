@@ -389,15 +389,39 @@ namespace StardewAutoPilot
                 var route = World.FindRoute(cur.NameOrUniqueName, name, blocked)
                     ?? throw new ActionFailed($"no reachable route from {cur.NameOrUniqueName} to {name}" + (blocked.Count > 0 ? $" (unreachable exits: {string.Join(", ", blocked.Select(b => b.Item1 + "->" + b.Item2))})" : ""));
                 string next = route[0];
-                var exit = World.GetExits(cur)
-                    .Where(e => string.Equals(e.To, next, StringComparison.OrdinalIgnoreCase))
-                    .FirstOrDefault(e => World.PathToExit(cur, e) != null);
+                var exit = World.ReachableExit(cur, next);
                 if (exit == null)
                 {
                     blocked.Add((cur.NameOrUniqueName.ToLowerInvariant(), next.ToLowerInvariant()));
                     continue;
                 }
-                foreach (var o in this.TakeExit(cur, exit)) yield return o;
+                // A locked transit map (Town while a festival is being set up) must not abort the
+                // whole trip: Mountain is still reachable via Farm -> Backwoods. A locked final door
+                // (the shop or the festival itself) still fails immediately.
+                string fail = null;
+                using (var steps = this.TakeExit(cur, exit).GetEnumerator())
+                {
+                    while (true)
+                    {
+                        bool moved;
+                        try { moved = steps.MoveNext(); }
+                        catch (ActionFailed ex)
+                        {
+                            fail = ex.Message;
+                            break;
+                        }
+                        if (!moved)
+                            break;
+                        yield return steps.Current;
+                    }
+                }
+                if (fail == null)
+                    continue;
+                if (Game1.activeClickableMenu is DialogueBox { isQuestion: false } closed)
+                    closed.exitThisMenu(false);
+                blocked.Add((cur.NameOrUniqueName.ToLowerInvariant(), next.ToLowerInvariant()));
+                if (string.Equals(next, name, StringComparison.OrdinalIgnoreCase))
+                    throw new ActionFailed(fail);
             }
             throw new ActionFailed("too many legs while travelling to " + name);
         }
@@ -2042,8 +2066,15 @@ namespace StardewAutoPilot
 
         private IEnumerable<object> LoadMachines(string only)
         {
+            var all = Machines.All().ToList();
+            if (all.Count == 0)
+                throw new ActionFailed("no machines on the farm");
+            var empty = all.Where(m => m.machine.heldObject.Value == null).ToList();
+            // Busy is not "nothing to smelt": the furnace is often full of copper when the script asks for iron.
+            if (empty.Count == 0)
+                throw new ActionFailed("all machines are busy; collect them when they finish");
             var loaded = new List<string>();
-            foreach (var group in Machines.All().Where(m => m.machine.heldObject.Value == null).GroupBy(m => m.loc).ToList())
+            foreach (var group in empty.GroupBy(m => m.loc).ToList())
             {
                 foreach (var (loc, tile, machine) in group)
                 {
@@ -2071,7 +2102,11 @@ namespace StardewAutoPilot
             }
             J.Data["loaded"] = loaded;
             if (loaded.Count == 0)
+            {
+                if (all.Count > empty.Count)
+                    throw new ActionFailed("no empty machine accepts that, and the rest are busy; try again after they finish");
                 throw new ActionFailed("no empty machine accepts anything in the backpack or the farm chests");
+            }
             J.Message = $"loaded: {string.Join(", ", loaded)}";
         }
 

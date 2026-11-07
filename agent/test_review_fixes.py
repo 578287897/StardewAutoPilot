@@ -48,6 +48,15 @@ class TestActionsAndScripts(unittest.TestCase):
         out = a.clean_script(raw)
         self.assertEqual([x["type"] for x in out], ["load_machines", "fish", "load_machines"])
 
+    def test_busy_furnace_does_not_block_later_loads(self):
+        self.assertFalse(Agent.load_failure_blocks_filler(
+            "all machines are busy; collect them when they finish"))
+        self.assertFalse(Agent.load_failure_blocks_filler(
+            "no empty machine accepts that, and the rest are busy; try again after they finish"))
+        self.assertTrue(Agent.load_failure_blocks_filler(
+            "no empty machine accepts anything in the backpack or the farm chests"))
+        self.assertTrue(Agent.load_failure_blocks_filler("no machines on the farm"))
+
     def test_upgrade_and_weapon_are_not_minor_failures(self):
         self.assertFalse(FakeAgent.is_minor_failure({"type": "upgrade_tool", "tool": "pickaxe"}))
         self.assertFalse(FakeAgent.is_minor_failure({"type": "buy_weapon"}))

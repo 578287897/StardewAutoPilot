@@ -184,6 +184,16 @@ namespace StardewAutoPilot
 
         public static List<Exit> GetExits(GameLocation loc)
         {
+            // de-duplicate (some maps define several adjacent warp tiles to the same place)
+            return AllExits(loc)
+                .GroupBy(e => (e.To, e.Kind))
+                .SelectMany(g => g.Key.Kind == "warp" ? new[] { g.OrderBy(e => Manhattan(new Point(e.X, e.Y), P.TilePoint)).First() } : g.ToArray())
+                .ToList();
+        }
+
+        /// <summary>Every warp, door and building exit, including adjacent tiles that lead to the same place.</summary>
+        public static List<Exit> AllExits(GameLocation loc)
+        {
             var exits = new List<Exit>();
             foreach (var w in loc.warps)
                 exits.Add(new Exit { To = w.TargetName, Kind = "warp", X = w.X, Y = w.Y, TargetX = w.TargetX, TargetY = w.TargetY });
@@ -196,11 +206,56 @@ namespace StardewAutoPilot
                     continue;
                 exits.Add(new Exit { To = indoors.NameOrUniqueName, Kind = "building", X = b.tileX.Value + b.humanDoor.Value.X, Y = b.tileY.Value + b.humanDoor.Value.Y });
             }
-            // de-duplicate (some maps define several adjacent warp tiles to the same place)
-            return exits
-                .GroupBy(e => (e.To, e.Kind))
-                .SelectMany(g => g.Key.Kind == "warp" ? new[] { g.OrderBy(e => Manhattan(new Point(e.X, e.Y), P.TilePoint)).First() } : g.ToArray())
-                .ToList();
+            return exits;
+        }
+
+        /// <summary>
+        /// An exit to <paramref name="to"/> that can actually be walked to.
+        /// Maps repeat a warp along a whole edge; the tile nearest the player is often a cliff,
+        /// and Backwoods is two disconnected regions, so the nearest warp is not always the road.
+        /// </summary>
+        public static Exit ReachableExit(GameLocation loc, string to)
+        {
+            var exits = AllExits(loc).Where(e => string.Equals(e.To, to, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (exits.Count == 0)
+                return null;
+            var goal = new Dictionary<Point, Exit>();
+            foreach (var exit in exits)
+                foreach (var tile in ApproachTiles(loc, exit))
+                    if (!goal.ContainsKey(tile))
+                        goal[tile] = exit;
+            if (goal.ContainsKey(P.TilePoint))
+                return goal[P.TilePoint];
+            var path = FindPath(loc, P.TilePoint, goal.ContainsKey);
+            if (path == null || path.Count == 0)
+                return null;
+            return goal.TryGetValue(path[^1], out var found) ? found : null;
+        }
+
+        private static IEnumerable<Point> ApproachTiles(GameLocation loc, Exit exit)
+        {
+            if (exit.Kind == "warp")
+            {
+                int w = loc.Map.Layers[0].LayerWidth, h = loc.Map.Layers[0].LayerHeight;
+                var tile = new Point(Math.Clamp(exit.X, 0, w - 1), Math.Clamp(exit.Y, 0, h - 1));
+                for (int dy = -2; dy <= 2; dy++)
+                    for (int dx = -2; dx <= 2; dx++)
+                    {
+                        if (Math.Abs(dx) + Math.Abs(dy) > 2)
+                            continue;
+                        int x = tile.X + dx, y = tile.Y + dy;
+                        if (InBounds(loc, x, y))
+                            yield return new Point(x, y);
+                    }
+                yield break;
+            }
+            var door = new Point(exit.X, exit.Y);
+            var south = new Point(door.X, door.Y + 1);
+            if (InBounds(loc, south.X, south.Y))
+                yield return south;
+            foreach (var p in new[] { new Point(door.X + 1, door.Y), new Point(door.X - 1, door.Y), new Point(door.X, door.Y - 1) })
+                if (InBounds(loc, p.X, p.Y))
+                    yield return p;
         }
 
         /// <summary>Find a sequence of location names from the current location to the target (inclusive of the target).</summary>
