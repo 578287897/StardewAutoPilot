@@ -1863,3 +1863,71 @@
 [00:17:26 TRACE SMAPI] Context: after save, starting spring 27 Y2.
 [00:17:30 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
 [00:17:32 TRACE game] Warping to Farm
+[00:17:48 TRACE Stardew AutoPilot] Action: {"type": "load_machines"}
+[00:17:49 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops"}
+[00:17:49 TRACE Stardew AutoPilot] Action: {"type": "water_crops"}
+[00:17:49 TRACE Stardew AutoPilot] Action: {"type": "ship_produce"}
+[00:17:49 TRACE Stardew AutoPilot] Action: {"type": "donate"}
+[00:17:52 TRACE Stardew AutoPilot] Action: {"type": "craft", "item": "Sprinkler", "count": 3}
+[00:17:52 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Sprinkler", "x": 56, "y": 17}
+[00:18:02 TRACE Stardew AutoPilot] Action: {"type": "craft", "item": "Preserves Jar", "count": 1}
+[00:18:02 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Preserves Jar", "x": 26, "y": 8}
+[00:18:12 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Town"}
+[00:18:26 TRACE game] Warping to BusStop
+[00:18:34 TRACE game] Warping to Town
+[00:18:36 TRACE Stardew AutoPilot] Action: {"type": "fish", "casts": 3}
+[00:19:35 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120}
+[00:20:57 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[00:20:57 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 110}
+[00:22:17 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[00:22:17 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Saloon"}
+[00:22:28 TRACE game] Warping to Saloon
+[00:22:30 TRACE Stardew AutoPilot] Action: {"type": "open_shop", "shop_id": "Saloon"}
+[00:22:32 TRACE Stardew AutoPilot] Action: {"type": "buy", "item": "Salad", "count": 3}
+[00:22:34 TRACE Stardew AutoPilot] Action: {"type": "close_menu"}
+[00:22:34 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Farm"}
+[00:22:34 TRACE game] Warping to Town
+[00:22:49 TRACE game] Warping to BusStop
+[00:22:57 TRACE game] Warping to Farm
+[00:22:59 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[00:22:59 TRACE Stardew AutoPilot] Action: {"type": "buy", "item": "Salad", "count": 3}
+[00:23:02 TRACE Stardew AutoPilot] Action: {"type": "craft", "item": "Sprinkler", "count": 3}
+[00:23:06 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "item": "Copper Ore"}
+[00:23:06 TRACE Stardew AutoPilot] Action: {"type": "craft", "item": "Preserves Jar", "count": 1}
+[00:23:06 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Preserves Jar", "x": 27, "y": 8}
+[00:23:06 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Mountain"}
+[00:23:19 TRACE game] Warping to Backwoods
+[00:23:33 TRACE game] Warping to Mountain
+[00:23:35 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Mine"}
+[00:23:52 TRACE game] Warping to Mine
+[00:23:53 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 6}
+[00:23:53 TRACE game] Warping to UndergroundMine50
+[00:23:57 TRACE game] Warping to UndergroundMine51
+[00:24:23 TRACE game] Warping to UndergroundMine52
+[00:24:41 TRACE game] Warping to UndergroundMine53
+[00:25:15 TRACE game] Warping to UndergroundMine54
+[00:28:53 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[00:28:53 TRACE Stardew AutoPilot] Action: {"type": "leave_mine"}
+[00:28:58 TRACE game] Warping to Mine
+[00:28:59 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Farm"}
+[00:29:01 TRACE game] Warping to Mountain
+[00:29:20 TRACE game] Warping to Backwoods
+[00:29:33 TRACE game] Warping to Farm
+[00:29:35 TRACE Stardew AutoPilot] Action: {"type": "ship_produce"}
+[00:29:45 TRACE Stardew AutoPilot] Action: {"type": "store", "items": []}
+[00:29:46 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path"}
+[00:29:51 TRACE Stardew AutoPilot] Action: {"type": "sleep"}
+[00:29:59 TRACE game] Warping to FarmHouse
+[00:30:04 TRACE SMAPI] Synchronizing 'NewDay' task...
+[00:30:05 TRACE SMAPI]    task complete.
+[00:30:11 TRACE SMAPI] Context: before save.
+[00:30:11 TRACE game] SaveGame.Save() called.
+[00:30:11 TRACE SMAPI] Synchronizing 'Save' task...
+[00:30:11 TRACE game] Saving without compression...
+[00:30:11 TRACE SMAPI]    task complete.
+[00:30:11 TRACE game] SaveGame.Save() completed without exceptions.
+[00:30:13 TRACE SMAPI] Context: after save, starting spring 28 Y2.
+[00:30:17 TRACE Stardew AutoPilot] Action: {"type": "load_machines"}
+[00:30:17 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops"}
+[00:30:17 TRACE Stardew AutoPilot] Action: {"type": "water_crops"}
+[00:30:17 TRACE Stardew AutoPilot] Action: {"type": "ship_produce"}
