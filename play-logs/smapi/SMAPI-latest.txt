@@ -934,3 +934,56 @@
 [22:26:44 TRACE SMAPI] Context: after save, starting spring 17 Y2.
 [22:26:48 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
 [22:26:50 TRACE game] Warping to Farm
+[22:27:00 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops"}
+[22:27:00 TRACE Stardew AutoPilot] Action: {"type": "water_crops"}
+[22:27:11 TRACE Stardew AutoPilot] Action: {"type": "ship_produce"}
+[22:27:11 TRACE Stardew AutoPilot] Action: {"type": "donate"}
+[22:27:17 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:27:17 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "item": "Iron Ore"}
+[22:27:23 TRACE Stardew AutoPilot] Action: {"type": "take", "item": "Wood", "count": 10}
+[22:27:36 TRACE Stardew AutoPilot] Action: {"type": "craft", "item": "Preserves Jar", "count": 1}
+[22:27:40 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120}
+[22:29:04 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[22:29:04 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 10}
+[22:29:12 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Blacksmith"}
+[22:29:13 TRACE game] Warping to BusStop
+[22:29:21 TRACE game] Warping to Town
+[22:29:50 TRACE game] Warping to Blacksmith
+[22:29:52 TRACE Stardew AutoPilot] Action: {"type": "upgrade_tool", "tool": "axe"}
+[22:29:53 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Farm"}
+[22:29:53 TRACE game] Warping to Town
+[22:30:22 TRACE game] Warping to BusStop
+[22:30:30 TRACE game] Warping to Farm
+[22:30:32 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:30:44 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "item": "Iron Ore"}
+[22:30:44 TRACE Stardew AutoPilot] Action: {"type": "store", "items": ["Stone", "Fiber", "Copper Bar", "Coal", "Cobblestone Path", "Driftwood"]}
+[22:30:56 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "except": ["Iron Bar", "Copper Bar", "Coal", "Iron Ore", "Sprinkler", "Garlic Seeds", "Rice Shoot", "Mixed Seeds", "Fiberglass Rod", "Copper Watering Can", "Scythe", "Rusty Sword", "Copper Hoe", "Copper Axe", "Copper Pickaxe", "Silver Saber", "Bamboo Pole", "Bait", "Stone", "Preserves Jar"]}
+[22:30:56 TRACE Stardew AutoPilot] Action: {"type": "craft", "item": "Cobblestone Path", "count": 24}
+[22:30:56 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path"}
+[22:31:01 TRACE Stardew AutoPilot] Action: {"type": "fish", "casts": 3}
+[22:31:36 TRACE Stardew AutoPilot] Action: {"type": "fish", "casts": 3}
+[22:31:59 TRACE Stardew AutoPilot] Action: {"type": "ship", "item": "Joja Cola", "count": 2}
+[22:32:03 TRACE Stardew AutoPilot] Action: {"type": "ship", "item": "Broken CD", "count": 1}
+[22:32:03 TRACE Stardew AutoPilot] Action: {"type": "ship", "item": "Broken Glasses", "count": 1}
+[22:32:04 TRACE Stardew AutoPilot] Action: {"type": "ship", "item": "Soggy Newspaper", "count": 1}
+[22:32:04 TRACE Stardew AutoPilot] Action: {"type": "ship", "item": "Trash", "count": 1}
+[22:32:04 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120}
+[22:33:30 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[22:33:30 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[22:33:39 TRACE Stardew AutoPilot] Action: {"type": "load_machines"}
+[22:33:40 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120}
+[22:35:05 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[22:35:05 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 10}
+[22:35:13 TRACE Stardew AutoPilot] Action: {"type": "sleep"}
+[22:35:21 TRACE game] Warping to FarmHouse
+[22:35:26 TRACE SMAPI] Synchronizing 'NewDay' task...
+[22:35:27 TRACE SMAPI]    task complete.
+[22:35:33 TRACE SMAPI] Context: before save.
+[22:35:33 TRACE game] SaveGame.Save() called.
+[22:35:33 TRACE SMAPI] Synchronizing 'Save' task...
+[22:35:33 TRACE game] Saving without compression...
+[22:35:33 TRACE SMAPI]    task complete.
+[22:35:33 TRACE game] SaveGame.Save() completed without exceptions.
+[22:35:35 TRACE SMAPI] Context: after save, starting spring 18 Y2.
+[22:35:39 TRACE Stardew AutoPilot] Action: {"type": "load_machines"}
+[22:35:41 TRACE game] Warping to Farm
