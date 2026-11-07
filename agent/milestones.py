@@ -88,31 +88,57 @@ def scarecrow(p):
     return {"missing": lack, "step": step, "advances": {"mine", "clear_debris"}}
 
 
-def copper_tools(p):
-    """Copper axe (large stumps) and copper pickaxe (boulders): they hold most of the farm's zones and roads."""
-    tools, up = p.get("tools", {}), p.get("upgrading")
-    have = {k: tools.get(k, 0) for k in ("axe", "pickaxe")}
-    if up and up.get("tool") in have:
-        have[up["tool"]] = max(have[up["tool"]], up.get("level", 0)) if up.get("days_left", 1) <= 0 else have[up["tool"]]
-    if all(v >= 1 for v in have.values()):
-        return None
+# Clint's upgrade shop, one tier at a time. Level 0 is the starter tool.
+TOOL_NAMES = {"axe": "斧头", "pickaxe": "镐", "watering_can": "水壶", "hoe": "锄头"}
+TOOL_ORDER = ("axe", "pickaxe", "watering_can", "hoe")
+TOOL_TIERS = {
+    1: (2000, "Copper Bar", "Copper Ore", "铜"),
+    2: (5000, "Iron Bar", "Iron Ore", "钢"),
+    3: (10000, "Gold Bar", "Gold Ore", "金"),
+    4: (25000, "Iridium Bar", "Iridium Ore", "铱"),
+}
+
+
+def _tool_level(p, name):
+    level = (p.get("tools") or {}).get(name, 0)
+    up = p.get("upgrading") or {}
+    if up.get("tool") == name and up.get("days_left", 1) <= 0:
+        level = max(level, up.get("level", 0))
+    return level
+
+
+def tool_upgrades(p):
+    """Next tool tier from the game's upgrade costs. One tool at a time. If the cost is short, gather it; if it is met, upgrade."""
+    up = p.get("upgrading")
     if up:
         if up.get("days_left", 1) <= 0:
-            return {"missing": [f"克林特已经升级好 {up['tool']}，去铁匠铺取回（9:00-16:00）"],
+            return {"missing": [f"克林特已经升级好{TOOL_NAMES.get(up.get('tool'), '工具')}，去铁匠铺取回（9:00-16:00）"],
                     "step": [{"type": "upgrade_tool"}], "advances": {"upgrade_tool"}}
-        return {"missing": [f"克林特正在升级 {up['tool']}，还要 {up.get('days_left')} 天（一次只能升级一件）"],
+        return {"missing": [f"克林特正在升级{TOOL_NAMES.get(up.get('tool'), '工具')}，还要 {up.get('days_left')} 天（一次只能升级一件）"],
                 "step": [{"type": "ship_produce"}, {"type": "fish", "casts": 5}],
                 "advances": {"ship_produce", "fish", "mine", "clear_debris", "harvest_crops"}}
-    tool = "axe" if have["axe"] < 1 else "pickaxe"   # the axe first: big stumps block the most farm space
-    lack = _lack(p, {"Copper Bar": 5}) + ([f"金钱还差 {2000 - p.get('money', 0)}g"] if p.get("money", 0) < 2000 else [])
+    materials = p.get("materials") or {}
+    max_tier = 4 if "Iridium Bar" in materials else 3
+    nxt = next(((tool, tier) for tier in range(1, max_tier + 1) for tool in TOOL_ORDER if _tool_level(p, tool) < tier), None)
+    if nxt is None:
+        return None
+    tool, tier = nxt
+    gold, bar, ore, tier_name = TOOL_TIERS[tier]
+    label = f"{tier_name}{TOOL_NAMES[tool]}"
+    lack = _lack(p, {bar: 5})
+    if p.get("money", 0) < gold:
+        lack.append(f"金钱还差 {gold - p.get('money', 0)}g")
     if not lack:
-        return {"missing": [f"材料够了：去铁匠铺升级铜{'斧头' if tool == 'axe' else '镐'}（2000g + 5 铜锭，2 天后取）"],
+        return {"missing": [f"升级要求够了：把{TOOL_NAMES[tool]}升成{label}（{gold}g + 5 个锭，一次一件）"],
                 "step": [{"type": "upgrade_tool", "tool": tool}], "advances": {"upgrade_tool"}}
-    if _m(p, "Copper Ore") >= 5 and _m(p, "Coal") >= 1 and _placed(p, "Furnace"):
-        step = [{"type": "load_machines"}]          # smelt bars
+    if _m(p, bar) < 5 and _m(p, ore) >= 5 and _m(p, "Coal") >= 1 and _placed(p, "Furnace"):
+        step = [{"type": "load_machines"}]
+    elif _m(p, bar) < 5:
+        step = [{"type": "mine", "floors": 5}]
     else:
-        step = [{"type": "mine", "floors": 5}]       # copper ore + coal
-    return {"missing": lack, "step": step, "advances": {"mine", "load_machines", "collect_machines"}}
+        step = [{"type": "ship_produce"}, {"type": "fish", "casts": 5}]
+    return {"missing": [f"下一档是{label}，要求还不够"] + lack, "step": step,
+            "advances": {"mine", "load_machines", "collect_machines", "ship_produce", "fish", "upgrade_tool"}}
 
 
 def mine_gear(p):
@@ -240,7 +266,7 @@ ROADMAP = [
     ("熔炉", furnace),
     ("第二座熔炉（材料够了才做，不挡住工具升级）", second_furnace),
     ("稻草人", scarecrow),
-    ("铜斧头 + 铜镐（清掉农场上的大树桩和大石头）", copper_tools),
+    ("工具按档升级（要求够了就升一件，不够就先凑钱和锭）", tool_upgrades),
     ("下矿装备（能安全下到 40 层以下拿铁矿）", mine_gear),
     ("洒水器 ×4（不再手动浇水）", sprinklers),
     ("钓鱼 2 级 + 玻璃纤维钓竿 + 鱼饵", fishing),

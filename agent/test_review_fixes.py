@@ -88,13 +88,25 @@ class TestActionsAndScripts(unittest.TestCase):
         progress["placed"] = {
             "Chest": 1, "Furnace": 1, "Scarecrow": 1, "Sprinkler": 4, "Preserves Jar": 4,
         }
-        progress["tools"] = {"axe": 1, "pickaxe": 1}
+        progress["tools"] = {"axe": 4, "pickaxe": 4, "watering_can": 4, "hoe": 4}
         progress["buildings"] = ["Coop", "Shed"]
         progress["skills"] = {"farming": 8, "fishing": 5}
         out = FakeAgent.enforce_milestone(script, progress)
         types = [a["type"] for a in out]
         self.assertIn("upgrade_house", types)
         self.assertEqual(types[-1], "sleep")
+
+    def test_tool_upgrade_one_step_when_the_cost_is_met(self):
+        short = {"money": 1912, "tools": {"axe": 1, "pickaxe": 1, "watering_can": 0, "hoe": 0},
+                 "materials": {"Copper Bar": 71}, "placed": {"Furnace": 1}, "upgrading": None}
+        info = milestones.tool_upgrades(short)
+        self.assertEqual([a["type"] for a in info["step"]], ["ship_produce", "fish"])
+        ready = {**short, "money": 2000}
+        step = milestones.tool_upgrades(ready)
+        self.assertEqual(step["step"], [{"type": "upgrade_tool", "tool": "watering_can"}])
+        steel = {"money": 5000, "tools": {"axe": 1, "pickaxe": 1, "watering_can": 1, "hoe": 1},
+                 "materials": {"Iron Bar": 5}, "placed": {"Furnace": 1}, "upgrading": None}
+        self.assertEqual(milestones.tool_upgrades(steel)["step"], [{"type": "upgrade_tool", "tool": "axe"}])
 
     def test_second_furnace_waits_for_materials_then_crafts(self):
         base = {"placed": {"Furnace": 1}, "recipes": ["Furnace"], "materials": {"Copper Ore": 10, "Stone": 25}}

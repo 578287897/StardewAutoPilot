@@ -11,7 +11,8 @@ namespace StardewAutoPilot
     {
         private static readonly string[] Materials =
         {
-            "Wood", "Stone", "Fiber", "Coal", "Copper Ore", "Iron Ore", "Gold Ore", "Copper Bar", "Iron Bar", "Gold Bar",
+            "Wood", "Stone", "Fiber", "Coal", "Copper Ore", "Iron Ore", "Gold Ore", "Iridium Ore",
+            "Copper Bar", "Iron Bar", "Gold Bar", "Iridium Bar",
             "Refined Quartz", "Quartz", "Hardwood", "Sap"
         };
 
