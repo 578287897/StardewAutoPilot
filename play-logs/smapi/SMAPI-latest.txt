@@ -1993,3 +1993,91 @@
 [00:40:35 TRACE SMAPI] Context: after save, starting summer 1 Y2.
 [00:40:39 TRACE Stardew AutoPilot] Action: {"type": "load_machines"}
 [00:40:40 TRACE game] Warping to Farm
+[00:40:53 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops"}
+[00:40:53 TRACE Stardew AutoPilot] Action: {"type": "water_crops"}
+[00:40:53 TRACE Stardew AutoPilot] Action: {"type": "ship_produce"}
+[00:40:53 TRACE Stardew AutoPilot] Action: {"type": "donate"}
+[00:40:57 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[00:40:57 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "item": "Iron Ore"}
+[00:40:57 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120}
+[00:42:19 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[00:42:19 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 50}
+[00:42:56 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "SeedShop"}
+[00:43:09 TRACE game] Warping to BusStop
+[00:43:17 TRACE game] Warping to Town
+[00:43:28 TRACE game] Warping to SeedShop
+[00:43:30 TRACE Stardew AutoPilot] Action: {"type": "open_shop", "shop_id": "SeedShop"}
+[00:43:32 TRACE Stardew AutoPilot] Action: {"type": "buy", "item": "Melon Seeds", "count": 5}
+[00:43:34 TRACE Stardew AutoPilot] Action: {"type": "buy", "item": "Blueberry Seeds", "count": 10}
+[00:43:35 TRACE Stardew AutoPilot] Action: {"type": "buy", "item": "Hops Starter", "count": 8}
+[00:43:37 TRACE Stardew AutoPilot] Action: {"type": "close_menu"}
+[00:43:37 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Farm"}
+[00:43:37 TRACE game] Warping to Town
+[00:43:48 TRACE game] Warping to BusStop
+[00:43:57 TRACE game] Warping to Farm
+[00:43:58 TRACE Stardew AutoPilot] Action: {"type": "buy", "item": "Blueberry Seeds", "count": 10}
+[00:44:03 TRACE Stardew AutoPilot] Action: {"type": "collect_machines"}
+[00:44:14 TRACE Stardew AutoPilot] Action: {"type": "plant_seeds", "item": "Blueberry Seeds", "count": 10, "plot": {"x": 51, "y": 14, "w": 6, "h": 4}}
+[00:44:28 TRACE Stardew AutoPilot] Action: {"type": "plant_seeds", "item": "Hops Starter", "count": 8, "plot": {"x": 51, "y": 14, "w": 6, "h": 4}}
+[00:44:39 TRACE Stardew AutoPilot] Action: {"type": "plant_seeds", "item": "Melon Seeds", "count": 5}
+[00:44:58 TRACE Stardew AutoPilot] Action: {"type": "water_crops"}
+[00:44:58 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 50}
+[00:45:28 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Saloon"}
+[00:45:38 TRACE game] Warping to BusStop
+[00:45:46 TRACE game] Warping to Town
+[00:46:02 TRACE game] Warping to Saloon
+[00:46:03 TRACE Stardew AutoPilot] Action: {"type": "open_shop", "shop_id": "Saloon"}
+[00:46:05 TRACE Stardew AutoPilot] Action: {"type": "buy", "item": "Salad", "count": 3}
+[00:46:14 TRACE Stardew AutoPilot] Action: {"type": "close_menu"}
+[00:46:14 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Mine"}
+[00:46:14 TRACE game] Warping to Town
+[00:46:38 TRACE game] Warping to Mountain
+[00:46:56 TRACE game] Warping to Mine
+[00:46:57 TRACE Stardew AutoPilot] Action: {"type": "buy", "item": "Salad", "count": 3}
+[00:47:01 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5}
+[00:47:01 TRACE game] Warping to UndergroundMine50
+[00:47:05 TRACE game] Warping to UndergroundMine51
+[00:47:31 TRACE game] Warping to UndergroundMine52
+[00:47:49 TRACE game] Warping to UndergroundMine53
+[00:47:59 TRACE game] Warping to UndergroundMine54
+[00:48:08 TRACE game] Warping to UndergroundMine55
+[00:48:09 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[00:48:09 TRACE Stardew AutoPilot] Action: {"type": "fight", "range": 6}
+[00:48:09 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5}
+[00:48:20 WARN  Stardew AutoPilot] Player stuck (usingTool=True, eating=False, fade=False, canMove=False); resetting.
+[00:48:24 TRACE game] Warping to UndergroundMine56
+[00:48:39 WARN  Stardew AutoPilot] Player stuck (usingTool=True, eating=False, fade=False, canMove=False); resetting.
+[00:48:47 WARN  Stardew AutoPilot] Player stuck (usingTool=True, eating=False, fade=False, canMove=False); resetting.
+[00:49:03 WARN  Stardew AutoPilot] Player stuck (usingTool=True, eating=False, fade=False, canMove=False); resetting.
+[00:49:10 WARN  Stardew AutoPilot] Player stuck (usingTool=True, eating=False, fade=False, canMove=False); resetting.
+[00:53:09 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[00:53:09 TRACE Stardew AutoPilot] Action: {"type": "fight", "range": 6}
+[00:58:09 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[00:58:10 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5}
+[00:58:10 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Farm"}
+[00:58:19 TRACE game] Warping to Mine
+[00:58:22 TRACE game] Warping to Mountain
+[00:58:40 TRACE game] Warping to Backwoods
+[00:58:54 TRACE game] Warping to Farm
+[00:58:55 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "item": "Iron Ore"}
+[00:58:56 TRACE Stardew AutoPilot] Action: {"type": "plant_seeds", "item": "Hops Starter", "count": 1}
+[00:58:57 TRACE Stardew AutoPilot] Action: {"type": "plant_seeds", "item": "Melon Seeds", "count": 2}
+[00:58:58 TRACE Stardew AutoPilot] Action: {"type": "ship_produce"}
+[00:59:09 TRACE Stardew AutoPilot] Action: {"type": "fish", "casts": 3}
+[00:59:42 TRACE Stardew AutoPilot] Action: {"type": "sleep"}
+[00:59:47 TRACE game] Warping to FarmHouse
+[00:59:52 TRACE SMAPI] Synchronizing 'NewDay' task...
+[00:59:52 TRACE SMAPI]    task complete.
+[00:59:58 TRACE SMAPI] Context: before save.
+[00:59:58 TRACE game] SaveGame.Save() called.
+[00:59:58 TRACE SMAPI] Synchronizing 'Save' task...
+[00:59:58 TRACE game] Saving without compression...
+[00:59:59 TRACE SMAPI]    task complete.
+[00:59:59 TRACE game] SaveGame.Save() completed without exceptions.
+[01:00:01 TRACE SMAPI] Context: after save, starting summer 2 Y2.
+[01:00:05 TRACE Stardew AutoPilot] Action: {"type": "load_machines"}
+[01:00:05 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Farm"}
+[01:00:06 TRACE game] Warping to Farm
+[01:00:08 TRACE Stardew AutoPilot] Action: {"type": "store", "items": []}
+[01:00:11 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops"}
+[01:00:11 TRACE Stardew AutoPilot] Action: {"type": "water_crops"}
