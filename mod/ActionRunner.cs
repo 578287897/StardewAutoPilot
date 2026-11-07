@@ -932,7 +932,27 @@ namespace StardewAutoPilot
         private IEnumerable<object> Sleep()
         {
             if (Game1.currentLocation is not FarmHouse)
-                foreach (var o in this.GotoLocation("FarmHouse")) yield return o;
+            {
+                var walk = this.GotoLocation("FarmHouse").GetEnumerator();
+                while (true)
+                {
+                    bool moved;
+                    try { moved = walk.MoveNext(); }
+                    catch (ActionFailed) { break; }
+                    if (!moved)
+                        break;
+                    yield return walk.Current;
+                }
+            }
+            // The farmhouse door often fails to open when the farmer is already standing on it.
+            if (Game1.currentLocation is not FarmHouse)
+            {
+                Game1.warpFarmer("FarmHouse", 9, 9, 2);
+                for (int i = 0; i < 90 && (Game1.currentLocation is not FarmHouse || Game1.isWarping || Game1.fadeToBlack); i++)
+                    yield return null;
+            }
+            if (Game1.currentLocation is not FarmHouse)
+                throw new ActionFailed("couldn't enter the farmhouse to sleep");
             foreach (var o in this.EnsureFree()) yield return o;
             var house = (FarmHouse)Game1.currentLocation;
             var bed = house.GetPlayerBedSpot();
