@@ -1669,3 +1669,31 @@
 [07:28:05 TRACE game] Warping to Farm
 [07:28:08 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "90ec7ca36abe4390b1adfc3eceb51705"}
 [07:28:09 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops", "request_id": "31359803bb134fe193f33a14ac1b53d1"}
+[07:28:09 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "2bb145e2716d4b229db9fdec319d6bd3"}
+[07:28:09 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "672d9d4ffc8444cf9fdf280c7dc81e00"}
+[07:28:14 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "21f8624188684d489b582c8f75e713ac"}
+[07:28:18 TRACE Stardew AutoPilot] Action: {"type": "fish", "casts": 3, "request_id": "1a4d1497386240c38982db6cd70110fd"}
+[07:29:24 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[07:29:24 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "7ed9e71030254929a6401cfdd3643498"}
+[07:29:25 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[78, 7], [78, 8], [78, 9], [78, 10], [78, 11], [78, 12], [78, 13], [78, 14], [59, 9], [59, 8], [59, 7], [57, 6], [59, 7], [60, 7], [61, 7], [62, 7], [63, 7], [64, 7], [65, 7], [66, 7], [67, 7], [68, 7], [69, 5], [70, 5]], "item": "Cobblestone Path", "request_id": "81fc354754094f248d9138fd4f4db668"}
+[07:29:40 TRACE Stardew AutoPilot] Action: {"type": "fish", "casts": 3, "request_id": "67af2a09b4e44947a82c678b879dffaf"}
+[07:30:47 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[07:30:48 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "a9bb4f4ced764d16bf321fb41045b101"}
+[07:30:48 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[71, 5], [72, 5], [73, 7], [74, 7], [75, 7], [76, 7], [77, 7], [79, 6], [79, 7], [79, 8], [79, 9], [79, 10], [79, 11], [79, 12], [79, 13], [79, 14], [64, 62], [64, 63], [63, 63], [62, 63], [61, 63], [60, 63], [59, 63], [58, 63]], "item": "Cobblestone Path", "request_id": "2cad2143a680416bb061d1a1bc015ca4"}
+[07:31:12 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120, "request_id": "d6b41bb1002f4db0ac7bf8ecbac5121f"}
+[07:32:37 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[07:32:37 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120, "request_id": "60b6a0c6dbad400991d692a21851af94"}
+[07:34:05 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[07:34:05 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120, "request_id": "a538fd3ffe114ff1b6afc3142d00604c"}
+[07:35:33 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[07:35:33 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 60, "request_id": "2d930fb3bf6549829b7dd1ff30a6e9cd"}
+[07:36:17 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "4f45c183938340c6a0f69b947106f485"}
+[07:36:34 TRACE game] Warping to FarmHouse
+[07:36:39 TRACE SMAPI] Synchronizing 'NewDay' task...
+[07:36:39 TRACE SMAPI]    task complete.
+[07:36:40 TRACE SMAPI] Context: before save.
+[07:36:40 TRACE game] SaveGame.Save() called.
+[07:36:40 TRACE SMAPI] Synchronizing 'Save' task...
+[07:36:40 TRACE game] Saving without compression...
+[07:36:40 TRACE SMAPI]    task complete.
+[07:36:40 TRACE game] SaveGame.Save() completed without exceptions.
