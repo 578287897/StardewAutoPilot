@@ -58,6 +58,18 @@ def furnace(p):
     return {"missing": lack, "step": [{"type": "mine", "floors": 5}], "advances": {"mine"}}
 
 
+def second_furnace(p):
+    """Guide: one furnace first, a second once extra copper and stone are on hand. Do not block tools while materials are short."""
+    placed = _placed(p, "Furnace")
+    if placed >= 2 or placed < 1 or not _knows(p, "Furnace"):
+        return None if placed >= 2 else LATER
+    lack = _lack(p, {"Copper Ore": 20, "Stone": 25})
+    if lack:
+        return LATER
+    return {"missing": ["铜矿和石头够再做第二座熔炉，两座才能同时炼铜和铁"],
+            "step": _craft_and_place("Furnace"), "advances": {"craft", "place"}}
+
+
 def scarecrow(p):
     if _placed(p, "Scarecrow") >= 1:
         return None
@@ -226,6 +238,7 @@ ROADMAP = [
     ("箱子", chest),
     ("背包升级 24 格", backpack),
     ("熔炉", furnace),
+    ("第二座熔炉（材料够了才做，不挡住工具升级）", second_furnace),
     ("稻草人", scarecrow),
     ("铜斧头 + 铜镐（清掉农场上的大树桩和大石头）", copper_tools),
     ("下矿装备（能安全下到 40 层以下拿铁矿）", mine_gear),

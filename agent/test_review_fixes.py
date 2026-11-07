@@ -96,6 +96,14 @@ class TestActionsAndScripts(unittest.TestCase):
         self.assertIn("upgrade_house", types)
         self.assertEqual(types[-1], "sleep")
 
+    def test_second_furnace_waits_for_materials_then_crafts(self):
+        base = {"placed": {"Furnace": 1}, "recipes": ["Furnace"], "materials": {"Copper Ore": 10, "Stone": 25}}
+        self.assertEqual(milestones.second_furnace(base), milestones.LATER)
+        ready = {"placed": {"Furnace": 1}, "recipes": ["Furnace"], "materials": {"Copper Ore": 20, "Stone": 25}}
+        step = milestones.second_furnace(ready)
+        self.assertEqual(step["step"][0]["item"], "Furnace")
+        self.assertIsNone(milestones.second_furnace({**ready, "placed": {"Furnace": 2}}))
+
     def test_house_milestone_ready(self):
         info = milestones.house({
             "house_level": 0, "house_upgrade_days": 0, "money": 10000,
