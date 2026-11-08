@@ -1786,3 +1786,40 @@
 [08:02:39 TRACE game] Warping to FarmHouse
 [08:02:44 TRACE SMAPI] Synchronizing 'NewDay' task...
 [08:02:45 TRACE SMAPI]    task complete.
+[08:02:46 TRACE SMAPI] Context: before save.
+[08:02:46 TRACE game] SaveGame.Save() called.
+[08:02:46 TRACE SMAPI] Synchronizing 'Save' task...
+[08:02:46 TRACE game] Saving without compression...
+[08:02:46 TRACE SMAPI]    task complete.
+[08:02:46 TRACE game] SaveGame.Save() completed without exceptions.
+[08:02:47 TRACE SMAPI] Context: after save, starting fall 13 Y2.
+[08:02:48 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "dbb2494e7ce44ffe84f3362c14dccfaf"}
+[08:02:48 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops", "request_id": "cbadb8c0b3a7414bbb09b6d8865000a1"}
+[08:02:48 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "36ab0f4238ab4c53b3209da9f8ff0238"}
+[08:02:49 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "69da369584eb4a599ffdf8389743aa0f"}
+[08:02:50 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "cc629de2d5044f5b86ae67c00dfa461f"}
+[08:02:52 TRACE game] Warping to Farm
+[08:02:57 TRACE Stardew AutoPilot] Action: {"type": "fish", "casts": 3, "request_id": "d0cc084aba634fb08dab79d056f5ff77"}
+[08:03:40 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "4c07f3a5f4b6423a867fd14c525f1c04"}
+[08:03:41 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[78, 7], [78, 8], [78, 9], [78, 10], [78, 11], [78, 12], [78, 13], [78, 14], [59, 9], [59, 8], [59, 7], [57, 6], [59, 7], [60, 7], [61, 7], [62, 7], [63, 7], [64, 7], [65, 7], [66, 7], [67, 7], [68, 7], [69, 5], [70, 5]], "item": "Cobblestone Path", "request_id": "cd30a6a356234c6fb4e3b5de1855b5d1"}
+[08:03:55 TRACE Stardew AutoPilot] Action: {"type": "fish", "casts": 3, "request_id": "5937bfb7121340188ec66f9af7e09f80"}
+[08:04:45 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "57ba94b5dc0f4777bc4eb2a6593a377d"}
+[08:04:46 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[71, 5], [72, 5], [73, 7], [74, 7], [75, 7], [76, 7], [77, 7], [79, 6], [79, 7], [79, 8], [79, 9], [79, 10], [79, 11], [79, 12], [79, 13], [79, 14], [64, 62], [64, 63], [63, 63], [62, 63], [61, 63], [60, 63], [59, 63], [58, 63]], "item": "Cobblestone Path", "request_id": "c0c2b10d6a0d453499ea67509c370b31"}
+[08:05:10 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120, "request_id": "4cc31123fe7f4b2aaea7f2701da60b79"}
+[08:06:33 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[08:06:34 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120, "request_id": "c2005fb4256e446d99fa77bd5c04ed9d"}
+[08:08:01 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[08:08:01 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120, "request_id": "6db8f0196e5f4ba1b87ad648d90aa5bd"}
+[08:09:29 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[08:09:29 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120, "request_id": "5d83c4c1bfc34b3e86eaed39da858770"}
+[08:10:57 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[08:10:57 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "52cfd4cb0e0a4a12b270be18e358b5b6"}
+[08:11:14 TRACE game] Warping to FarmHouse
+[08:11:19 TRACE SMAPI] Synchronizing 'NewDay' task...
+[08:11:20 TRACE SMAPI]    task complete.
+[08:11:20 TRACE SMAPI] Context: before save.
+[08:11:20 TRACE game] SaveGame.Save() called.
+[08:11:20 TRACE SMAPI] Synchronizing 'Save' task...
+[08:11:20 TRACE game] Saving without compression...
+[08:11:20 TRACE SMAPI]    task complete.
+[08:11:20 TRACE game] SaveGame.Save() completed without exceptions.
