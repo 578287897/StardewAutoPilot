@@ -8,7 +8,7 @@
 
 基于真实游戏状态的《星露谷物语》AI 自动驾驶系统
 
-[![Version](https://img.shields.io/badge/version-0.2.11-b7d88d?style=flat-square&labelColor=102d28)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.2.12-b7d88d?style=flat-square&labelColor=102d28)](CHANGELOG.md)
 [![SMAPI](https://img.shields.io/badge/SMAPI-4.x-efce82?style=flat-square&labelColor=102d28)](https://smapi.io/)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-9cc8c1?style=flat-square&labelColor=102d28)](agent/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-d2ddd0?style=flat-square&labelColor=102d28)](LICENSE)
@@ -25,7 +25,7 @@
 
 SMAPI Mod 直接读取游戏状态并执行动作，Python 代理负责计划、调度和复盘。代理通过 OpenAI 兼容 API 调用模型，围绕每日脚本完成种植、采集、钓鱼、下矿与经营，并将策略与教训保存下来，供后续计划参考。无需截图或图像识别。
 
-> **当前源码：0.2.11** · 56 项 Python 测试通过，Mod Release 构建通过。熔炉忙时不再空转装料；下矿挥击卡住会立刻松开。详见 [更新记录](CHANGELOG.md) 和 [可靠性与验收说明](RELIABILITY.md)。
+> **当前版本：0.2.12** · 70 项 Python 测试、11 项回执检查通过，Mod Release 构建通过。改进中断恢复、季节任务和资源依赖判断。可从 [Releases](https://github.com/578287897/StardewAutoPilot/releases) 下载包含已编译 Mod 与 Python 代理的压缩包。更新需同时替换两者；尚未进行游戏内实测。
 
 ## 核心能力
 
