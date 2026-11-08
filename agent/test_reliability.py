@@ -146,12 +146,14 @@ class TestPreciseBreakers(unittest.TestCase):
         guard = ExecutionGuard()
         state = {'machines': [{'id': '(BC)13', 'contains': None}],
                  'farm_resources': {'(O)378': 4}, 'player': {'money': 100}}
+        state['machine_inputs'] = {'ore': 4, 'coal': 0}
         action = {'type': 'load_machines'}
         guard.observe(state, action, {'ok': False, 'message': 'no empty machine accepts anything'})
         state['farm_resources']['(O)145'] = 1
         state['player']['money'] = 500
         self.assertTrue(guard.blocked(state, action))
         state['farm_resources']['(O)382'] = 1
+        state['machine_inputs']['coal'] = 1
         self.assertFalse(guard.blocked(state, action))
 
     def test_route_failure_is_not_reset_by_crafting_or_clock(self):

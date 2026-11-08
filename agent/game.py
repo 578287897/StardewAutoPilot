@@ -111,7 +111,8 @@ class Game:
                 return {"ok": False, "status": "AGENT_UNAVAILABLE",
                         "message": "update the Mod: durable action receipts are required"}
         body = {**action, "request_id": uuid.uuid4().hex}
-        self.pending = {"base": self.base, "action": body}
+        self.pending = {"base": self.base, "action": body,
+                        "script_action": getattr(self, "script_action", None) or dict(action)}
         self._save_pending()
         try:
             result = self._request("POST", "/act", body)
@@ -138,6 +139,7 @@ class Game:
         request_id = self.pending["action"]["request_id"]
         result = self._request("GET", "/action_status?request_id=" + urllib.parse.quote(request_id), timeout=30)
         result["action"] = self.pending["action"]
+        result["script_action"] = self.pending.get("script_action", result["action"])
         if result.get("state") == "completed" and result.get("result", {}).get("status") == "ACTION_UNCERTAIN":
             result["state"] = "uncertain"
         if result.get("state") == "completed":

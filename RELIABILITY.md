@@ -106,3 +106,22 @@ git push origin main
 | 夜间复盘生成到一半退出 | 重启后文件完整，策略与教训配套恢复 |
 
 这部分需要更新 Mod 后的真实游戏及新日志确认，尚未标记通过。
+
+
+## Recovery and end-of-day work (2026-11-08)
+
+- Persist the parent script action with the operation intent before POST. Unsent
+  operations stay in the script; ambiguous mutations wait for a durable receipt.
+  Confirmed purchases are not replayed. Interrupted macros and confirmed failures
+  replan from current facts, and confirmed sleep closes the day.
+- End-of-day work tries immediate requirements, the current milestone and one
+  seasonal outing, with at most three supplemental jobs per day. Health, stamina
+  and time bound outings. Wait only for pending machine production; otherwise
+  permit early sleep. `--no-save` continues to prohibit saving.
+- Machine dependency snapshots read IDs and tags from live machine rules, including
+  fuel. Query and negated-tag rules conservatively track all resources. Farm work
+  uses current recipe ingredient/category IDs, output stock and seasonal seeds.
+  Older Mods without dependency metadata conservatively track all resources.
+- Machine, road and decoration results report `progress_count` and `reason_code`.
+  Zero progress suppresses repeats immediately; message matching remains for older
+  Mods. Deploy the Python agent and rebuilt Mod together to use the new metadata.

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using Microsoft.Xna.Framework;
 using StardewValley;
 using SObject = StardewValley.Object;
@@ -36,6 +37,55 @@ namespace StardewAutoPilot
                 ["ready"] = m.machine.readyForHarvest.Value,
                 ["minutes_left"] = m.machine.heldObject.Value != null && !m.machine.readyForHarvest.Value ? m.machine.MinutesUntilReady : 0
             }).ToList();
+
+        // Read IDs and context tags from live machine data, including modded rules.
+        // Include quantities before a full batch is available; probing alone misses shortages.
+        private static IEnumerable<string> RuleStrings(JsonElement value)
+        {
+            if (value.ValueKind == JsonValueKind.String)
+                yield return value.GetString();
+            else if (value.ValueKind == JsonValueKind.Array)
+                foreach (var child in value.EnumerateArray())
+                    foreach (var text in RuleStrings(child)) yield return text;
+            else if (value.ValueKind == JsonValueKind.Object)
+                foreach (var property in value.EnumerateObject())
+                    foreach (var text in RuleStrings(property.Value)) yield return text;
+        }
+
+        private static bool NeedsFullInventory(JsonElement value)
+        {
+            if (value.ValueKind == JsonValueKind.String)
+                return value.GetString()?.StartsWith("!") == true;
+            if (value.ValueKind == JsonValueKind.Array)
+                return value.EnumerateArray().Any(NeedsFullInventory);
+            if (value.ValueKind == JsonValueKind.Object)
+                return value.EnumerateObject().Any(p =>
+                    (p.Name.Contains("Query") && p.Value.ValueKind != JsonValueKind.Null)
+                    || NeedsFullInventory(p.Value));
+            return false;
+        }
+
+        public static object InputSnapshot()
+        {
+            var items = Game1.player.Items.Concat(Crafting.FarmChests().SelectMany(c => c.Items))
+                .Where(i => i != null && i is not Tool).ToList();
+            return All().Select(m =>
+            {
+                var rules = JsonSerializer.SerializeToElement(m.machine.GetMachineData());
+                var tokens = RuleStrings(rules).Where(t => !string.IsNullOrEmpty(t)).ToHashSet();
+                // Query-based rules may depend on arbitrary items: keep all resources in
+                // that case rather than risk blocking a newly satisfiable recipe.
+                bool query = NeedsFullInventory(rules);
+                return new
+                {
+                    location = m.loc.NameOrUniqueName, x = m.tile.X, y = m.tile.Y,
+                    rules,
+                    inputs = items.Where(i => query || tokens.Contains(i.ItemId) || tokens.Contains(i.QualifiedItemId)
+                        || tokens.Any(t => i.HasContextTag(t)))
+                        .GroupBy(i => i.QualifiedItemId).ToDictionary(g => g.Key, g => g.Sum(i => i.Stack))
+                };
+            }).OrderBy(m => m.location).ThenBy(m => m.x).ThenBy(m => m.y).ToList();
+        }
 
         /// <summary>First backpack slot holding something this machine accepts (asks the machine itself, without consuming).</summary>
         public static int AcceptedSlot(SObject machine, Farmer who, string only = null)

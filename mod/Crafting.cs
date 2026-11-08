@@ -63,6 +63,8 @@ namespace StardewAutoPilot
                     ["display"] = recipe.DisplayName,
                     ["ingredients"] = recipe.recipeList.Select(kv => $"{IngredientName(kv.Key)} x{kv.Value}").ToList(),
                     ["can_make"] = recipe.getCraftableCount(chests),
+                    ["ingredient_ids"] = recipe.recipeList.Keys.ToList(),
+                    ["output_id"] = recipe.createItem().QualifiedItemId,
                     ["description"] = recipe.description?.Replace("\n", " ")
                 });
             }

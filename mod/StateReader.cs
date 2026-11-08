@@ -113,6 +113,10 @@ namespace StardewAutoPilot
                 ["birthdays_today"] = Utility.getAllVillagers().Where(n => n.isBirthday()).Select(n => n.Name).ToList(),
                 ["save_name"] = Constants.SaveFolderName,
                 ["busy_action"] = mod.Runner.CurrentType,
+                ["machine_inputs"] = Machines.InputSnapshot(),
+                ["farm_items"] = p.Items.Concat(Crafting.FarmChests().SelectMany(c => c.Items))
+                    .Where(i => i != null && i is not Tool)
+                    .Select(i => new { id = i.QualifiedItemId, name = i.Name, stack = i.Stack, category = i.Category }).ToList(),
                 ["farm_revision"] = mod.Runner.FarmRevision,
                 ["route_revision"] = mod.Runner.RouteRevision,
                 ["farm_resources"] = p.Items.Concat(Crafting.FarmChests().SelectMany(c => c.Items))

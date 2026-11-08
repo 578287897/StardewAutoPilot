@@ -14,7 +14,7 @@ class ExecutionGuard:
     @staticmethod
     def identity(action):
         return json.dumps({k: v for k, v in action.items() if k not in
-                           ("request_id", "thought", "reason", "filler")}, sort_keys=True, ensure_ascii=False)
+                           ("request_id", "thought", "reason", "filler", "supplemental", "work_exhausted")}, sort_keys=True, ensure_ascii=False)
 
     def key(self, state, action, timed=False):
         kind = action.get("type")
@@ -30,24 +30,11 @@ class ExecutionGuard:
                                    for m in state.get("machines") or []]
             context["machines"].sort(key=lambda value: json.dumps(value, sort_keys=True))
             if kind == "load_machines":
-                machines = state.get("machines") or []
-                if machines and all(m.get("id") == "(BC)13" for m in machines):
-                    inputs = {"(O)" + str(n) for n in (378, 380, 384, 386, 909, 382, 80, 82)}
-                    resources = ({k: v for k, v in resources.items() if k in inputs}
-                                 if isinstance(resources, dict) else
-                                 [i for i in resources if i.get("id") in inputs])
-                context["resources"] = resources
+                # The Mod computes this from each machine's current acceptance probe.
+                context["resources"] = state.get("machine_inputs", resources)
         elif kind in ("build_road", "decorate"):
-            ids = {"(O)388", "(O)390", "(O)401", "(O)402", "(O)403", "(O)404",
-                   "(O)405", "(O)427", "(O)429", "(O)431", "(O)453", "(O)425",
-                   "(O)309", "(O)310", "(O)311", "(O)292", "(O)293",
-                   "(O)328", "(O)329", "(O)331", "(O)409", "(O)368"}
-            if isinstance(resources, dict):
-                resources = {k: v for k, v in resources.items() if k in ids}
-            else:
-                resources = [i for i in resources if i.get("id") in ids]
-            context.update(resources=resources, revision=state.get("farm_revision", 0),
-                           season=state.get("season"))
+            context.update(resources=state.get("work_dependencies", {}).get(kind, resources),
+                           revision=state.get("farm_revision", 0), season=state.get("season"))
         elif kind == "goto_location":
             context.update(location=state.get("location"), exits=state.get("exits"),
                            revision=state.get("route_revision", 0))
@@ -71,7 +58,11 @@ class ExecutionGuard:
             return False
         identity = self.identity(action)
         msg = str(result.get("message", "")).lower()
-        empty = ((kind == "load_machines" and any(s in msg for s in
+        measured = result.get("progress_count")
+        reason = result.get("reason_code")
+        empty = measured == 0 or reason in {"MISSING_MATERIALS", "NO_WORK", "BLOCKED", "MACHINES_BUSY"}
+        # Compatibility with older Mods that don't supply structured feedback.
+        empty = empty or ((kind == "load_machines" and any(s in msg for s in
                   ("no empty machine accepts", "no machines", "all machines are busy")))
                  or (kind == "collect_machines" and "no machine has finished output" in msg)
                  or (kind in ("build_road", "lay_path") and "laid 0 " in msg))

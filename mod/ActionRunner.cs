@@ -1957,6 +1957,8 @@ namespace StardewAutoPilot
                 yield return null;
             }
             J.Data["laid"] = laid;
+            J.Data["progress_count"] = laid;
+            J.Data["reason_code"] = laid > 0 ? "PROGRESS" : (skipped > 0 ? "BLOCKED" : "NO_WORK");
             J.Message = $"laid {laid} {item} tiles ({already} already done, {skipped} skipped: blocked by trees/crops/objects)" + (stop != null ? "; stopped: " + stop : "");
             if (laid == 0 && already == 0)
                 throw new ActionFailed(J.Message);
@@ -2175,18 +2177,25 @@ namespace StardewAutoPilot
                 }
             }
             J.Data["collected"] = collected;
+            J.Data["progress_count"] = collected.Count;
+            J.Data["reason_code"] = collected.Count > 0 ? "PROGRESS" : "NO_WORK";
             J.Message = collected.Count == 0 ? "no machine has finished output" : $"collected: {string.Join(", ", collected)}";
         }
 
         private IEnumerable<object> LoadMachines(string only)
         {
+            J.Data["progress_count"] = 0;
+            J.Data["reason_code"] = "NO_WORK";
             var all = Machines.All().ToList();
             if (all.Count == 0)
                 throw new ActionFailed("no machines on the farm");
             var empty = all.Where(m => m.machine.heldObject.Value == null).ToList();
             // Busy is not "nothing to smelt": the furnace is often full of copper when the script asks for iron.
             if (empty.Count == 0)
+            {
+                J.Data["reason_code"] = "MACHINES_BUSY";
                 throw new ActionFailed("all machines are busy; collect them when they finish");
+            }
             var loaded = new List<string>();
             foreach (var group in empty.GroupBy(m => m.loc).ToList())
             {
@@ -2215,6 +2224,8 @@ namespace StardewAutoPilot
                 }
             }
             J.Data["loaded"] = loaded;
+            J.Data["progress_count"] = loaded.Count;
+            J.Data["reason_code"] = loaded.Count > 0 ? "PROGRESS" : "MISSING_MATERIALS";
             if (loaded.Count == 0)
             {
                 if (all.Count > empty.Count)

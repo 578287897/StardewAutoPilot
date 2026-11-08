@@ -131,7 +131,8 @@ class TestExecutionGuard(unittest.TestCase):
         agent.farm_plan = Mock(return_value=None)
         agent.day.fish_failed = True
         self.state["player"] = {"stamina": 100, "max_stamina": 270}
-        self.assertEqual(agent.time_filler(self.state)["type"], "wait")
+        agent.supplemental_work = Mock(return_value=None)
+        self.assertEqual(agent.time_filler(self.state)["type"], "sleep")
         self.state["machines"][0].update(ready=True, contains="Copper Bar")
         self.assertEqual(agent.time_filler(self.state)["type"], "collect_machines")
 

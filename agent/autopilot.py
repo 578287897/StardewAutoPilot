@@ -288,6 +288,8 @@ class DayLog:
         self.road_skip = set()     # road tiles blocked today (trees, crops)
         self.junk_fishing = 0      # time-filler fishing rounds that caught only junk
         self.awaiting_script = False
+        self.supplemental_jobs = set()
+        self.supplemental_queue = []
         self.empty_debris_spots = set()
         self.craft_blocked = set()  # items that already failed craft today (don't spam)
         self.place_blocked = set()  # items with no tidy spot left today
@@ -910,6 +912,7 @@ class Agent:
                 return
             if recovery.get("state") == "completed":
                 self.record(st, "(查询先前动作的实际结果，不重放)", recovery["action"], recovery["result"])
+                self.resume_recovered(st, recovery)
             else:
                 log(f"动作尚未确认（{recovery.get('state')}），暂停派发；操作编号保存在 pending_action.json")
                 time.sleep(5)
@@ -952,7 +955,7 @@ class Agent:
             self.prep_thread.join(timeout=30)
             return
         if not self.day.script and self.mode == "script" and not self.day.awaiting_script:
-            log("脚本执行完：回农场，按固定规则填满时间再睡觉（不叫模型、不乱跑）")
+            log("脚本执行完：检查需求和季节补充工作，没有有效工作则睡觉")
             self.set_script([{"type": "sleep"}], "收尾", st.get("location"))
         if not self.day.script:
             self.llm_step(st)
@@ -963,7 +966,12 @@ class Agent:
             self.day.script.insert(0, action)
             action = self.time_filler(st)
             res = self.execute(st, action)
-            self.record(st, "(脚本做完了，到 17:00 前固定做这个，不换地图)", action, res)
+            self.preserve_interrupted(action, res)
+            self.record(st, "(按需求补充工作，无有效工作则收尾)", action, res)
+            if not res.get("ok") and action.get("supplemental"):
+                self.day.supplemental_queue.clear()
+            if res.get("status") in ("AGENT_UNAVAILABLE", "ACTION_UNCERTAIN"):
+                return
             if not res.get("ok") and action["type"] == "fish":
                 self.day.fish_failed = True
             if action["type"] == "fish":
@@ -977,6 +985,7 @@ class Agent:
             return
         n = self.day.script_total - len(self.day.script)
         res = self.execute(st, action)
+        self.preserve_interrupted(action, res)
         self.record(st, f"(脚本 {n}/{self.day.script_total})", action, res)
         if res.get("status") in ("AGENT_UNAVAILABLE", "ACTION_UNCERTAIN", "CIRCUIT_OPEN"):
             return  # transport failures and suppressed work must not trigger a repair loop
@@ -992,6 +1001,34 @@ class Agent:
             fresh = self.safe(self.game.state, st)
             if fresh.get("ready") and not fresh.get("menu"):
                 self.replan(fresh, "脚本里的上一个动作失败了。", (action, res))
+
+    def preserve_interrupted(self, action, result):
+        if result.get("status") not in ("AGENT_UNAVAILABLE", "ACTION_UNCERTAIN"):
+            return
+        pending = getattr(getattr(self, "game", None), "pending", None)
+        if isinstance(pending, dict):
+            pending["script_action"] = dict(action)
+            self.game._save_pending()
+        elif result.get("dispatched") is False:
+            # No mutation was sent; keep the task at the front of the script.
+            self.day.script.insert(0, dict(action))
+            self.day.script_total += 1
+
+    def resume_recovered(self, st, recovery):
+        result = recovery["result"]
+        action = recovery["action"]
+        original = recovery.get("script_action", action)
+        if result.get("ok") and action.get("type") == "sleep":
+            self.day.ended = True
+            self.on_went_to_sleep(st, self.safe(lambda: self.game.crops("Farm"), {}))
+            return
+        if result.get("ok") and action.get("type") in ("ship", "ship_produce"):
+            self.day.shipped_value += int(result.get("value", 0) or 0)
+        if not result.get("ok") or original.get("type") != action.get("type"):
+            # A macro may have completed only its first child. Replan against current
+            # facts rather than replaying the macro and duplicating purchases/crafts.
+            if self.mode == "script" and st.get("ready") and not st.get("menu"):
+                self.replan(st, "通信已恢复，请依据当前状态补完中断任务，已完成的操作不要重做。", (original, result))
 
     JUNK = ("Trash", "Driftwood", "Soggy Newspaper", "Broken CD", "Broken Glasses", "Joja Cola", "Rotten Plant")
 
@@ -1015,24 +1052,92 @@ class Agent:
         tired = p.get("stamina", 0) < 0.2 * p.get("max_stamina", 270) or p.get("health", 100) <= 10
         return st.get("time", 0) < 1700 and not tired
 
+    def work_state(self, st, action):
+        kind = action.get("type")
+        if kind not in ("build_road", "decorate"):
+            return st
+        items = st.get("farm_items")
+        if items is None:
+            return st
+        recipes = self.safe(self.game.recipes, [])
+        if not isinstance(recipes, list):
+            return st  # Older Mod: conservatively compare all resources.
+        names = set(self.PATH_ITEMS) if kind == "build_road" else {"Wood Fence", "Gate"}
+        seeds = set(self.TREE_SEEDS) | set(self.FLOWER_SEEDS.get(st.get("season"), ()))
+        selected = [r for r in recipes if r.get("name") in names]
+        if any("ingredient_ids" not in r or "output_id" not in r for r in selected):
+            return st
+        ids, categories = set(), set()
+        for recipe in selected:
+            ids.add(recipe["output_id"])
+            for raw in recipe["ingredient_ids"]:
+                raw = str(raw)
+                if raw.startswith("-"):
+                    categories.add(int(raw))
+                else:
+                    ids.add(raw if raw.startswith("(") else "(O)" + raw)
+        totals = {}
+        for item in items:
+            if item["id"] in ids or item.get("category") in categories or (kind == "decorate" and item.get("name") in seeds):
+                totals[item["id"]] = totals.get(item["id"], 0) + item.get("stack", 0)
+        dependency = {"items": totals, "recipes": selected}
+        return {**st, "work_dependencies": {**st.get("work_dependencies", {}), kind: dependency}}
+
+    def supplemental_work(self, st):
+        """Try each immediate requirement/milestone once, then one seasonal outing."""
+        if not hasattr(self.day, "supplemental_jobs"):
+            self.day.supplemental_jobs, self.day.supplemental_queue = set(), []
+        p = st.get("player", {})
+        if st.get("time", 0) >= 1500 or p.get("stamina", 0) < .35 * p.get("max_stamina", 270) or p.get("health", 100) < 40:
+            self.day.supplemental_queue.clear()
+            return None
+        if self.day.supplemental_queue:
+            return self.day.supplemental_queue.pop(0)
+        progress = self.safe(self.game.progress, {})
+        requirement = needs.immediate(progress, st, self.safe(self.game.bundles, {}))
+        current = milestones.current(progress)
+        candidates = []
+        if requirement:
+            candidates.append((requirement["name"], requirement.get("step", [])))
+        if current:
+            candidates.append((current[0], current[1].get("step", [])))
+        # Winter has no outdoor crop routine: use a short, guarded mine trip.
+        if st.get("season") == "winter" and progress.get("gear", {}).get("safe_depth", 0) > 0:
+            candidates.append(("seasonal", [{"type": "mine", "floors": 3}]))
+        else:
+            candidates.append(("seasonal", [{"type": "goto_location", "location": "Forest"}, {"type": "forage"}]))
+        for name, steps in candidates:
+            if name in self.day.supplemental_jobs or not steps or len(self.day.supplemental_jobs) >= 3:
+                continue
+            self.day.supplemental_jobs.add(name)
+            if any(self.day.execution_guard.blocked(st, a) for a in steps):
+                continue
+            self.day.supplemental_queue = [{**a, "supplemental": True} for a in steps if a.get("type") != "sleep"]
+            if self.day.supplemental_queue:
+                return self.day.supplemental_queue.pop(0)
+        return None
+
     def time_filler(self, st):
-        """Fixed, model-free way to use the rest of the afternoon where the player already is."""
+        """Finish useful work, wait for pending production, or sleep when exhausted."""
         p = st.get("player", {})
         machines = st.get("machines") or []
-        eligible = lambda kind: not self.day.execution_guard.blocked(st, {"type": kind})
+        eligible = lambda kind: not self.day.execution_guard.blocked(self.work_state(st, {"type": kind}), {"type": kind})
         if any(m.get("ready") for m in machines) and eligible("collect_machines"):
             return {"type": "collect_machines"}
         if eligible("load_machines") and any(not m.get("contains") for m in machines):
             return {"type": "load_machines"}
+        work = self.supplemental_work(st)
+        if work:
+            return work
         if eligible("build_road") and self.farm_plan() and p.get("stamina", 0) >= 0.3 * p.get("max_stamina", 270):
             return {"type": "build_road"}
         if eligible("decorate") and self.farm_plan():
             return {"type": "decorate"}
-        if not self.day.fish_failed and p.get("stamina", 0) >= 0.35 * p.get("max_stamina", 270):
-            return {"type": "fish", "casts": 3}
-        t = st.get("time", 0)
-        minutes = (17 * 60) - (t // 100 * 60 + t % 100)
-        return {"type": "wait", "minutes": max(10, min(minutes, 120)), "filler": True}
+        # Wait only for a real machine deadline; otherwise save the finished day.
+        remaining = [m.get("minutes_left", 0) for m in machines if m.get("minutes_left", 0) > 0]
+        if remaining and st.get("time", 0) < 1700:
+            return {"type": "wait", "minutes": max(10, min(min(remaining), 120)), "filler": True}
+        return {"type": "sleep", "work_exhausted": True}
 
     @staticmethod
     def is_minor_failure(action):
@@ -1081,10 +1186,13 @@ class Agent:
                 break
 
     def execute(self, st, action, forced=False):
+        st = self.work_state(st, action)
         guard = self.day.execution_guard
         if guard.blocked(st, action):
             return {"ok": False, "status": "CIRCUIT_OPEN",
                     "message": "repeated ineffective action suppressed until game state changes"}
+        if getattr(self, "game", None) is not None:
+            self.game.script_action = dict(action)
         try:
             res = self._execute(st, action, forced)
         except ActionInterrupted as e:
@@ -1104,10 +1212,11 @@ class Agent:
             fresh = self.game.state()
             if not fresh.get("ready") or fresh.get("busy_action"):
                 return {"ok": False, "status": "AGENT_UNAVAILABLE", "message": "Mod not ready or still busy"}
+            fresh = self.work_state(fresh, action)
             guard = self.day.execution_guard
             if guard.blocked(fresh, action):
                 return {"ok": False, "status": "CIRCUIT_OPEN", "message": "unchanged failed action suppressed"}
-            res = self.game.act(action)
+            res = self.game.act({k: v for k, v in action.items() if k not in ("supplemental", "work_exhausted")})
             if guard.observe(fresh, action, res):
                 res = {**res, "ok": False, "status": "NO_PROGRESS"}
             res["_guard_observed"] = True
@@ -1121,7 +1230,7 @@ class Agent:
         if "fresh" in locals() and (res.get("after") or {}).get("time") is not None:
             minutes = lambda value: value // 100 * 60 + value % 100
             res["game_minutes"] = max(0, minutes(res["after"]["time"]) - minutes(fresh.get("time", 0)))
-        res["dispatched"] = True
+        res["dispatched"] = "fresh" in locals() and (res.get("status") != "AGENT_UNAVAILABLE" or isinstance(pending, dict))
         return res
 
     def _execute(self, st, action, forced=False):
@@ -1133,7 +1242,7 @@ class Agent:
             # refuse an early bedtime once per day (nudges toward useful work); if the model insists after re-planning, allow it
             tired = p.get("stamina", 0) < 0.2 * p.get("max_stamina", 270) or p.get("health", 100) <= 10
             early = st.get("time", 0) < 1500 or (st.get("time", 0) < 1700 and not self.day.early_sleep_refused)
-            if early and not tired and not forced:
+            if early and not tired and not forced and not action.get("work_exhausted"):
                 self.day.early_sleep_refused = True
                 return {"ok": False, "message": "规则：体力还多，15:00 前不能睡觉（15-17 点只提醒一次）。可以用 clear_debris（不填 x,y 自动找最近杂物）、或做不耗体力的事："
                                                 "和村民打招呼(interact npc)推进任务、forage 采集、check_mail、去别的地图探索、去商店看看货。"}
@@ -1364,7 +1473,7 @@ class Agent:
         entry = {"time": st.get("time"), "location": st.get("location"), "thought": thought, "action": action,
                  "ok": bool(res.get("ok")), "message": msg[:400],
                  "status": res.get("status", "SUCCESS" if res.get("ok") else "ACTION_FAILED")}
-        entry.update({k: res[k] for k in ("request_id", "elapsed_seconds", "game_minutes") if k in res})
+        entry.update({k: res[k] for k in ("request_id", "elapsed_seconds", "game_minutes", "reason_code", "progress_count") if k in res})
         self.day.steps.append(entry)
         self.write_run("step", {"day": self.day.tag, **entry, "result": res})
         log(("✓ " if entry["ok"] else "✗ ") + self.fmt_step(entry, with_thought=True))
@@ -1719,7 +1828,7 @@ class Agent:
                 if self.act_and_record(st, {"type": "place", "item": seed, "x": t[0], "y": t[1]}, "(种一棵遮挡作坊的树)").get("ok"):
                     done.append("遮挡树")
             if done:
-                return {"ok": True, "message": f"在作坊角外种了 {len(done)} 棵遮挡树"}
+                return {"ok": True, "progress_count": len(done), "reason_code": "PROGRESS", "message": f"在作坊角外种了 {len(done)} 棵遮挡树"}
         # 2. fence around the animal zone, once a coop/barn stands there
         ranch = self.safe(self.game.ranch, {})
         zone = plan["zones"].get("animals")
@@ -1737,7 +1846,7 @@ class Agent:
                 if gate and free(gate) and recipes.get("Gate", {}).get("can_make", 0) > 0 \
                         and self.act_and_record(st, {"type": "craft", "item": "Gate", "count": 1}, "(做栅栏门)").get("ok"):
                     self.act_and_record(st, {"type": "place", "item": "Gate", "x": gate[0], "y": gate[1]}, "(装栅栏门，对着主干道)")
-                return {"ok": placed > 0, "message": f"牧场栅栏装了 {placed} 段"}
+                return {"ok": placed > 0, "progress_count": placed, "reason_code": "PROGRESS" if placed else "BLOCKED", "message": f"牧场栅栏装了 {placed} 段"}
         # 3. flowerbeds on both sides of the plaza (seasonal flowers)
         flower = next((s for s in self.FLOWER_SEEDS.get(st.get("season"), ()) if inv.get(s)), None)
         if flower and plan.get("flowers"):
@@ -1746,8 +1855,8 @@ class Agent:
                 res = self.act_and_record(st, {"type": "plant_seeds", "item": flower, "count": bw * bh,
                                                "plot": {"x": x, "y": y, "w": bw, "h": bh}}, "(门前花坛种花)")
                 ok += bool(res.get("ok"))
-            return {"ok": ok > 0, "message": f"门前花坛种了 {flower}"}
-        return {"ok": False, "message": "今天没有能做的装饰（缺树种子/木头/花种，或还没有畜舍）"}
+            return {"ok": ok > 0, "progress_count": ok, "reason_code": "PROGRESS" if ok else "BLOCKED", "message": f"门前花坛种了 {flower}"}
+        return {"ok": False, "progress_count": 0, "reason_code": "MISSING_MATERIALS", "message": "今天没有能做的装饰（缺树种子/木头/花种，或还没有畜舍）"}
 
     PATH_ITEMS = ("Cobblestone Path", "Wood Path", "Stone Floor", "Gravel Path")
 
@@ -1763,7 +1872,7 @@ class Agent:
         todo = [tuple(t) for t in plan.get("plaza", [])] + [tuple(t) for r in plan["roads"] for t in r["tiles"]]
         todo = [t for t in todo if rows[t[1]][t[0]] in ".d" and t not in self.day.road_skip][:max_tiles]
         if not todo:
-            return {"ok": False, "message": "规划的路都铺好了，或剩下的路段被树/作物挡住（升级斧头后再清）"}
+            return {"ok": False, "progress_count": 0, "reason_code": "NO_WORK", "message": "规划的路都铺好了，或剩下的路段被树/作物挡住（升级斧头后再清）"}
         recipes = self.safe(self.game.recipes, [])
         recipes = {r["name"]: r for r in recipes} if isinstance(recipes, list) else {}
         stock = {}
@@ -1774,7 +1883,7 @@ class Agent:
         item = item or next((n for n in self.PATH_ITEMS if recipes.get(n, {}).get("can_make", 0) > 0), None)
         have = stock.get(item, 0)
         if not item:
-            return {"ok": False, "message": "做不了铺路材料（Cobblestone Path 要 1 块石头）"}
+            return {"ok": False, "progress_count": 0, "reason_code": "MISSING_MATERIALS", "message": "做不了铺路材料（Cobblestone Path 要 1 块石头）"}
         need = max(0, min(len(todo) - have, recipes.get(item, {}).get("can_make", 0)))
         if need > 0:
             res = self.act_and_record(st, {"type": "craft", "item": item, "count": need}, f"(做 {need} 块 {item} 用来铺路)")
