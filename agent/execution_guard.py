@@ -31,10 +31,23 @@ class ExecutionGuard:
             context["machines"].sort(key=lambda value: json.dumps(value, sort_keys=True))
             if kind == "load_machines":
                 machines = state.get("machines") or []
-                if machines and all(m.get("id") == "(BC)13" for m in machines) and isinstance(resources, dict):
+                if machines and all(m.get("id") == "(BC)13" for m in machines):
                     inputs = {"(O)" + str(n) for n in (378, 380, 384, 386, 909, 382, 80, 82)}
-                    resources = {k: v for k, v in resources.items() if k in inputs}
+                    resources = ({k: v for k, v in resources.items() if k in inputs}
+                                 if isinstance(resources, dict) else
+                                 [i for i in resources if i.get("id") in inputs])
                 context["resources"] = resources
+        elif kind in ("build_road", "decorate"):
+            ids = {"(O)388", "(O)390", "(O)401", "(O)402", "(O)403", "(O)404",
+                   "(O)405", "(O)427", "(O)429", "(O)431", "(O)453", "(O)425",
+                   "(O)309", "(O)310", "(O)311", "(O)292", "(O)293",
+                   "(O)328", "(O)329", "(O)331", "(O)409", "(O)368"}
+            if isinstance(resources, dict):
+                resources = {k: v for k, v in resources.items() if k in ids}
+            else:
+                resources = [i for i in resources if i.get("id") in ids]
+            context.update(resources=resources, revision=state.get("farm_revision", 0),
+                           season=state.get("season"))
         elif kind == "goto_location":
             context.update(location=state.get("location"), exits=state.get("exits"),
                            revision=state.get("route_revision", 0))
@@ -72,3 +85,9 @@ class ExecutionGuard:
         count = previous.get("count", 0) if previous.get("state") == key else 0
         self.failures[identity] = {"state": key, "timed": timed, "count": 2 if empty else count + 1}
         return empty
+
+    def invalidate(self):
+        """Legacy chest mutations only re-enable machine loading."""
+        for identity in list(self.failures):
+            if json.loads(identity).get("type") == "load_machines":
+                del self.failures[identity]

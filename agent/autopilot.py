@@ -1766,11 +1766,16 @@ class Agent:
             return {"ok": False, "message": "规划的路都铺好了，或剩下的路段被树/作物挡住（升级斧头后再清）"}
         recipes = self.safe(self.game.recipes, [])
         recipes = {r["name"]: r for r in recipes} if isinstance(recipes, list) else {}
-        item = next((n for n in self.PATH_ITEMS if recipes.get(n, {}).get("can_make", 0) > 0), None)
-        have = next((i.get("stack", 0) for i in st.get("inventory", []) if i and i.get("name") == item), 0) if item else 0
+        stock = {}
+        for i in st.get("inventory", []):
+            if i:
+                stock[i.get("name")] = stock.get(i.get("name"), 0) + i.get("stack", 0)
+        item = next((n for n in self.PATH_ITEMS if stock.get(n, 0) > 0), None)
+        item = item or next((n for n in self.PATH_ITEMS if recipes.get(n, {}).get("can_make", 0) > 0), None)
+        have = stock.get(item, 0)
         if not item:
             return {"ok": False, "message": "做不了铺路材料（Cobblestone Path 要 1 块石头）"}
-        need = min(len(todo) - have, recipes[item]["can_make"])
+        need = max(0, min(len(todo) - have, recipes.get(item, {}).get("can_make", 0)))
         if need > 0:
             res = self.act_and_record(st, {"type": "craft", "item": item, "count": need}, f"(做 {need} 块 {item} 用来铺路)")
             if not res.get("ok"):
