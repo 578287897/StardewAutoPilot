@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using StardewValley;
 using StardewValley.GameData.Objects;
+using StardewValley.Network;
 using StardewValley.GameData.SpecialOrders;
 using StardewValley.GameData.Tools;
 using StardewValley.Internal;
@@ -45,8 +46,11 @@ namespace StardewAutoPilot
             var minerals = new List<Dictionary<string, object>>();
             var cooking = new List<Dictionary<string, object>>();
             var donated = MuseumDonated();
-            foreach (var data in ItemRegistry.GetObjectTypeDefinition().GetAllData())
+            foreach (string rawId in ItemRegistry.GetObjectTypeDefinition().GetAllIds())
             {
+                var data = ItemRegistry.GetData(rawId);
+                if (data == null)
+                    continue;
                 string id = data.ItemId;
                 string type = data.ObjectType ?? "";
                 var raw = data.RawData as ObjectData;
@@ -86,7 +90,7 @@ namespace StardewAutoPilot
                     cooking.Add(row);
                     continue;
                 }
-                if (!Object.isPotentialBasicShipped(id, data.Category, type))
+                if (!StardewValley.Object.isPotentialBasicShipped(id, data.Category, type))
                     continue;
                 int shipped = DictCount(Game1.player.basicShipped, id);
                 shipping.Add(ItemRow(data, shipped > 0, shipped, false));
@@ -151,7 +155,7 @@ namespace StardewAutoPilot
                     entry["days_left"] = live.IsTimedQuest() ? live.GetDaysLeft() : null;
                     entry["current_objective"] = live.currentObjective;
                     entry["objectives"] = live.GetObjectiveDescriptions().ToList();
-                    entry["completion_string"] = live.completionString.Value;
+                    entry["completion_string"] = live.obsolete_completionString;
                     if (live is GoSomewhereQuest somewhere)
                         entry["where"] = somewhere.whereToGo.Value;
                 }
@@ -438,16 +442,16 @@ namespace StardewAutoPilot
             return donated;
         }
 
-        private static int DictCount(Netcode.NetStringDictionary<int, Netcode.NetInt> dict, string key)
+        private static int DictCount(NetStringDictionary<int, Netcode.NetInt> dict, string key)
         {
             if (dict == null || !dict.ContainsKey(key))
                 return 0;
             return dict[key];
         }
 
-        private static int ArrayCount(Netcode.NetStringIntArrayDictionary dict, string key) => ArrayField(dict, key, 0);
+        private static int ArrayCount(StardewValley.NetStringIntArrayDictionary dict, string key) => ArrayField(dict, key, 0);
 
-        private static int ArrayField(Netcode.NetStringIntArrayDictionary dict, string key, int index)
+        private static int ArrayField(StardewValley.NetStringIntArrayDictionary dict, string key, int index)
         {
             if (dict != null && dict.TryGetValue(key, out int[] fields) && fields != null && fields.Length > index)
                 return fields[index];
