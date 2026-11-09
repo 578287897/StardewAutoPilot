@@ -728,3 +728,11 @@ Microsoft.Xna.Framework.Audio.NoAudioHardwareException (0x80004005): OpenAL devi
 [19:26:26 TRACE game] Warping to FarmHouse
 [19:26:31 TRACE SMAPI] Synchronizing 'NewDay' task...
 [19:26:32 TRACE SMAPI]    task complete.
+[19:26:38 TRACE game] Warping to FarmHouse
+[19:26:38 TRACE SMAPI] Context: before save.
+[19:26:38 TRACE game] SaveGame.Save() called.
+[19:26:38 TRACE SMAPI] Synchronizing 'Save' task...
+[19:26:38 TRACE game] Saving without compression...
+[19:26:39 TRACE SMAPI]    task complete.
+[19:26:39 TRACE game] SaveGame.Save() completed without exceptions.
+[19:26:41 TRACE SMAPI] Context: after save, starting summer 4 Y4.
