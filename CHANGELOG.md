@@ -1,5 +1,15 @@
 # 更新记录
 
+## 2026-11-09 · 0.2.15-pre 商店必须在对应地点打开（预发布）
+
+- **触发**：SMAPI 日志（`84d833e7` 当时的 `play-logs/smapi/SMAPI-latest.txt`）里，玩家最后一次传送停在 Mountain（03:33:45、03:54:27）或 Beach（23:30:54），没有进入 FishShop。同一秒内依次出现 `open_shop FishShop`、`buy Bait ×20`、`close_menu`。Mountain 上买完后的下一跳是 Backwoods；Beach 上买完后的下一跳是 Town。脚本只有在上一步返回成功时才会继续买和关菜单。
+- **表现**：鱼店菜单在鱼店屋外打开，并在错误地图上扣钱买鱼饵。
+- **影响**：购买发生在玩家并未站在威利柜台时。当前 `origin/main` 的日志里还有两次只发起 `open_shop`、随后离开 Mountain 的记录；那两次没有紧跟 `buy`，不能单独证明菜单打开。
+- **根因**：`OpenShop` 直接调用 `Utility.TryOpenShopMenu(shopId, 当前地图)`。这个接口按商店主人规则决定能否打开，不要求当前地图名就是该商店的室内。地点不符时仍会留下 `ShopMenu`，随后的 `buy` 照样扣钱。
+- **修复**：开店前用与 `agent/prompts.py` 的 `SHOP_HOURS` 相同的地点表核对玩家所在地图。FishShop 只允许在 FishShop，Carpenter 在 ScienceHouse，AdventureShop 在 AdventureGuild，Joja 在 JojaMart。地点不明、不在表内的商店 id，或打开后的菜单 id 与请求不一致，都拒绝；若已经弹出不匹配的菜单，先关掉再失败。`buy` 在扣钱前再核对当前菜单和所在地图，不符则关菜单并拒绝。
+- **验证**：`tests/ModProtocol` 增加地点与菜单对照回归（FishShop 在 Mountain/Beach 拒绝、在 FishShop 允许，以及 Carpenter/AdventureShop/Saloon/Joja 和菜单 id 不匹配）。未连接游戏，游戏内复测尚未做。这不是长期运行验收。
+- **配置**：不需要改 `config.json`，版本号仍是 **0.2.15-pre**。这次只改 Mod：替换 `StardewAutoPilot.dll` 后重启游戏才生效。不必为这次修复单独升级 Python 代理。
+
 ## 2026-11-09 · 0.2.15-pre 过场卡住不再空转睡觉（预发布）
 
 - **触发**：第4年夏11日 11:00，`event=true`，`sleep` 连续失败，结果均为 `a cutscene/event is running`，游戏时间停在 11:00，代理仍不断派发睡觉。
@@ -9,7 +19,7 @@
   - Python：`step` 在 `event` 为真时只等待，不派发动作。
   - C#：可跳过过场照旧跳过；同一过场持续约 90 秒仍未结束则强制 `skipEvent`（节日除外），并打 Warn 日志。
 - **验证**：新增回归测试；`unittest` + Mod Release 构建。需同时更新 Mod DLL 与代理并重启。
-- **状态**：**预发布 / 尚未达到长期运行验收标准**（需 ≥24 小时墙钟且 ≥30 游戏日连续无人值守）。已知风险：钓鱼小游戏假死、错误地点开 FishShop、铺路被挡等仍在跟进。
+- **状态**：**预发布 / 尚未达到长期运行验收标准**（需 ≥24 小时墙钟且 ≥30 游戏日连续无人值守）。已知风险：钓鱼小游戏假死、铺路被挡等仍在跟进。错误地点开 FishShop 的代码拒绝见上一节，游戏内复测尚未做。
 
 ## 2026-11-09 · 0.2.14 出货箱被挡住也能出货；复盘 401 会重读 F8
 

@@ -863,17 +863,48 @@ namespace StardewAutoPilot
         private IEnumerable<object> OpenShop(string shopId)
         {
             foreach (var o in this.EnsureFree()) yield return o;
+            var here = Game1.currentLocation;
+            // TryOpenShopMenu keys off shop-owner rules, not the map name, so FishShop can open on the Beach or the Mountain.
+            string mismatch = ShopLocations.RejectReason(shopId, here?.Name, here?.NameOrUniqueName);
+            if (mismatch != null)
+                throw new ActionFailed(mismatch);
+            if (!ShopLocations.TryResolve(shopId, out _, out string menuShopId))
+                throw new ActionFailed(ShopLocations.RejectReason(shopId, here?.Name, here?.NameOrUniqueName));
             // Pre-check known lock hours so the agent gets a clear "opens at" instead of a cascade of buy/close failures.
-            string loc = Game1.currentLocation?.NameOrUniqueName;
+            string loc = here?.NameOrUniqueName;
             if (!string.IsNullOrEmpty(loc) && GameData.LockedNow(loc, out int opensAt))
                 throw new ActionFailed($"can't open shop '{shopId}': {loc} is locked until {opensAt / 100}:{opensAt % 100:00}");
-            if (!Utility.TryOpenShopMenu(shopId, Game1.currentLocation, null, null, false, true, null))
+            if (!Utility.TryOpenShopMenu(menuShopId, here, null, null, false, true, null))
                 throw new ActionFailed($"can't open shop '{shopId}' here (wrong location, closed, or shopkeeper absent)");
             for (int i = 0; i < 10; i++)
                 yield return null;
+            if (Game1.activeClickableMenu is not ShopMenu shop)
+                throw this.FailShopMenu($"shop '{shopId}' did not open a shop menu");
+            string menuProblem = ShopLocations.MenuMismatch(shopId, shop.ShopId)
+                ?? ShopLocations.RejectReason(shopId, Game1.currentLocation?.Name, Game1.currentLocation?.NameOrUniqueName);
+            if (menuProblem != null)
+                throw this.FailShopMenu(menuProblem);
             J.Message = "shop opened";
-            if (Game1.activeClickableMenu != null)
-                J.Data["menu"] = MenuAutomation.Describe(this.mod, Game1.activeClickableMenu);
+            J.Data["menu"] = MenuAutomation.Describe(this.mod, shop);
+        }
+
+        /// <summary>Close a menu that failed the location check. The caller throws the returned error. A close failure is included, not ignored.</summary>
+        private ActionFailed FailShopMenu(string reason)
+        {
+            var menu = Game1.activeClickableMenu;
+            if (menu != null)
+            {
+                try
+                {
+                    menu.exitThisMenu(false);
+                }
+                catch (Exception ex)
+                {
+                    this.mod.Monitor.Log($"Failed to close menu after a shop location check: {ex}", LogLevel.Warn);
+                    throw new ActionFailed(reason + "; failed to close the menu: " + ex.Message);
+                }
+            }
+            return new ActionFailed(reason);
         }
 
         /// <summary>Pierre's backpack upgrade (a counter question in the game, not a shop item): same effect as GameLocation's "Backpack_Purchase".</summary>
@@ -905,6 +936,10 @@ namespace StardewAutoPilot
         {
             if (Game1.activeClickableMenu is not ShopMenu shop)
                 throw new ActionFailed("no shop is open; use open_shop first");
+            // A menu left open on the wrong map must not spend gold. FishShop did this on Mountain and Beach.
+            string mismatch = ShopLocations.RejectReason(shop.ShopId, Game1.currentLocation?.Name, Game1.currentLocation?.NameOrUniqueName);
+            if (mismatch != null)
+                throw this.FailShopMenu("refusing to buy: " + mismatch);
             if (shop.currency != 0)
                 throw new ActionFailed("this shop doesn't take gold");
             string q = query.ToLowerInvariant();
