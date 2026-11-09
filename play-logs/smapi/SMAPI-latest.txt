@@ -1,821 +1,103 @@
-[18:00:39 INFO  SMAPI] SMAPI 4.5.2 with Stardew Valley 1.6.15 build 24356 on Windows 10 (10.0.20348.0)
-[18:00:39 INFO  SMAPI] Mods go here: F:\steam\steamapps\common\Stardew Valley\Mods
-[18:00:39 TRACE SMAPI] Log started at 2026-11-09T10:00:39 UTC
-[18:00:54 DEBUG SMAPI] Waiting for game to launch...
-[18:00:55 ERROR game] Game.Initialize() caught exception initializing XACT.
-Microsoft.Xna.Framework.Audio.NoAudioHardwareException (0x80004005): OpenAL device could not be initialized, see console output for details.
-   at Microsoft.Xna.Framework.Audio.OpenALSoundController..ctor() in D:\GitlabRunner\builds\Gq5qA5P4\0\ConcernedApe\stardewvalley\MonoGame.Desktop\MonoGame.Framework\Platform\Audio\OpenALSoundController.cs:line 117
-   at Microsoft.Xna.Framework.Audio.OpenALSoundController.EnsureInitialized() in D:\GitlabRunner\builds\Gq5qA5P4\0\ConcernedApe\stardewvalley\MonoGame.Desktop\MonoGame.Framework\Platform\Audio\OpenALSoundController.cs:line 309
-   at Microsoft.Xna.Framework.Audio.SoundEffect.Initialize() in D:\GitlabRunner\builds\Gq5qA5P4\0\ConcernedApe\stardewvalley\MonoGame.Desktop\MonoGame.Framework\Audio\SoundEffect.cs:line 147
-   at Microsoft.Xna.Framework.Audio.SoundEffect..ctor(MiniFormatTag codec, Byte[] buffer, Int32 channels, Int32 sampleRate, Int32 blockAlignment, Int32 loopStart, Int32 loopLength) in D:\GitlabRunner\builds\Gq5qA5P4\0\ConcernedApe\stardewvalley\MonoGame.Desktop\MonoGame.Framework\Audio\SoundEffect.cs:line 104
-   at Microsoft.Xna.Framework.Audio.WaveBank..ctor(AudioEngine audioEngine, String waveBankFilename, Boolean streaming, Int32 offset, Int32 packetsize) in D:\GitlabRunner\builds\Gq5qA5P4\0\ConcernedApe\stardewvalley\MonoGame.Desktop\MonoGame.Framework\Audio\Xact\WaveBank.cs:line 276
-   at StardewValley.Game1.InitializeSounds() in D:\GitlabRunner\builds\Gq5qA5P4\0\ConcernedApe\stardewvalley\Farmer\Farmer\Game1.cs:line 2347
-[18:00:55 TRACE game] Instance_Initialize() finished, elapsed = '00:00:00.3759720'
-[18:00:55 TRACE SMAPI] Scanning for malicious files...
-[18:00:55 DEBUG SMAPI] Loading mod metadata...
-[18:00:56 DEBUG SMAPI] Loading mods...
-[18:00:56 TRACE SMAPI]    Console Commands (from Mods\ConsoleCommands\ConsoleCommands.dll, ID: SMAPI.ConsoleCommands, assembly version: 4.5.2)...
-[18:00:57 TRACE SMAPI]    Save Backup (from Mods\SaveBackup\SaveBackup.dll, ID: SMAPI.SaveBackup, assembly version: 4.5.2)...
-[18:00:57 TRACE SMAPI]       Detected direct console access (System.Console type) in assembly SaveBackup.dll.
-[18:00:57 TRACE SMAPI]    Stardew AutoPilot (from Mods\StardewAutoPilot\StardewAutoPilot.dll, ID: 578287897.StardewAutoPilot, assembly version: 0.2.13)...
-[18:00:57 INFO  SMAPI] Loaded 3 mods:
-[18:00:57 INFO  SMAPI]    Console Commands 4.5.2 by SMAPI | Adds SMAPI console commands that let you manipulate the game.
-[18:00:57 INFO  SMAPI]    Save Backup 4.5.2 by SMAPI | Automatically backs up all your saves once per day into its folder.
-[18:00:57 INFO  SMAPI]    Stardew AutoPilot 0.2.13 by 578287897 | 通过本地 HTTP 接口暴露结构化游戏状态并执行高层动作，供外部 AI 代理自动游玩（不使用图像识别）。
+[19:56:33 INFO  SMAPI] SMAPI 4.5.2 with Stardew Valley 1.6.15 build 24356 on Windows 10 (10.0.20348.0)
+[19:56:33 INFO  SMAPI] Mods go here: F:\steam\steamapps\common\Stardew Valley\Mods
+[19:56:33 TRACE SMAPI] Log started at 2026-11-09T11:56:33 UTC
+[19:56:48 DEBUG SMAPI] Waiting for game to launch...
+[19:56:52 TRACE game] Instance_Initialize() finished, elapsed = '00:00:02.5852996'
+[19:56:52 TRACE SMAPI] Scanning for malicious files...
+[19:56:52 DEBUG SMAPI] Loading mod metadata...
+[19:56:52 DEBUG SMAPI] Loading mods...
+[19:56:53 TRACE SMAPI]    Console Commands (from Mods\ConsoleCommands\ConsoleCommands.dll, ID: SMAPI.ConsoleCommands, assembly version: 4.5.2)...
+[19:56:53 TRACE SMAPI]    Save Backup (from Mods\SaveBackup\SaveBackup.dll, ID: SMAPI.SaveBackup, assembly version: 4.5.2)...
+[19:56:53 TRACE SMAPI]       Detected direct console access (System.Console type) in assembly SaveBackup.dll.
+[19:56:53 TRACE SMAPI]    Stardew AutoPilot (from Mods\StardewAutoPilot\StardewAutoPilot.dll, ID: 578287897.StardewAutoPilot, assembly version: 0.2.13)...
+[19:56:54 INFO  SMAPI] Loaded 3 mods:
+[19:56:54 INFO  SMAPI]    Console Commands 4.5.2 by SMAPI | Adds SMAPI console commands that let you manipulate the game.
+[19:56:54 INFO  SMAPI]    Save Backup 4.5.2 by SMAPI | Automatically backs up all your saves once per day into its folder.
+[19:56:54 INFO  SMAPI]    Stardew AutoPilot 0.2.14 by 578287897 | 通过本地 HTTP 接口暴露结构化游戏状态并执行高层动作，供外部 AI 代理自动游玩（不使用图像识别）。
 
-[18:00:57 TRACE SMAPI]    Direct console access
-[18:00:57 TRACE SMAPI]    --------------------------------------------------
-[18:00:57 TRACE SMAPI]       These mods access the SMAPI console window directly. This is more fragile, and their output may not
-[18:00:57 TRACE SMAPI]       be logged by SMAPI.
+[19:56:55 TRACE SMAPI]    Direct console access
+[19:56:55 TRACE SMAPI]    --------------------------------------------------
+[19:56:55 TRACE SMAPI]       These mods access the SMAPI console window directly. This is more fragile, and their output may not
+[19:56:55 TRACE SMAPI]       be logged by SMAPI.
 
-[18:00:57 TRACE SMAPI]       - Save Backup
+[19:56:55 TRACE SMAPI]       - Save Backup
 
-[18:00:57 DEBUG SMAPI]    No update keys
-[18:00:57 DEBUG SMAPI]    --------------------------------------------------
-[18:00:57 DEBUG SMAPI]       These mods have no update keys in their manifest. SMAPI may not notify you about updates for these
-[18:00:57 DEBUG SMAPI]       mods. Consider notifying the mod authors about this problem.
+[19:56:55 DEBUG SMAPI]    No update keys
+[19:56:55 DEBUG SMAPI]    --------------------------------------------------
+[19:56:55 DEBUG SMAPI]       These mods have no update keys in their manifest. SMAPI may not notify you about updates for these
+[19:56:55 DEBUG SMAPI]       mods. Consider notifying the mod authors about this problem.
 
-[18:00:57 DEBUG SMAPI]       - Stardew AutoPilot
+[19:56:55 DEBUG SMAPI]       - Stardew AutoPilot
 
-[18:00:58 DEBUG SMAPI] Launching mods...
-[18:00:58 TRACE Stardew AutoPilot] Wiki text: 3333 entries from wiki.txt
-[18:00:58 TRACE Save Backup] Backed up to F:\steam\steamapps\common\Stardew Valley\save-backups\2026-11-09 - SMAPI 4.5.2 with Stardew Valley 1.6.15.zip.
-[18:00:58 INFO  Stardew AutoPilot] AutoPilot API listening on http://localhost:8765/
-[18:00:58 INFO  Stardew AutoPilot] 载入存档后按 F8 打开 LLM 网关/Key 设置（仅进档后可用）。
-[18:00:58 DEBUG SMAPI] Mods loaded and ready!
-[18:00:58 TRACE SMAPI] Checking for known software conflicts...
-[18:00:58 TRACE SMAPI]    None found!
-[18:00:58 TRACE SMAPI] Checking for updates...
-[18:01:00 TRACE SMAPI]    SMAPI okay.
-[18:01:00 TRACE SMAPI]    Checking for updates to 1 mods...
-[18:01:00 TRACE game] setGameMode( 'titleScreenGameMode (0)' )
-[18:01:00 TRACE SMAPI]    All mods up to date.
-[18:01:00 TRACE SMAPI] Running on GPU: NVIDIA GeForce GTX 1660 SUPER/PCIe/SSE2
-[18:01:00 TRACE game] Instance_LoadContent() finished, elapsed = '00:00:05.4570880'
-[18:01:01 TRACE game] Steam logged on: True
-[18:01:01 TRACE game] Initializing GalaxySDK
-[18:01:01 TRACE game] Requesting Steam app ticket
-[18:01:02 TRACE SMAPI]    Mod blacklist OK.
-[18:01:02 INFO  SMAPI] Type 'help' for help, or 'help <cmd>' for a command's usage
-[18:01:02 TRACE game] Signing into GalaxySDK
-[18:01:03 TRACE game] Window_ClientSizeChanged(); Window.ClientBounds={X:320 Y:180 Width:1280 Height:720}
-[18:01:04 TRACE game] gameMode was 'titleScreenGameMode (0)', set to 'loadingMode (6)'.
-[18:01:04 TRACE SMAPI] Game loader synchronizing...
-[18:01:05 TRACE game] getLoadEnumerator('AI_453272148')
-[18:01:05 TRACE SMAPI] Synchronizing 'Load_ReadSave' task...
-[18:01:08 TRACE game] Successfully loaded ContentHashes.json containing 3560 file(s);
-[18:01:08 TRACE game] EnsureManifestInitialized() finished, elapsed = '00:00:00.0220613'
-[18:01:16 TRACE SMAPI]    task complete.
-[18:01:16 TRACE SMAPI] Synchronizing 'Load_LoadForNewGame' task...
-[18:01:18 TRACE SMAPI]    task complete.
-[18:01:18 TRACE SMAPI] Synchronizing 'Load_Farmer' task...
-[18:01:18 TRACE SMAPI]    task complete.
-[18:01:18 TRACE SMAPI] Synchronizing 'Load_Locations' task...
-[18:01:20 TRACE SMAPI]    task complete.
-[18:01:20 TRACE game] gameMode was 'loadingMode (6)', set to 'playingGameMode (3)'.
-[18:01:22 TRACE game] getLoadEnumerator() exited, elapsed = '00:00:17.0517621'
-[18:01:22 TRACE game] setGameMode( 'playingGameMode (3)' )
-[18:01:22 TRACE SMAPI] Game loader done.
-[18:01:22 TRACE game] Galaxy auth success
-[18:01:22 TRACE game] Galaxy signed in
-[18:01:22 TRACE game] Galaxy logged on
-[18:01:23 TRACE game] Window_ClientSizeChanged(); Window.ClientBounds={X:320 Y:180 Width:1280 Height:720}
-[18:01:23 TRACE game] Vsync toggled: False
-[18:01:23 TRACE game] Successfully set GOG Galaxy profile name.
-[18:01:23 TRACE SMAPI] Context: loaded save 'AI_453272148', starting spring 8 Y4, locale set to . Single-player.
-[18:01:34 TRACE Stardew AutoPilot] Action: {"type": "check_mail", "request_id": "1856b31d19c341d582a50c3bc18541ed"}
-[18:01:36 TRACE game] Warping to Farm
-[18:01:39 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "de98a170223a445bb759609bcc84b910"}
-[18:01:53 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "6c0be971defb41c18fb04bff4325912d"}
-[18:01:54 TRACE Stardew AutoPilot] Action: {"type": "check_mail", "request_id": "1af3372142144a0fadc8f7793d944612"}
-[18:01:54 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "2a10f979400841d9bd8c13735c22019b"}
-[18:01:54 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "6a840a3959c54257b587e081aa9243d4"}
-[18:01:55 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "73f3951724a544208af1fcdee3dde174"}
-[18:01:55 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "d9e2196ac5e648658bdf4f95588128ef"}
-[18:01:56 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "239d2961eb4b478aa64e3bbae3328151"}
-[18:02:15 TRACE game] Warping to Forest
-[18:02:16 TRACE Stardew AutoPilot] Action: {"type": "forage", "request_id": "bf3f554819b044879af893a0a1221f69"}
-[18:02:58 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "91e23d7a57b94c07939823767eb2c440"}
-[18:03:26 TRACE game] Warping to Farm
-[18:03:47 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Acorn", "x": 23, "y": 9, "request_id": "2aa7432281d04b00b4f4dbdd8f5e312c"}
-[18:03:59 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120, "request_id": "db1473b7e070465a9a2dadb60b377f6d"}
-[18:05:22 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
-[18:05:23 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120, "request_id": "2ae003d2cb394842bab37b19e912583a"}
-[18:06:50 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
-[18:06:50 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120, "request_id": "0e19c6ae649d4c1f999eccf4221b9145"}
-[18:08:18 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
-[18:08:18 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120, "request_id": "24ca4ecf6d4c44b8979f7f04a6fb4009"}
-[18:09:46 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
-[18:09:46 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "c7b6d7c6661044388ab32e38ff118173"}
-[18:09:59 TRACE game] Warping to FarmHouse
-[18:10:04 TRACE SMAPI] Synchronizing 'NewDay' task...
-[18:10:06 TRACE SMAPI]    task complete.
-[18:10:06 TRACE SMAPI] Context: before save.
-[18:10:06 TRACE game] SaveGame.Save() called.
-[18:10:06 TRACE SMAPI] Synchronizing 'Save' task...
-[18:10:06 TRACE game] Saving without compression...
-[18:10:11 TRACE SMAPI]    task complete.
-[18:10:11 TRACE game] SaveGame.Save() completed without exceptions.
-[18:10:12 TRACE SMAPI] Context: after save, starting spring 9 Y4.
-[18:10:18 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "31b04842aa0f456d8a885ebdc800ed8d"}
-[18:10:19 TRACE game] Warping to Farm
-[18:10:21 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "7c56f419639a4410888bc82fc3baf940"}
-[18:10:21 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "a005aae8c2904aa8ac38ac9407a83f23"}
-[18:10:22 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "ceea352ab087452389ab109ac5b92514"}
-[18:10:22 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "076d701ecb684fd3ba34642f77856970"}
-[18:10:40 TRACE game] Warping to Forest
-[18:10:42 TRACE Stardew AutoPilot] Action: {"type": "forage", "request_id": "4c6c2c15df564a49a956d5f75438074d"}
-[18:11:24 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "389aecc6e2ec48dd8647b1e1d0b103ea"}
-[18:11:52 TRACE game] Warping to Farm
-[18:12:13 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Acorn", "x": 23, "y": 9, "request_id": "97eec9eed9b94133826f7536ff0929ef"}
-[18:12:23 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120, "request_id": "76f2d8bbe0254eb1bce2cac947025cdb"}
-[18:13:49 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
-[18:13:49 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120, "request_id": "d7cd1b6b24ed47e3934c8cbfece8506b"}
-[18:15:17 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
-[18:15:17 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120, "request_id": "f3de042fb5ca4e87b3130c7f09b43cf5"}
-[18:16:45 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
-[18:16:45 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120, "request_id": "73e6efc747254e3c8d67c8b7ad818725"}
-[18:18:13 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
-[18:18:13 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120, "request_id": "a6525b3ac2704842922013b34a985490"}
-[18:19:41 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
-[18:19:41 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "4eede1fbd4b24fcd976c3aa7009a8142"}
-[18:19:54 TRACE game] Warping to FarmHouse
-[18:19:59 TRACE SMAPI] Synchronizing 'NewDay' task...
-[18:20:00 TRACE SMAPI]    task complete.
-[18:20:00 TRACE SMAPI] Context: before save.
-[18:20:00 TRACE game] SaveGame.Save() called.
-[18:20:00 TRACE SMAPI] Synchronizing 'Save' task...
-[18:20:00 TRACE game] Saving without compression...
-[18:20:00 TRACE SMAPI]    task complete.
-[18:20:00 TRACE game] SaveGame.Save() completed without exceptions.
-[18:20:01 TRACE SMAPI] Context: after save, starting spring 10 Y4.
-[18:20:02 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "e3e36dcee2a04215804a33dcf3c8dbff"}
-[18:20:03 TRACE game] Warping to Farm
-[18:20:05 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "68a9079142d5429f9bb7af6eca93d59e"}
-[18:20:05 TRACE Stardew AutoPilot] Action: {"type": "store", "items": [], "request_id": "f53b12a28e1f4d2aa68662eaa28effd5"}
-[18:20:11 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops", "request_id": "141e9360d2734443b2513481f85c81fe"}
-[18:20:12 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "135fed7276d849b1890dc1f08fc156dc"}
-[18:20:12 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "56a9b8be74df495bb94f5b2e4995dc97"}
-[18:20:13 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "9d46c84c5d3f46a6bbf1879f1b068090"}
-[18:20:14 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "3be34be84f7b455282cb3b7d3712d1d0"}
-[18:20:14 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "c5762dfe1f84443c90168ae7390a8aef"}
-[18:20:37 TRACE game] Warping to Forest
-[18:20:39 TRACE Stardew AutoPilot] Action: {"type": "forage", "request_id": "b391aeac44d54777aabb01773fe75793"}
-[18:21:24 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "cca13dd6968c4a5584fcd3de1e586617"}
-[18:21:52 TRACE game] Warping to Farm
-[18:22:13 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Acorn", "x": 23, "y": 9, "request_id": "93de5af744984e4d8fb2a475e8a86d9d"}
-[18:22:23 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120, "request_id": "820676563a724c1bba8b4062c52816fb"}
-[18:23:44 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
-[18:23:44 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120, "request_id": "dd0c5e734c394072b76906d2472d1f52"}
-[18:25:12 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
-[18:25:12 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120, "request_id": "81f53052da404760ab8ac39b52a6a0da"}
-[18:26:40 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
-[18:26:40 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120, "request_id": "07565b4a1dfa478fb3a82bd58bd61c6e"}
-[18:28:08 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
-[18:28:08 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120, "request_id": "2b133bbc48174287b4cb3fb727999fba"}
-[18:29:35 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
-[18:29:36 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "5d7c0f9ef9b047009ea0ac90db8048d1"}
-[18:29:49 TRACE game] Warping to FarmHouse
-[18:29:55 TRACE SMAPI] Synchronizing 'NewDay' task...
-[18:29:56 TRACE SMAPI]    task complete.
-[18:29:56 TRACE SMAPI] Context: before save.
-[18:29:56 TRACE game] SaveGame.Save() called.
-[18:29:56 TRACE SMAPI] Synchronizing 'Save' task...
-[18:29:56 TRACE game] Saving without compression...
-[18:29:56 TRACE SMAPI]    task complete.
-[18:29:56 TRACE game] SaveGame.Save() completed without exceptions.
-[18:29:57 TRACE SMAPI] Context: after save, starting spring 11 Y4.
-[18:29:58 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "79d3f2972f0642e7a29adc172402fe44"}
-[18:29:59 TRACE game] Warping to Farm
-[18:30:01 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "140a80b1a390472a98545168a26a99d1"}
-[18:30:01 TRACE Stardew AutoPilot] Action: {"type": "store", "items": [], "request_id": "90e7849464d24c55bf69cb6d6c882c64"}
-[18:30:07 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops", "request_id": "4699ff7cf6d343908710e4f1869ad288"}
-[18:30:08 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "d5541d05d0724c7ab803eb6b386c58f1"}
-[18:30:08 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "880a4a17c30144cab78e9c3037ddc618"}
-[18:30:09 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "ee1940b98ab74734a6059fd90ac49de1"}
-[18:30:09 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "5ec81880f73b4bcfb99019d430c59357"}
-[18:30:10 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "6172548e082a473494cd33b5c0f32e05"}
-[18:30:33 TRACE game] Warping to Forest
-[18:30:34 TRACE Stardew AutoPilot] Action: {"type": "forage", "request_id": "ba774fb65d3c497a8eb155e268f289a9"}
-[18:31:19 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "6eb390f0b1fe45e79e21d3d6e8089e51"}
-[18:31:46 TRACE game] Warping to Farm
-[18:32:07 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Acorn", "x": 23, "y": 9, "request_id": "d5d1702b2a4b4f12a73511a37e119e60"}
-[18:32:18 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "1386453ed6fe4c08a73051a73219c0bf"}
-[18:32:31 TRACE game] Warping to FarmHouse
-[18:32:36 TRACE SMAPI] Synchronizing 'NewDay' task...
-[18:32:36 TRACE SMAPI]    task complete.
-[18:32:37 TRACE SMAPI] Context: before save.
-[18:32:37 TRACE game] SaveGame.Save() called.
-[18:32:37 TRACE SMAPI] Synchronizing 'Save' task...
-[18:32:37 TRACE game] Saving without compression...
-[18:32:37 TRACE SMAPI]    task complete.
-[18:32:37 TRACE game] SaveGame.Save() completed without exceptions.
-[18:32:38 TRACE SMAPI] Context: after save, starting spring 12 Y4.
-[18:32:38 TRACE Stardew AutoPilot] Action: {"type": "check_mail", "request_id": "e7a3b0eda73c463ba3be793dc00c9f4d"}
-[18:32:40 TRACE game] Warping to Farm
-[18:32:43 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "3bf5aef29f0a447ca4cbaff773026934"}
-[18:32:44 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "9eaf968a182d4774afdffa6d54a80d27"}
-[18:32:44 TRACE Stardew AutoPilot] Action: {"type": "store", "items": [], "request_id": "0303454163a84dcd9121b350cef2f219"}
-[18:32:49 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops", "request_id": "db70c36244434a28869247c63513bd8e"}
-[18:32:49 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "7cdbe82853be454695c1de46afd43001"}
-[18:32:49 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "8324a35c88a4429492d22d7fc3fe8683"}
-[18:32:50 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "e148a2d38038477d948fe7bb155fbc23"}
-[18:32:51 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "3ef4fa3f5b7a4aa8859e5a6f3dff63e6"}
-[18:32:51 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "ad85b5efd6834cada0bf98408b759821"}
-[18:33:14 TRACE game] Warping to Forest
-[18:33:16 TRACE Stardew AutoPilot] Action: {"type": "forage", "request_id": "aee28b5d677743fa852f67b1bce400d7"}
-[18:34:00 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "e14ec53600734d24ac3abf966daf7882"}
-[18:34:28 TRACE game] Warping to Farm
-[18:34:49 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Acorn", "x": 23, "y": 9, "request_id": "fcabb2caedfe4e49876d698b0ae0588e"}
-[18:34:59 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "f8f9f8e862154c488486acbf343a698e"}
-[18:35:12 TRACE game] Warping to FarmHouse
-[18:35:18 TRACE SMAPI] Synchronizing 'NewDay' task...
-[18:35:19 TRACE SMAPI]    task complete.
-[18:35:19 TRACE SMAPI] Context: before save.
-[18:35:19 TRACE game] SaveGame.Save() called.
-[18:35:19 TRACE SMAPI] Synchronizing 'Save' task...
-[18:35:19 TRACE game] Saving without compression...
-[18:35:19 TRACE SMAPI]    task complete.
-[18:35:19 TRACE game] SaveGame.Save() completed without exceptions.
-[18:35:21 TRACE SMAPI] Context: after save, starting spring 13 Y4.
-[18:35:21 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "6be3d5c443f84deca74325a4fc74e68a"}
-[18:35:23 TRACE game] Warping to Farm
-[18:35:24 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "29a5991331b14da1a937c6f640bef90b"}
-[18:35:25 TRACE Stardew AutoPilot] Action: {"type": "store", "items": [], "request_id": "fe62e372c62240b3a94a00fda72759fb"}
-[18:35:31 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops", "request_id": "5c058f53ae0a4e90bc623e21fd1f9788"}
-[18:35:31 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "17bbef2c05564701aec5360551654dd5"}
-[18:35:31 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "43b549a4b0744aafacc30d362496a1ce"}
-[18:35:32 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Town", "request_id": "1f5da1cc214746208bea30fc7796f49e"}
-[18:35:33 TRACE game] Warping to BusStop
-[18:35:47 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "ee15b03d15614bca9efd2196494db765"}
-[18:35:47 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "b98c46b69a7f4596bd12d253c5b84bb6"}
-[18:36:00 TRACE game] Warping to Farm
-[18:36:23 TRACE game] Warping to Forest
-[18:36:24 TRACE Stardew AutoPilot] Action: {"type": "forage", "request_id": "1eef5bbeba2c46f4ba286e91ece5a2ae"}
-[18:37:06 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "fcad1e08b881445cbf11485a4b4211d0"}
-[18:37:30 TRACE game] Warping to Farm
-[18:37:51 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Acorn", "x": 23, "y": 9, "request_id": "63844d7329e34e2f8ce36c12a00e448c"}
-[18:38:03 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "632d8b905a67444eaaab1b5dbf7b27ac"}
-[18:38:16 TRACE game] Warping to FarmHouse
-[18:38:22 TRACE SMAPI] Synchronizing 'NewDay' task...
-[18:38:22 TRACE SMAPI]    task complete.
-[18:38:22 TRACE SMAPI] Context: before save.
-[18:38:22 TRACE game] SaveGame.Save() called.
-[18:38:22 TRACE SMAPI] Synchronizing 'Save' task...
-[18:38:22 TRACE game] Saving without compression...
-[18:38:23 TRACE SMAPI]    task complete.
-[18:38:23 TRACE game] SaveGame.Save() completed without exceptions.
-[18:38:24 TRACE SMAPI] Context: after save, starting spring 14 Y4.
-[18:38:24 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "63f0d3143f2148eb94dd63ffce467a51"}
-[18:38:26 TRACE game] Warping to Farm
-[18:38:28 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "8de66ebfc7834951ae6d2bfe72bd0176"}
-[18:38:28 TRACE Stardew AutoPilot] Action: {"type": "store", "items": [], "request_id": "3ea441bfca494ac98871fb52e4bf7a57"}
-[18:38:34 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops", "request_id": "eb8b1806fd14468ab2fc26da163724bb"}
-[18:38:34 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "7f3a5959402e4c3885cd4883d2140605"}
-[18:38:34 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "2c6d93cbc17049878fff0c363a40a73f"}
-[18:38:36 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "68be7b73b1114120b7eedc509a7b942a"}
-[18:38:36 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "49c7bf9b7b89467481b8e00748f68e41"}
-[18:38:37 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "8a149e568e70415c9acd7de7887be189"}
-[18:39:00 TRACE game] Warping to Forest
-[18:39:01 TRACE Stardew AutoPilot] Action: {"type": "forage", "request_id": "cf40faa780d744a5a3a59766aaba22b6"}
-[18:40:11 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
-[18:40:11 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "92c8ee4811b44c6fa06d26f034229818"}
-[18:40:37 TRACE game] Warping to Farm
-[18:40:58 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Acorn", "x": 23, "y": 9, "request_id": "582e51ea73d14c67ba503d35f34df516"}
-[18:41:09 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "603d65ef406d4ee99f91573a01bdd2a6"}
-[18:41:22 TRACE game] Warping to FarmHouse
-[18:41:28 TRACE SMAPI] Synchronizing 'NewDay' task...
-[18:41:29 TRACE SMAPI]    task complete.
-[18:41:29 TRACE SMAPI] Context: before save.
-[18:41:29 TRACE game] SaveGame.Save() called.
-[18:41:29 TRACE SMAPI] Synchronizing 'Save' task...
-[18:41:29 TRACE game] Saving without compression...
-[18:41:29 TRACE SMAPI]    task complete.
-[18:41:29 TRACE game] SaveGame.Save() completed without exceptions.
-[18:41:30 TRACE SMAPI] Context: after save, starting spring 15 Y4.
-[18:41:31 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "40677e2ae45b4cf5b405839b6cdb8deb"}
-[18:41:32 TRACE game] Warping to Farm
-[18:41:34 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "386ab0f2b45844a5b3d6903ecdddb56f"}
-[18:41:34 TRACE Stardew AutoPilot] Action: {"type": "store", "items": [], "request_id": "92c15a16e97d4068be459f49db033d23"}
-[18:41:40 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops", "request_id": "ba9788d9ad8647db8c93fc1c63754bd9"}
-[18:41:40 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "0bef4d1d98944db8a7e6434165973e15"}
-[18:41:41 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "f911633febbb4820b47c6b17bbe94358"}
-[18:41:42 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "8722391ff6a24e70bf87497709e37213"}
-[18:41:42 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "c5fc8eb6c6fb41bab611491e8d754b7f"}
-[18:41:42 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "bc62081eef424a9e8a9ee779386ea275"}
-[18:42:05 TRACE game] Warping to Forest
-[18:42:07 TRACE Stardew AutoPilot] Action: {"type": "forage", "request_id": "9f8865da93f54f17a4cf88456c7cb762"}
-[18:43:05 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "dc997524493049e494b8a49ffcbab390"}
-[18:43:31 TRACE game] Warping to Farm
-[18:43:52 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Acorn", "x": 23, "y": 9, "request_id": "7b084e620d654273bb4dfcdc26ac9eca"}
-[18:44:04 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "51e60b8544c840d4b5e5d5290123fa4e"}
-[18:44:17 TRACE game] Warping to FarmHouse
-[18:44:22 TRACE SMAPI] Synchronizing 'NewDay' task...
-[18:44:23 TRACE SMAPI]    task complete.
-[18:44:23 TRACE SMAPI] Context: before save.
-[18:44:23 TRACE game] SaveGame.Save() called.
-[18:44:23 TRACE SMAPI] Synchronizing 'Save' task...
-[18:44:23 TRACE game] Saving without compression...
-[18:44:23 TRACE SMAPI]    task complete.
-[18:44:23 TRACE game] SaveGame.Save() completed without exceptions.
-[18:44:24 TRACE SMAPI] Context: after save, starting spring 16 Y4.
-[18:44:25 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "21076026eb1246c2a12daed280d8efe6"}
-[18:44:26 TRACE game] Warping to Farm
-[18:44:28 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "291d710c481841e9b0f9d4ae677fdd19"}
-[18:44:28 TRACE Stardew AutoPilot] Action: {"type": "store", "items": [], "request_id": "3a8d0f177dc14889800a6f58d76bf8ba"}
-[18:44:34 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops", "request_id": "cfd103444b754b70a563cb20c4d64b84"}
-[18:44:34 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "a2dddb53c8484657a322dd3192776da6"}
-[18:44:35 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "5aa39fb5dec2433783ae2ec7399f4af4"}
-[18:44:43 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "df5f821e8cf248bbbd8ad3773f6462b1"}
-[18:44:43 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "5759149f766e4e349984251c9f918a40"}
-[18:44:44 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "9b4541d12045496d9ec6c6c820f49f5e"}
-[18:45:07 TRACE game] Warping to Forest
-[18:45:08 TRACE Stardew AutoPilot] Action: {"type": "forage", "request_id": "2a89afe0df2a4212ae3d0518f653573b"}
-[18:46:16 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
-[18:46:17 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "f1df89846eaa4d26bf8596a74338b6db"}
-[18:46:43 TRACE game] Warping to Farm
-[18:47:04 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Acorn", "x": 23, "y": 9, "request_id": "35f5955c0f554c899602407873a241b8"}
-[18:47:14 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "8660b1fcfb344f9288b53a0d2c66bdd9"}
-[18:47:27 TRACE game] Warping to FarmHouse
-[18:47:32 TRACE SMAPI] Synchronizing 'NewDay' task...
-[18:47:33 TRACE SMAPI]    task complete.
-[18:47:33 TRACE SMAPI] Context: before save.
-[18:47:33 TRACE game] SaveGame.Save() called.
-[18:47:33 TRACE SMAPI] Synchronizing 'Save' task...
-[18:47:33 TRACE game] Saving without compression...
-[18:47:33 TRACE SMAPI]    task complete.
-[18:47:33 TRACE game] SaveGame.Save() completed without exceptions.
-[18:47:34 TRACE SMAPI] Context: after save, starting spring 17 Y4.
-[18:47:35 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "aaf794e02ac54f3aaba90901c5137e33"}
-[18:47:36 TRACE game] Warping to Farm
-[18:47:38 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "fd19b39db97e4d079c71f5e457b5c80d"}
-[18:47:38 TRACE Stardew AutoPilot] Action: {"type": "store", "items": [], "request_id": "e197c179bdff4f27856ee00f06b12bc3"}
-[18:47:44 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops", "request_id": "04f7cb101c94470ca7f265590f2ba18f"}
-[18:47:45 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "0a1a2a64054d4802a695c858e7a90486"}
-[18:47:45 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "69cacd131848409ca37d20530685c301"}
-[18:47:46 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "4427ca332e114bb5bf270247d4d58f53"}
-[18:47:46 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "57f9e8c44455451eb6fb53671c7dcfb1"}
-[18:47:47 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "4c4e283ce40140e0a389d557c5363ccd"}
-[18:48:10 TRACE game] Warping to Forest
-[18:48:11 TRACE Stardew AutoPilot] Action: {"type": "forage", "request_id": "bdac5fc32deb4a27ae071e9ad0a1f838"}
-[18:49:09 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "3da88f0e498e468b845ee6d3ead1f862"}
-[18:49:35 TRACE game] Warping to Farm
-[18:49:56 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Acorn", "x": 23, "y": 9, "request_id": "5f39ef62703a4ac4ac2a1bfd257ddc48"}
-[18:50:06 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "7ace88b22b984259a90e949afc018292"}
-[18:50:19 TRACE game] Warping to FarmHouse
-[18:50:25 TRACE SMAPI] Synchronizing 'NewDay' task...
-[18:50:25 TRACE SMAPI]    task complete.
-[18:50:25 TRACE SMAPI] Context: before save.
-[18:50:25 TRACE game] SaveGame.Save() called.
-[18:50:25 TRACE SMAPI] Synchronizing 'Save' task...
-[18:50:25 TRACE game] Saving without compression...
-[18:50:26 TRACE SMAPI]    task complete.
-[18:50:26 TRACE game] SaveGame.Save() completed without exceptions.
-[18:50:27 TRACE SMAPI] Context: after save, starting spring 18 Y4.
-[18:50:27 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "4b201e7fd6a34d2d9aa9225d0e5d0280"}
-[18:50:29 TRACE game] Warping to Farm
-[18:50:31 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "5abe1c2bef29476e850304d2e24ce1c5"}
-[18:50:31 TRACE Stardew AutoPilot] Action: {"type": "store", "items": [], "request_id": "a3a0917362e14ea98c17e14dbe64e40d"}
-[18:50:37 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops", "request_id": "17f5deea30ce49b4a25742fc8959cb55"}
-[18:50:37 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "0815babcad584adea3999c29cc8936a2"}
-[18:50:37 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "4b51522ba3804145b6568baef1dc8aec"}
-[18:50:46 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "d01868705d884208bcda4befdd7cd77a"}
-[18:50:46 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "58f6f2faa70042819959a91b8a1b8138"}
-[18:50:46 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "e1fda4e7c80c4acb8b82f14e7e32daa7"}
-[18:51:09 TRACE game] Warping to Forest
-[18:51:11 TRACE Stardew AutoPilot] Action: {"type": "forage", "request_id": "16e84f5e786a4f55bd4bfa15522b2cd7"}
-[18:51:43 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "bedc75df7c3945a2bfa2aeef77f932b0"}
-[18:52:11 TRACE game] Warping to Farm
-[18:52:32 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Acorn", "x": 23, "y": 9, "request_id": "9b8eb59b996947ce929b4fbeebf68886"}
-[18:52:42 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "eaacc28c315041f9b28c0c6b2249e2f3"}
-[18:52:55 TRACE game] Warping to FarmHouse
-[18:53:00 TRACE SMAPI] Synchronizing 'NewDay' task...
-[18:53:01 TRACE SMAPI]    task complete.
-[18:53:01 TRACE SMAPI] Context: before save.
-[18:53:01 TRACE game] SaveGame.Save() called.
-[18:53:01 TRACE SMAPI] Synchronizing 'Save' task...
-[18:53:01 TRACE game] Saving without compression...
-[18:53:01 TRACE SMAPI]    task complete.
-[18:53:01 TRACE game] SaveGame.Save() completed without exceptions.
-[18:53:03 TRACE SMAPI] Context: after save, starting spring 19 Y4.
-[18:53:03 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "ba7c08204bed4861a140f771d8e0056b"}
-[18:53:05 TRACE game] Warping to Farm
-[18:53:06 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "7bb2f5e481a44796a890dcf272456515"}
-[18:53:07 TRACE Stardew AutoPilot] Action: {"type": "store", "items": [], "request_id": "b91a35e6a61544e7be848cdf5a533b90"}
-[18:53:13 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops", "request_id": "ed1c0570a294449f8f57403dab782cc6"}
-[18:53:13 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "89cb5c2f196d4cba8d4898ca4cad4c57"}
-[18:53:13 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "832b8439c4bf429e9ce20d87b02c932b"}
-[18:53:14 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "d4c2a0f8bb5842d291009754071c2bb9"}
-[18:53:15 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "0df37ded298744a88cb5deb8a47d1059"}
-[18:53:15 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "c64c2d3bd833457387fc28e6413b3a06"}
-[18:53:38 TRACE game] Warping to Forest
-[18:53:40 TRACE Stardew AutoPilot] Action: {"type": "forage", "request_id": "c18b94d7105d4374a2550b5213645499"}
-[18:54:12 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "5b4e4ced61d64f70ae7d4e9a44ca7bd7"}
-[18:54:39 TRACE game] Warping to Farm
-[18:55:00 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Acorn", "x": 23, "y": 9, "request_id": "df7c62211c3947838f28db8c60d32a72"}
-[18:55:10 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "050c4bb5bab84ec1aced0e59d49a15ca"}
-[18:55:23 TRACE game] Warping to FarmHouse
-[18:55:29 TRACE SMAPI] Synchronizing 'NewDay' task...
-[18:55:30 TRACE SMAPI]    task complete.
-[18:55:30 TRACE SMAPI] Context: before save.
-[18:55:30 TRACE game] SaveGame.Save() called.
-[18:55:30 TRACE SMAPI] Synchronizing 'Save' task...
-[18:55:30 TRACE game] Saving without compression...
-[18:55:30 TRACE SMAPI]    task complete.
-[18:55:30 TRACE game] SaveGame.Save() completed without exceptions.
-[18:55:31 TRACE SMAPI] Context: after save, starting spring 20 Y4.
-[18:55:32 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "5da8491cec1d4e88b09060104a095d02"}
-[18:55:33 TRACE game] Warping to Farm
-[18:55:35 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "767fe2d8bc7b48008f539333481b81a9"}
-[18:55:35 TRACE Stardew AutoPilot] Action: {"type": "store", "items": [], "request_id": "5aab4158b70342f18f46b53d35ffe682"}
-[18:55:41 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops", "request_id": "c82ee5fd30fc4633bba04edaa222540e"}
-[18:55:42 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "36fbe57b547b4fcfa40acd0bb7c35a28"}
-[18:55:42 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "b0d013490b8841a385e8c1de2062faa5"}
-[18:55:43 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "e3ae9bf2f6e04857aa64ccaf25db86bd"}
-[18:55:43 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "32ad62d1a5544e9cbb9bac3665235a5a"}
-[18:55:44 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "a580723f1e55497bb60612d694be3061"}
-[18:56:07 TRACE game] Warping to Forest
-[18:56:08 TRACE Stardew AutoPilot] Action: {"type": "forage", "request_id": "28afd3ee3dcb41c1aed71a1edfa6c9a8"}
-[18:56:19 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "821aee5c0f954364980c0746f2cebe35"}
-[18:56:29 TRACE game] Warping to Farm
-[18:56:50 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Acorn", "x": 23, "y": 9, "request_id": "72d2250fc4a64d29b812841995972910"}
-[18:57:00 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "1acb594863054fcc834b16e2bfab6281"}
-[18:57:13 TRACE game] Warping to FarmHouse
-[18:57:19 TRACE SMAPI] Synchronizing 'NewDay' task...
-[18:57:19 TRACE SMAPI]    task complete.
-[18:57:19 TRACE SMAPI] Context: before save.
-[18:57:19 TRACE game] SaveGame.Save() called.
-[18:57:19 TRACE SMAPI] Synchronizing 'Save' task...
-[18:57:19 TRACE game] Saving without compression...
-[18:57:20 TRACE SMAPI]    task complete.
-[18:57:20 TRACE game] SaveGame.Save() completed without exceptions.
-[18:57:21 TRACE SMAPI] Context: after save, starting spring 21 Y4.
-[18:57:21 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "ea23590e59c54d37a5f9462045ce9f38"}
-[18:57:23 TRACE game] Warping to Farm
-[18:57:25 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "716d0528710d444d8358ebbd519d838d"}
-[18:57:25 TRACE Stardew AutoPilot] Action: {"type": "store", "items": [], "request_id": "40262a8038ce47ddb8db2f467dc19e1b"}
-[18:57:31 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops", "request_id": "11bd7e8d3b024df0bcbcd6b7edb307fd"}
-[18:57:31 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "a875d1e996084ef1a0bdfbfa77a089eb"}
-[18:57:31 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "9f4db4e900c2436c9d3e53aace7b0615"}
-[18:57:33 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "bc09de476c614a8a941dd0888b3f5ecd"}
-[18:57:33 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "7df74035f51b4589906128bbf294f48b"}
-[18:57:33 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "58d828b078974c37abeb8c19fb3324ce"}
-[18:57:57 TRACE game] Warping to Forest
-[18:57:58 TRACE Stardew AutoPilot] Action: {"type": "forage", "request_id": "7ea124a551f24e8ea46008a5572d333d"}
-[18:58:54 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "70fbee24ff0d40409d768e399d75df23"}
-[18:59:15 TRACE game] Warping to Farm
-[18:59:36 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Acorn", "x": 23, "y": 9, "request_id": "d44d38f4c7974669810223cc717aa595"}
-[18:59:50 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "6efcbc7924964052a7a830b55956ba40"}
-[19:00:02 TRACE game] Warping to FarmHouse
-[19:00:07 TRACE SMAPI] Synchronizing 'NewDay' task...
-[19:00:08 TRACE SMAPI]    task complete.
-[19:00:08 TRACE SMAPI] Context: before save.
-[19:00:08 TRACE game] SaveGame.Save() called.
-[19:00:08 TRACE SMAPI] Synchronizing 'Save' task...
-[19:00:08 TRACE game] Saving without compression...
-[19:00:09 TRACE SMAPI]    task complete.
-[19:00:09 TRACE game] SaveGame.Save() completed without exceptions.
-[19:00:10 TRACE SMAPI] Context: after save, starting spring 22 Y4.
-[19:00:10 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "928c9f39242942ee90a66b7c2592695a"}
-[19:00:12 TRACE game] Warping to Farm
-[19:00:13 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "c7ec9cc0b9a548f1bc5863224ab81474"}
-[19:00:14 TRACE Stardew AutoPilot] Action: {"type": "store", "items": [], "request_id": "7232d62fc4894d9b9e1839d503c27f4c"}
-[19:00:20 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops", "request_id": "347614590e244e6189efe9a33fb5ea07"}
-[19:00:20 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "d674d798424a4a36ad735caab82366ef"}
-[19:00:20 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "babf30eda9e84ee789311cdbd5586f60"}
-[19:00:22 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "3b675ddff4ca422294788529baab72d9"}
-[19:00:22 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "5c68dc6f00e54639a996812274a7d4eb"}
-[19:00:22 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "74d8a1dbe93d49cda00b9675261fcde7"}
-[19:00:45 TRACE game] Warping to Forest
-[19:00:47 TRACE Stardew AutoPilot] Action: {"type": "forage", "request_id": "c78b5927450140439fd9a600de2a9292"}
-[19:01:35 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "4d619426339a41fe82d1afbeb3466e60"}
-[19:02:05 TRACE game] Warping to Farm
-[19:02:27 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Acorn", "x": 23, "y": 9, "request_id": "ca4f82994c5748a584ddafc2edd7a402"}
-[19:02:37 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "99b7146a4acd41c9ae25c914dc2b13d4"}
-[19:02:50 TRACE game] Warping to FarmHouse
-[19:02:56 TRACE SMAPI] Synchronizing 'NewDay' task...
-[19:02:56 TRACE SMAPI]    task complete.
-[19:02:56 TRACE SMAPI] Context: before save.
-[19:02:56 TRACE game] SaveGame.Save() called.
-[19:02:56 TRACE SMAPI] Synchronizing 'Save' task...
-[19:02:56 TRACE game] Saving without compression...
-[19:02:57 TRACE SMAPI]    task complete.
-[19:02:57 TRACE game] SaveGame.Save() completed without exceptions.
-[19:02:58 TRACE SMAPI] Context: after save, starting spring 23 Y4.
-[19:02:58 TRACE Stardew AutoPilot] Action: {"type": "check_mail", "request_id": "e333e057c1b04ebfa879122949f30102"}
-[19:03:00 TRACE game] Warping to Farm
-[19:03:03 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "bd79d3924a2e4a3d927ad37b003049ae"}
-[19:03:04 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "b398a99358344cac8c328fabd3cde2f1"}
-[19:03:04 TRACE Stardew AutoPilot] Action: {"type": "store", "items": [], "request_id": "1b78c5779c294461b81ea47a2a22cf5e"}
-[19:03:09 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops", "request_id": "4819cd478e0e4863889096d2c5ea1091"}
-[19:03:09 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "7674bb5f6c1e47f49ff8f7f263723152"}
-[19:03:09 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "e31706e2731b4840b8ea826174714d2e"}
-[19:03:11 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "2f5f250416ec4633ab7eb09e75028aef"}
-[19:03:11 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "5e0059bd35954c599a0f8cae5397d165"}
-[19:03:11 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "45e8b5ec270043698674aef3e0fd744a"}
-[19:03:34 TRACE game] Warping to Forest
-[19:03:36 TRACE Stardew AutoPilot] Action: {"type": "forage", "request_id": "aee0c1afad304a8290d5c329d37d47e9"}
-[19:04:21 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "f4b881d409ac441eafefb4e75a2c7b71"}
-[19:04:51 TRACE game] Warping to Farm
-[19:05:12 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Acorn", "x": 23, "y": 9, "request_id": "46be3af9e5a84eb18c54b98d2d7ed84d"}
-[19:05:22 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "6034abcf62444b8e95d2c4b7e7d3806c"}
-[19:05:35 TRACE game] Warping to FarmHouse
-[19:05:40 TRACE SMAPI] Synchronizing 'NewDay' task...
-[19:05:41 TRACE SMAPI]    task complete.
-[19:05:41 TRACE SMAPI] Context: before save.
-[19:05:41 TRACE game] SaveGame.Save() called.
-[19:05:41 TRACE SMAPI] Synchronizing 'Save' task...
-[19:05:41 TRACE game] Saving without compression...
-[19:05:41 TRACE SMAPI]    task complete.
-[19:05:41 TRACE game] SaveGame.Save() completed without exceptions.
-[19:05:43 TRACE SMAPI] Context: after save, starting spring 24 Y4.
-[19:05:43 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "4534de4697eb4170a2c1b4e21e1bdd8b"}
-[19:05:45 TRACE game] Warping to Farm
-[19:05:46 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "06f5c691d35e438595c034a096c1b638"}
-[19:05:47 TRACE Stardew AutoPilot] Action: {"type": "store", "items": [], "request_id": "277d076f8d954ad8816134cc128046fe"}
-[19:05:53 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops", "request_id": "3a5d6edda78244689173a3595bf2c176"}
-[19:05:53 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "e968d76a8c2e4cebbba1868603ea406b"}
-[19:05:53 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "7387a38602ec4f1db78d2a0655b15449"}
-[19:05:54 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "522b7e77e2c442d0868dc41a252a613d"}
-[19:06:23 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "8d3f552461324f05b7a22f8e4c49bb37"}
-[19:06:23 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "97095823fb2845a184d2ffe622a85026"}
-[19:06:29 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "15cd05599c1743afa08cf9b66b198f7a"}
-[19:06:48 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Acorn", "x": 23, "y": 9, "request_id": "f3d06ff19d2b4947908afaff641d25a3"}
-[19:07:02 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "0ca3ea45b20948219017488f4a086105"}
-[19:07:14 TRACE game] Warping to FarmHouse
-[19:07:20 TRACE SMAPI] Synchronizing 'NewDay' task...
-[19:07:20 TRACE SMAPI]    task complete.
-[19:07:20 TRACE SMAPI] Context: before save.
-[19:07:20 TRACE game] SaveGame.Save() called.
-[19:07:20 TRACE SMAPI] Synchronizing 'Save' task...
-[19:07:20 TRACE game] Saving without compression...
-[19:07:21 TRACE SMAPI]    task complete.
-[19:07:21 TRACE game] SaveGame.Save() completed without exceptions.
-[19:07:22 TRACE SMAPI] Context: after save, starting spring 25 Y4.
-[19:07:22 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "e5c3907964dc4f52aadc8dbddcc7fe7e"}
-[19:07:24 TRACE game] Warping to Farm
-[19:07:26 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "0f595610d0b04f7281574d8d6b9d7cc8"}
-[19:07:26 TRACE Stardew AutoPilot] Action: {"type": "store", "items": [], "request_id": "3e6c2437eaea4fcdae9c620fdbd97e2f"}
-[19:07:32 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops", "request_id": "7bc81b60de934a2faca961c8c166fa47"}
-[19:07:32 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "46dac377fe2e48469b1d6fe977041ac9"}
-[19:07:33 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "56ca482db7c2450ab502091894c6463c"}
-[19:07:34 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "517b07134e1d4d26b759a2d1ca1e6af1"}
-[19:07:34 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "ee6962161a9c41f98d6518ca28220d8d"}
-[19:07:35 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "35e12e4e7f9d4c50a0dc16729c8500aa"}
-[19:07:58 TRACE game] Warping to Forest
-[19:07:59 TRACE Stardew AutoPilot] Action: {"type": "forage", "request_id": "4b9d827ea374416abe2a3fb845769072"}
-[19:08:44 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "725b6e8f5bec4ac5bd681f226195ad80"}
-[19:09:14 TRACE game] Warping to Farm
-[19:09:35 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Acorn", "x": 23, "y": 9, "request_id": "cb83add19c14414f964d1ae7488401a0"}
-[19:09:45 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "f1f9138d014e4129835e4088f222791a"}
-[19:09:58 TRACE game] Warping to FarmHouse
-[19:10:04 TRACE SMAPI] Synchronizing 'NewDay' task...
-[19:10:05 TRACE SMAPI]    task complete.
-[19:10:05 TRACE SMAPI] Context: before save.
-[19:10:05 TRACE game] SaveGame.Save() called.
-[19:10:05 TRACE SMAPI] Synchronizing 'Save' task...
-[19:10:05 TRACE game] Saving without compression...
-[19:10:05 TRACE SMAPI]    task complete.
-[19:10:05 TRACE game] SaveGame.Save() completed without exceptions.
-[19:10:06 TRACE SMAPI] Context: after save, starting spring 26 Y4.
-[19:10:07 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "8ec6b52e8c1b4a568eaf756fa86e4a68"}
-[19:10:08 TRACE game] Warping to Farm
-[19:10:10 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "d0c29d751e134a37a725a676c31ff477"}
-[19:10:10 TRACE Stardew AutoPilot] Action: {"type": "store", "items": [], "request_id": "d88486e51de846b88f029640f9f3441e"}
-[19:10:16 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops", "request_id": "ccdbcaf0e0ed4a4e891b7589c127bb13"}
-[19:10:16 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "58913552946d45619fe7e972516c8748"}
-[19:10:17 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "cffe7bb782e24a4c80cd8645605969f0"}
-[19:10:18 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "1803460da05c4e12a62332938f497aa2"}
-[19:10:18 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "2000dcefc3d24959a005bb4ff76f43dc"}
-[19:10:19 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "7e245743d8d84b288dc1f56cf85aae28"}
-[19:10:42 TRACE game] Warping to Forest
-[19:10:43 TRACE Stardew AutoPilot] Action: {"type": "forage", "request_id": "f0499f8852bb49b0a4f85c622e09cc96"}
-[19:11:28 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "740776a9a64a4ff7b7c66236c90c8f3a"}
-[19:11:58 TRACE game] Warping to Farm
-[19:12:19 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Acorn", "x": 23, "y": 9, "request_id": "d9c75d8c4fad42f18187d095af4f72cb"}
-[19:12:29 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "a2ae332a5dae445ca91bd953745181fd"}
-[19:12:42 TRACE game] Warping to FarmHouse
-[19:12:48 TRACE SMAPI] Synchronizing 'NewDay' task...
-[19:12:49 TRACE SMAPI]    task complete.
-[19:12:49 TRACE SMAPI] Context: before save.
-[19:12:49 TRACE game] SaveGame.Save() called.
-[19:12:49 TRACE SMAPI] Synchronizing 'Save' task...
-[19:12:49 TRACE game] Saving without compression...
-[19:12:49 TRACE SMAPI]    task complete.
-[19:12:49 TRACE game] SaveGame.Save() completed without exceptions.
-[19:12:50 TRACE SMAPI] Context: after save, starting spring 27 Y4.
-[19:12:51 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "d6d461bb17e940af82b95fc81e08ea19"}
-[19:12:52 TRACE game] Warping to Farm
-[19:12:54 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "5f5cb67a10c24d2184154901127b9121"}
-[19:12:54 TRACE Stardew AutoPilot] Action: {"type": "store", "items": [], "request_id": "2469c6a9f76d499e825b434b0a2b2a0e"}
-[19:13:00 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops", "request_id": "402ab5ff735f46c18f252fa1b52053b2"}
-[19:13:01 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "ce622349880d41b9a2e2b4cb4df955a3"}
-[19:13:01 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "bcadce1449554c499a82572ef97a72bc"}
-[19:13:02 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "07f32463b92a477286f22b2a108ed03c"}
-[19:13:03 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "64a48fe12af54be389b789e7edac810f"}
-[19:13:03 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "ed168758c651429f919ef0c4ae5ab0b7"}
-[19:13:26 TRACE game] Warping to Forest
-[19:13:28 TRACE Stardew AutoPilot] Action: {"type": "forage", "request_id": "334613120e05415db2a223d8079401be"}
-[19:14:10 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "84ba540a149b488694ee8e420f0df45a"}
-[19:14:38 TRACE game] Warping to Farm
-[19:14:59 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Acorn", "x": 23, "y": 9, "request_id": "853e7399f7ee4c1087aa24787e83b707"}
-[19:15:09 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "5e87ae759ba3402c9a0a3d35a4629e39"}
-[19:15:22 TRACE game] Warping to FarmHouse
-[19:15:27 TRACE SMAPI] Synchronizing 'NewDay' task...
-[19:15:28 TRACE SMAPI]    task complete.
-[19:15:28 TRACE SMAPI] Context: before save.
-[19:15:28 TRACE game] SaveGame.Save() called.
-[19:15:28 TRACE SMAPI] Synchronizing 'Save' task...
-[19:15:28 TRACE game] Saving without compression...
-[19:15:28 TRACE SMAPI]    task complete.
-[19:15:28 TRACE game] SaveGame.Save() completed without exceptions.
-[19:15:30 TRACE SMAPI] Context: after save, starting spring 28 Y4.
-[19:15:30 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "cff0a78e56ce418e984823fc086cfb40"}
-[19:15:32 TRACE game] Warping to Farm
-[19:15:33 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "f427f276078b4f34982a67dbd28dcf3a"}
-[19:15:34 TRACE Stardew AutoPilot] Action: {"type": "store", "items": [], "request_id": "df51b613ccd94611abcbde20e40d848c"}
-[19:15:40 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops", "request_id": "352d93a02ae04e719e5b2134d476bef3"}
-[19:15:40 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "a85b704d25d54b01bb03e52e24213607"}
-[19:15:40 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "75d814329e314d43a28fb9a799dd0dcb"}
-[19:15:41 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "9df8ad3fb2cf423090d507b903a8b284"}
-[19:15:42 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "52d253f377d94eed83b74959c7c85acd"}
-[19:15:42 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "b7c9c3fd84344b30a0f46436f7a6dcd4"}
-[19:16:05 TRACE game] Warping to Forest
-[19:16:07 TRACE Stardew AutoPilot] Action: {"type": "forage", "request_id": "48706a0f44fe4ec98f64ba13ea051f8f"}
-[19:16:39 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "c9160b8c749f4d60a264b87e599b8c78"}
-[19:17:09 TRACE game] Warping to Farm
-[19:17:31 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Acorn", "x": 23, "y": 9, "request_id": "670bf913dcf348a69ebd809ad4d67099"}
-[19:17:41 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "ed9806fadf994825832d1833251e2510"}
-[19:17:54 TRACE game] Warping to FarmHouse
-[19:17:59 TRACE SMAPI] Synchronizing 'NewDay' task...
-[19:18:00 TRACE SMAPI]    task complete.
-[19:18:00 TRACE SMAPI] Context: before save.
-[19:18:00 TRACE game] SaveGame.Save() called.
-[19:18:00 TRACE SMAPI] Synchronizing 'Save' task...
-[19:18:00 TRACE game] Saving without compression...
-[19:18:00 TRACE SMAPI]    task complete.
-[19:18:00 TRACE game] SaveGame.Save() completed without exceptions.
-[19:18:02 TRACE SMAPI] Context: after save, starting summer 1 Y4.
-[19:18:02 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "342065de53024c069583a8a213c0bb3f"}
-[19:18:04 TRACE game] Warping to Farm
-[19:18:05 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "b50f2eb4a0b84201b3b60e487dc5492e"}
-[19:18:06 TRACE Stardew AutoPilot] Action: {"type": "store", "items": [], "request_id": "58023bcb3d5645efa6e710ba9f28e13e"}
-[19:18:12 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops", "request_id": "9d0fe71f0a0940e4ab64592dd704e2fc"}
-[19:18:12 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "095fa0bc986d4e239260e9474cf11196"}
-[19:18:12 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "5103914a94a5486a930fe7ecb4e35daf"}
-[19:18:13 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "12a3e3b608d24a598ea6317d1524fcdf"}
-[19:18:14 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "7c8c7991eaf143e7a6d0d7b8340461d7"}
-[19:18:14 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "b2ad4cdcdf4e4f628904c18cebfd50ed"}
-[19:18:37 TRACE game] Warping to Forest
-[19:18:39 TRACE Stardew AutoPilot] Action: {"type": "forage", "request_id": "49056f9ad410402bb408c3e42076ec12"}
-[19:19:29 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "ad12ea58d1e2464780c032861713b47e"}
-[19:19:58 TRACE game] Warping to Farm
-[19:20:19 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Acorn", "x": 23, "y": 9, "request_id": "16463ef09ee44e4a994e2d6adaa0ecf2"}
-[19:20:29 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "ca7c51570bab4054b771e2de3a5ffba0"}
-[19:20:42 TRACE game] Warping to FarmHouse
-[19:20:47 TRACE SMAPI] Synchronizing 'NewDay' task...
-[19:20:48 TRACE SMAPI]    task complete.
-[19:20:48 TRACE SMAPI] Context: before save.
-[19:20:48 TRACE game] SaveGame.Save() called.
-[19:20:48 TRACE SMAPI] Synchronizing 'Save' task...
-[19:20:48 TRACE game] Saving without compression...
-[19:20:49 TRACE SMAPI]    task complete.
-[19:20:49 TRACE game] SaveGame.Save() completed without exceptions.
-[19:20:50 TRACE SMAPI] Context: after save, starting summer 2 Y4.
-[19:20:50 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "9363c94fe76a485397d76fa7e1f3eb09"}
-[19:20:52 TRACE game] Warping to Farm
-[19:20:54 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "5527c2b1a92b40b59871cf3e4b5b92ae"}
-[19:20:54 TRACE Stardew AutoPilot] Action: {"type": "store", "items": [], "request_id": "5ef3da3370b1479d88cd5a550fa22f75"}
-[19:21:00 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops", "request_id": "c6b32ca616e74b2bbc68f25f920e5836"}
-[19:21:00 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "85381ab39ca1463c8ac124e96fb2062f"}
-[19:21:01 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "7619a1e9b16a4171ae8a73562cef22bb"}
-[19:21:02 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "1136a04e3b9744479d58170b1d809166"}
-[19:21:02 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "454c239c5daf45209ff59b4d0177c83e"}
-[19:21:02 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "55768f1d0b4241b9ac24b1f1a7ff3c19"}
-[19:21:26 TRACE game] Warping to Forest
-[19:21:27 TRACE Stardew AutoPilot] Action: {"type": "forage", "request_id": "b2a7b3b06711495888bb69ddc3ea4b1a"}
-[19:22:17 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "3fe26fed8249408a8ec1b61cb6aab3b3"}
-[19:22:46 TRACE game] Warping to Farm
-[19:23:07 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Acorn", "x": 23, "y": 9, "request_id": "20bfcfcbdf0a45f4a2e976c4feb3ad65"}
-[19:23:21 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "9e5a75db56b742bfaf2a70a3e5c35f46"}
-[19:23:34 TRACE game] Warping to FarmHouse
-[19:23:39 TRACE SMAPI] Synchronizing 'NewDay' task...
-[19:23:40 TRACE SMAPI]    task complete.
-[19:23:40 TRACE SMAPI] Context: before save.
-[19:23:40 TRACE game] SaveGame.Save() called.
-[19:23:40 TRACE SMAPI] Synchronizing 'Save' task...
-[19:23:40 TRACE game] Saving without compression...
-[19:23:40 TRACE SMAPI]    task complete.
-[19:23:40 TRACE game] SaveGame.Save() completed without exceptions.
-[19:23:41 TRACE SMAPI] Context: after save, starting summer 3 Y4.
-[19:23:42 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "313f54dbc79c4d288bf6f9b43cc8e895"}
-[19:23:43 TRACE game] Warping to Farm
-[19:23:45 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "ee8886853ac14f59adfad3d9c4603eb7"}
-[19:23:45 TRACE Stardew AutoPilot] Action: {"type": "store", "items": [], "request_id": "922ec102fb5d43ba87cfc42297585837"}
-[19:23:51 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops", "request_id": "e6804a864eae4c85969f4a0a4108029d"}
-[19:23:52 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "dec274e262f34812a465adc2230e1890"}
-[19:23:52 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "b43090817932466bb7b5fc5cfed0950c"}
-[19:23:53 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "937b796c165f435cad1edbc965cad907"}
-[19:23:53 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "4a2f2a86d0fd400ea7c6328d8225bfd1"}
-[19:23:54 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "91214b0c6ebb43f08448a8f8b2a19b17"}
-[19:24:17 TRACE game] Warping to Forest
-[19:24:19 TRACE Stardew AutoPilot] Action: {"type": "forage", "request_id": "dc1340c9b2aa47aaa17def9653e0a45f"}
-[19:25:21 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
-[19:25:21 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "f1476005d1b24709941d4491c92f0e96"}
-[19:25:41 TRACE game] Warping to Farm
-[19:26:02 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Acorn", "x": 23, "y": 9, "request_id": "8cee29b4d449491c9284ee741d1e0d2e"}
-[19:26:13 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "de5c7ad86eb44895b08e0248607cdb63"}
-[19:26:26 TRACE game] Warping to FarmHouse
-[19:26:31 TRACE SMAPI] Synchronizing 'NewDay' task...
-[19:26:32 TRACE SMAPI]    task complete.
-[19:26:38 TRACE game] Warping to FarmHouse
-[19:26:38 TRACE SMAPI] Context: before save.
-[19:26:38 TRACE game] SaveGame.Save() called.
-[19:26:38 TRACE SMAPI] Synchronizing 'Save' task...
-[19:26:38 TRACE game] Saving without compression...
-[19:26:39 TRACE SMAPI]    task complete.
-[19:26:39 TRACE game] SaveGame.Save() completed without exceptions.
-[19:26:41 TRACE SMAPI] Context: after save, starting summer 4 Y4.
-[19:26:46 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "2a1f690c4a584504ae63665a8f2cc72f"}
-[19:26:48 TRACE game] Warping to Farm
-[19:26:50 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "1dd8203444aa4c41b2682e24bcf35332"}
-[19:26:50 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "5f89d2af8f2644b3ae54109c5b3b8542"}
-[19:26:50 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "62acae54f84b4ba0b569ab236a36ad0e"}
-[19:26:51 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "e64bf52190b44440a350429cd089015e"}
-[19:27:09 TRACE game] Warping to Forest
-[19:27:11 TRACE Stardew AutoPilot] Action: {"type": "forage", "request_id": "467694ad58de486aa8b3d5782024f77c"}
-[19:28:21 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
-[19:28:22 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "6e816a95c58841d7a0b83b397577ce86"}
-[19:28:41 TRACE game] Warping to Farm
-[19:29:02 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Acorn", "x": 23, "y": 9, "request_id": "b2cc8043a90c4fd191d2d54cf8c57874"}
-[19:29:12 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "24de2169320b4795a2666da0672cd48f"}
-[19:29:25 TRACE game] Warping to FarmHouse
-[19:29:31 TRACE SMAPI] Synchronizing 'NewDay' task...
-[19:29:31 TRACE SMAPI]    task complete.
-[19:29:31 TRACE SMAPI] Context: before save.
-[19:29:31 TRACE game] SaveGame.Save() called.
-[19:29:31 TRACE SMAPI] Synchronizing 'Save' task...
-[19:29:31 TRACE game] Saving without compression...
-[19:29:31 TRACE SMAPI]    task complete.
-[19:29:31 TRACE game] SaveGame.Save() completed without exceptions.
-[19:29:33 TRACE SMAPI] Context: after save, starting summer 5 Y4.
-[19:29:33 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "0ed3f59c66824c56bfc641bbbfe04dbe"}
-[19:29:35 TRACE game] Warping to Farm
-[19:29:36 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "fae5046a186d4d87b7ee6257f0febe8f"}
-[19:29:37 TRACE Stardew AutoPilot] Action: {"type": "store", "items": [], "request_id": "6d8d005882b741ab9866a29c72ab64c4"}
-[19:29:43 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops", "request_id": "402429837b084300af8e67b0d7b8ff14"}
-[19:29:43 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "926e14f1b12647f1892db1ca1c169c99"}
-[19:29:43 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "f681e884d6a84efc935cd4573b3c48cd"}
-[19:29:44 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "85ed79b1264f4119a773b93905e36662"}
-[19:29:44 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "4e4bc072e3a44550be2f96cd59856d64"}
-[19:29:44 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "72eb119904204db0befcf59f9f721e5a"}
-[19:30:07 TRACE game] Warping to Forest
-[19:30:09 TRACE Stardew AutoPilot] Action: {"type": "forage", "request_id": "897e33b56c804d5bbd216e4c504ef396"}
-[19:31:20 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "d0979d9648134d118a5f6adf51a2c6a4"}
-[19:31:40 TRACE game] Warping to Farm
-[19:32:01 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Acorn", "x": 23, "y": 9, "request_id": "f71c68c71f32456696a676b1c2c65fac"}
-[19:32:11 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "84727a8a83e4408e9c4292bc5004e437"}
-[19:32:24 TRACE game] Warping to FarmHouse
-[19:32:29 TRACE SMAPI] Synchronizing 'NewDay' task...
-[19:32:30 TRACE SMAPI]    task complete.
-[19:32:30 TRACE SMAPI] Context: before save.
-[19:32:30 TRACE game] SaveGame.Save() called.
-[19:32:30 TRACE SMAPI] Synchronizing 'Save' task...
-[19:32:30 TRACE game] Saving without compression...
-[19:32:30 TRACE SMAPI]    task complete.
-[19:32:30 TRACE game] SaveGame.Save() completed without exceptions.
-[19:32:32 TRACE SMAPI] Context: after save, starting summer 6 Y4.
-[19:32:32 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "de405d4a28e647068d7250a43f46283d"}
-[19:32:33 TRACE game] Warping to Farm
-[19:32:35 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "554e0af862a94d729d1e77c1dedeb8e1"}
-[19:32:35 TRACE Stardew AutoPilot] Action: {"type": "store", "items": [], "request_id": "f9805614a6e5476d9249e91c030108cc"}
-[19:32:41 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops", "request_id": "1af38307a6ee427ba8aa62c524760771"}
-[19:32:42 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "fde828b9b00a43ab9c9c3ea667ce8d81"}
-[19:32:42 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "19786c900e1341be982efadef24a567b"}
-[19:32:43 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "202d423439e3450c8218a3579a323be5"}
-[19:32:43 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "e527ccf6e9c1492baa71aa7ad7a236cb"}
-[19:32:44 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "e4dae560af234b428e3f68dc6e03be50"}
-[19:33:07 TRACE game] Warping to Forest
-[19:33:08 TRACE Stardew AutoPilot] Action: {"type": "forage", "request_id": "222ea7b6cc6b448a8670c772e8182804"}
-[19:34:26 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
-[19:34:27 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "0a746c4301074c25a90ab8c2313c58b3"}
-[19:34:47 TRACE game] Warping to Farm
-[19:35:07 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Acorn", "x": 23, "y": 9, "request_id": "3d41b901954b42d0b1cca25ce7d8233f"}
-[19:35:18 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "c03a41fa52d34d0b8421eb18626a6d97"}
-[19:35:31 TRACE game] Warping to FarmHouse
-[19:35:37 TRACE SMAPI] Synchronizing 'NewDay' task...
-[19:35:37 TRACE SMAPI]    task complete.
-[19:35:37 TRACE SMAPI] Context: before save.
-[19:35:37 TRACE game] SaveGame.Save() called.
-[19:35:37 TRACE SMAPI] Synchronizing 'Save' task...
-[19:35:37 TRACE game] Saving without compression...
-[19:35:37 TRACE SMAPI]    task complete.
-[19:35:37 TRACE game] SaveGame.Save() completed without exceptions.
-[19:35:39 TRACE SMAPI] Context: after save, starting summer 7 Y4.
-[19:35:39 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "d140b6e31738432bae725e1b7219f8c2"}
-[19:35:41 TRACE game] Warping to Farm
-[19:35:42 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "341d144657c94463acd6e02fff349fce"}
-[19:35:43 TRACE Stardew AutoPilot] Action: {"type": "store", "items": [], "request_id": "6b2cb4d5f642474a9f56136be55a491f"}
-[19:35:49 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops", "request_id": "5c3d013cc0864c30b16a24419471978d"}
-[19:35:49 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "a4696286be394028b249fee106dd0fb5"}
-[19:35:50 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "1f57698ff9d740fc8f022363fcb6d2ef"}
+[19:56:55 DEBUG SMAPI] Launching mods...
+[19:56:55 TRACE Save Backup] Already backed up today.
+[19:56:55 TRACE Stardew AutoPilot] Wiki text: 3333 entries from wiki.txt
+[19:56:55 INFO  Stardew AutoPilot] AutoPilot API listening on http://localhost:8765/
+[19:56:55 INFO  Stardew AutoPilot] 载入存档后按 F8 打开 LLM 网关/Key 设置（仅进档后可用）。
+[19:56:55 DEBUG SMAPI] Mods loaded and ready!
+[19:56:55 TRACE SMAPI] Checking for known software conflicts...
+[19:56:55 TRACE SMAPI]    None found!
+[19:56:55 TRACE SMAPI] Checking for updates...
+[19:56:57 TRACE SMAPI]    SMAPI okay.
+[19:56:57 TRACE SMAPI]    Checking for updates to 1 mods...
+[19:56:57 TRACE game] setGameMode( 'titleScreenGameMode (0)' )
+[19:56:57 TRACE SMAPI]    All mods up to date.
+[19:56:58 TRACE SMAPI] Running on GPU: NVIDIA GeForce GTX 1660 SUPER/PCIe/SSE2
+[19:56:58 TRACE game] Instance_LoadContent() finished, elapsed = '00:00:05.8737565'
+[19:56:58 TRACE game] Steam logged on: True
+[19:56:58 TRACE game] Initializing GalaxySDK
+[19:56:58 TRACE game] Requesting Steam app ticket
+[19:56:59 TRACE SMAPI]    Mod blacklist OK.
+[19:56:59 INFO  SMAPI] Type 'help' for help, or 'help <cmd>' for a command's usage
+[19:56:59 TRACE game] Signing into GalaxySDK
+[19:57:00 TRACE game] Window_ClientSizeChanged(); Window.ClientBounds={X:320 Y:180 Width:1280 Height:720}
+[19:57:02 TRACE game] Galaxy auth success
+[19:57:02 TRACE game] Galaxy signed in
+[19:57:02 TRACE game] Galaxy logged on
+[19:57:04 TRACE game] Successfully set GOG Galaxy profile name.
+[19:57:34 TRACE game] gameMode was 'titleScreenGameMode (0)', set to 'loadingMode (6)'.
+[19:57:34 TRACE SMAPI] Game loader synchronizing...
+[19:57:34 TRACE game] getLoadEnumerator('AI_453272148')
+[19:57:34 TRACE SMAPI] Synchronizing 'Load_ReadSave' task...
+[19:57:39 TRACE game] Successfully loaded ContentHashes.json containing 3560 file(s);
+[19:57:39 TRACE game] EnsureManifestInitialized() finished, elapsed = '00:00:00.0237857'
+[19:57:47 TRACE SMAPI]    task complete.
+[19:57:47 TRACE SMAPI] Synchronizing 'Load_LoadForNewGame' task...
+[19:57:50 TRACE SMAPI]    task complete.
+[19:57:50 TRACE SMAPI] Synchronizing 'Load_Farmer' task...
+[19:57:50 TRACE SMAPI]    task complete.
+[19:57:50 TRACE SMAPI] Synchronizing 'Load_Locations' task...
+[19:57:52 TRACE SMAPI]    task complete.
+[19:57:52 TRACE game] gameMode was 'loadingMode (6)', set to 'playingGameMode (3)'.
+[19:57:54 TRACE game] getLoadEnumerator() exited, elapsed = '00:00:19.3458071'
+[19:57:54 TRACE game] setGameMode( 'playingGameMode (3)' )
+[19:57:54 TRACE SMAPI] Game loader done.
+[19:57:55 TRACE game] Window_ClientSizeChanged(); Window.ClientBounds={X:320 Y:180 Width:1280 Height:720}
+[19:57:55 TRACE game] Vsync toggled: False
+[19:57:56 TRACE SMAPI] Context: loaded save 'AI_453272148', starting summer 7 Y4, locale set to . Single-player.
+[19:57:59 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "1bfa4cc596094f2194cd3250f56a3a70"}
+[19:58:00 TRACE game] Warping to Farm
+[19:58:02 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "f7873fe24b3f42d7bb73fd4e87f92e41"}
+[19:58:03 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "20b36ed9c71649cf8715f9d66fa923c8"}
+[19:58:03 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "8e6335928d43440ab77cd2356ee42dfe"}
+[19:58:04 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "ac9e2e36960947d6a0a0ee624572718c"}
+[19:58:22 TRACE game] Warping to Forest
+[19:58:23 TRACE Stardew AutoPilot] Action: {"type": "forage", "request_id": "29cac039765f4557b1a5b784bb30bb1f"}
+[19:58:27 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "501ad8e417df4519829991f8338b149a"}
+[19:58:29 TRACE game] Warping to Farm
+[19:59:10 TRACE Stardew AutoPilot] Action: {"type":"ship_produce","except":[]}
+[19:59:33 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "4798f51b040b4222ae5a55d114617539"}
+[19:59:49 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "db247f5b6a5c47aab2a8aa64cdc31629"}
+[19:59:50 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "812e4c22ef1b4cd5b0ceb3afe7a5dd38"}
+[19:59:50 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "999eb2cb9a4a495d8e81e6ac67a42593"}
+[19:59:50 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "2d1a4f713c16473b85614610c944b512"}
+[19:59:51 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "c1a0031ddfb74c238e9b11131c39a064"}
+[20:00:09 TRACE game] Warping to Forest
+[20:00:11 TRACE Stardew AutoPilot] Action: {"type": "forage", "request_id": "c6d2b71efe0d4d24bfe4d11f4c8c4426"}
+[20:00:14 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "644e965574354177bc32efa1d743df8c"}
+[20:00:16 TRACE game] Warping to Farm
+[20:00:37 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Acorn", "x": 23, "y": 9, "request_id": "3085b0cb81874b0e987dd06348ab43ef"}
+[20:00:49 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "6f6fcf804e8b4c37a104370905e26159"}
+[20:01:02 TRACE game] Warping to FarmHouse
+[20:01:07 TRACE SMAPI] Synchronizing 'NewDay' task...
+[20:01:09 TRACE SMAPI]    task complete.
