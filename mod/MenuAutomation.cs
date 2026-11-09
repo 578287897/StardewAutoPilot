@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
+using StardewModdingAPI;
 using StardewValley;
 using StardewValley.Menus;
 
@@ -14,6 +15,8 @@ namespace StardewAutoPilot
         private IClickableMenu lastMenu;
         private string lastDialogue;
         private int menuAge;
+        private int eventAge;
+        private string lastEventKey;
 
         public MenuAutomation(ModEntry mod) { this.mod = mod; }
 
@@ -45,13 +48,29 @@ namespace StardewAutoPilot
                 return;
 
             var ev = Game1.CurrentEvent;
-            if (Game1.eventUp && ev != null && this.mod.Config.AutoSkipEvents && ev.skippable && !ev.skipped && !ev.isFestival)
+            string eventKey = Game1.eventUp && ev != null ? $"{ev.id}:{ev.isFestival}" : null;
+            if (eventKey != this.lastEventKey)
             {
-                // same guard as the game's own Skip button: skipping again while the skip is finishing restarts it forever
-                ev.skipped = true;
-                this.mod.Log.Add("event", "Skipped cutscene " + ev.id);
-                ev.skipEvent();
-                return;
+                this.lastEventKey = eventKey;
+                this.eventAge = 0;
+            }
+            if (eventKey != null)
+                this.eventAge++;
+
+            if (Game1.eventUp && ev != null && this.mod.Config.AutoSkipEvents && !ev.skipped && !ev.isFestival)
+            {
+                // Normal path: skippable cutscenes. Stuck path: after ~90s still eventUp, force-skip
+                // so sleep/work cannot spin forever on "a cutscene/event is running".
+                bool stuck = this.eventAge >= 270; // Tick runs every 20 frames ≈ 1/3s → ~90s
+                if (ev.skippable || stuck)
+                {
+                    ev.skipped = true;
+                    this.mod.Log.Add("event", (stuck && !ev.skippable ? "Force-skipped stuck cutscene " : "Skipped cutscene ") + ev.id);
+                    if (stuck && !ev.skippable)
+                        this.mod.Monitor.Log($"Force-skipping non-skippable event {ev.id} after it stayed up too long.", LogLevel.Warn);
+                    ev.skipEvent();
+                    return;
+                }
             }
 
             switch (menu)

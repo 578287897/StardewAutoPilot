@@ -200,3 +200,14 @@ class ReviewAuthRetryTests(unittest.TestCase):
             agent.review_json([{"role": "user", "content": "x"}])
         self.assertIn("F8", str(ctx.exception))
         self.assertIn("401", str(ctx.exception))
+
+    def test_step_waits_during_cutscene_instead_of_sleeping(self):
+        from unittest.mock import patch
+        agent = Agent.__new__(Agent)
+        agent.game = Mock(pending=None)
+        agent.day = SimpleNamespace(script=[{"type": "sleep"}], steps=[])
+        agent.execute = Mock()
+        with patch("autopilot.time.sleep") as sleeper:
+            agent.step({"ready": True, "event": True, "time": 1100, "menu": None, "busy_action": None})
+        sleeper.assert_called()
+        agent.execute.assert_not_called()

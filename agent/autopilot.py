@@ -948,6 +948,12 @@ class Agent:
         if st.get("busy_action"):
             time.sleep(1)  # a timed-out HTTP call may still be executing in the mod
             return
+        if st.get("event"):
+            # AutoSkipEvents handles skippable cutscenes; non-skippable ones must play out.
+            # Do not spam sleep/work against "a cutscene/event is running".
+            log("过场/事件进行中，等待自动跳过或播完…")
+            time.sleep(3)
+            return
         menu = (st.get("menu") or {}).get("type")
         if menu in self.NIGHT_MENUS and not (st.get("menu") or {}).get("is_profession_chooser"):
             time.sleep(2)  # end-of-night screens save the game; the mod confirms them, never close them
