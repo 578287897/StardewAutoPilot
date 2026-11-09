@@ -49,7 +49,9 @@ def immediate(progress, state=None, bundles=None, festival_in_days=0):
     found = _as_step(target)
     if found:
         return found
-    if _bundle_ready(bundles):
+    stage = state.get("community_center") or ""
+    # wait_letter / visit_wizard are not "we already own a bundle item".
+    if (stage.startswith("donate") or stage == "") and _bundle_ready(bundles):
         return {"name": "收集包里已经有的东西", "step": [{"type": "donate"}], "advances": {"donate"}, "at": "start"}
     if isinstance(progress, dict):
         info = milestones.tool_upgrades(progress)

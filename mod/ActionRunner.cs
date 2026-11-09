@@ -2034,10 +2034,55 @@ namespace StardewAutoPilot
             J.Message = $"left the mine, now in {Game1.currentLocation.NameOrUniqueName}";
         }
 
+        /// <summary>Open one bundle note so JunimoNoteMenu.setUpMenu can queue wizardJunimoNote. Does not place items.</summary>
+        private IEnumerable<object> OpenCommunityCenterNote()
+        {
+            if (Game1.currentLocation is not CommunityCenter)
+                foreach (var o in this.GotoLocation("CommunityCenter")) yield return o;
+            if (Game1.currentLocation is not CommunityCenter cc)
+                throw new ActionFailed("could not enter the Community Center to open the Junimo note");
+            var reflection = this.mod.Helper.Reflection;
+            bool opened = false;
+            for (int area = 0; area < 7 && !opened; area++)
+            {
+                if (!cc.shouldNoteAppearInArea(area))
+                    continue;
+                var note = reflection.GetMethod(cc, "getNotePosition").Invoke<Point>(area);
+                foreach (var o in this.EnsureFree()) yield return o;
+                if (World.Chebyshev(P.TilePoint, note) > 1)
+                    foreach (var o in this.WalkTo(note, adjacent: true)) yield return o;
+                foreach (var o in this.EnsureFree()) yield return o;
+                Face(note);
+                cc.checkAction(new xTile.Dimensions.Location(note.X, note.Y), Game1.viewport, P);
+                for (int i = 0; i < 30 && Game1.activeClickableMenu is not JunimoNoteMenu; i++)
+                    yield return null;
+                if (Game1.activeClickableMenu is not JunimoNoteMenu)
+                    continue;
+                opened = true;
+                for (int i = 0; i < 10; i++)
+                    yield return null;
+                Game1.activeClickableMenu.exitThisMenu(false);
+                for (int i = 0; i < 10 && Game1.activeClickableMenu != null; i++)
+                    yield return null;
+            }
+            J.Message = Game1.player.hasOrWillReceiveMail("wizardJunimoNote")
+                ? "opened the Junimo note; wizardJunimoNote is now pending. Read it, then go to WizardHouse. Donating stays locked until canReadJunimoText."
+                : "no Junimo note could be opened, so wizardJunimoNote was not queued";
+        }
+
         private IEnumerable<object> Donate()
         {
+            // Opening the note is what queues wizardJunimoNote. Refusing here made the
+            // agent call donate forever while Bundles.Stage stayed on wait_letter.
             if (!Bundles.CanDonate)
-                throw new ActionFailed("can't donate yet: " + Bundles.Stage());
+            {
+                bool openNote = Game1.player.eventsSeen.Contains("611439")
+                    && !Game1.player.hasOrWillReceiveMail("wizardJunimoNote");
+                if (!openNote)
+                    throw new ActionFailed("can't donate yet: " + Bundles.Stage());
+                foreach (var o in this.OpenCommunityCenterNote()) yield return o;
+                yield break;
+            }
             var usable = P.Items.Where(i => i is SObject o && Game1.RequireLocation<CommunityCenter>("CommunityCenter").couldThisIngredienteBeUsedInABundle(o)).ToList();
             if (usable.Count == 0)
             {

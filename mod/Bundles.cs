@@ -43,13 +43,22 @@ namespace StardewAutoPilot
                 if (somewhere.whereToGo.Value is "WizardHouse" or "CommunityCenter")
                     return Target(quest.GetName(), somewhere.whereToGo.Value, "quest:" + quest.id.Value);
             }
-            if (CanDonate || player.eventsSeen.Contains("611439"))
+            if (CanDonate)
                 return null;
+            // Event 611439 only unlocks the door and adds quest 26. It does not send
+            // wizardJunimoNote. The letter is referenced by JunimoNoteMenu.setUpMenu,
+            // which runs when a bundle note is opened. Don't swallow that step.
+            if (player.eventsSeen.Contains("611439") && !player.hasOrWillReceiveMail("wizardJunimoNote"))
+            {
+                var step = Target("打开社区中心的祝尼魔卷轴", "CommunityCenter", "event:611439");
+                ((List<Dictionary<string, object>>)step["step"]).Add(new Dictionary<string, object> { ["type"] = "donate" });
+                return step;
+            }
             if (player.hasOrWillReceiveMail("wizardJunimoNote"))
             {
                 if (LocationQuest("WizardHouse", out string title, out string where))
                     return Target(title, where, "mail:wizardJunimoNote");
-                return null;
+                return Target("Meet the Wizard", "WizardHouse", "mail:wizardJunimoNote");
             }
             if (Game1.getLocationFromName("CommunityCenter") != null)
                 return Target("进入社区中心", "CommunityCenter", "not_started");
