@@ -1347,6 +1347,120 @@ namespace StardewAutoPilot
             J.Message = $"took {n}x {part.DisplayName} from chest at ({tile.X},{tile.Y})";
         }
 
+        /// <summary>
+        /// Watch BobberBar until it closes. A stalled or unfinished bar is recovered once:
+        /// escape, award a catch the game already decided, or close a menu whose pull already started.
+        /// BobberBar.readyToClose is false, so close_menu cannot dismiss it.
+        /// </summary>
+        private IEnumerable<object> PlayMinigame(FishingRod rod)
+        {
+            int ticks = 0, still = 0, fadeTicks = 0;
+            float last = float.NaN;
+            while (Game1.activeClickableMenu is BobberBar bar)
+            {
+                if (bar.fadeOut)
+                    fadeTicks++;
+                else
+                    fadeTicks = 0;
+                if (!bar.fadeIn)
+                {
+                    if (!float.IsNaN(last) && !float.IsNaN(bar.distanceFromCatching)
+                        && Math.Abs(bar.distanceFromCatching - last) > 0.0001f)
+                        still = 0;
+                    else
+                        still++;
+                }
+                last = bar.distanceFromCatching;
+                var step = FishingRecovery.Decide(ticks, still, fadeTicks, new FishingRecovery.Sample
+                {
+                    MenuOpen = true,
+                    FadeOut = bar.fadeOut,
+                    ResultHandled = bar.handledFishResult,
+                    Progress = bar.distanceFromCatching,
+                    PullStarted = rod.pullingOutOfWater || rod.fishCaught
+                });
+                if (step != FishingRecovery.Step.Wait)
+                {
+                    foreach (var o in this.RecoverMinigame(rod, bar, step))
+                        yield return o;
+                    yield break;
+                }
+                if (++ticks > FishingRecovery.MaxMinigameTicks + FishingRecovery.FadeOutGraceTicks)
+                {
+                    foreach (var o in this.RecoverMinigame(rod, bar, FishingRecovery.Step.Escape))
+                        yield return o;
+                    yield break;
+                }
+                yield return null;
+            }
+        }
+
+        private IEnumerable<object> RecoverMinigame(FishingRod rod, BobberBar bar, FishingRecovery.Step step)
+        {
+            this.mod.Monitor.Log($"Fishing minigame stuck ({step}, progress={bar.distanceFromCatching:0.00}, fadeOut={bar.fadeOut}); recovering.", LogLevel.Warn);
+            if (step == FishingRecovery.Step.AwardCatch)
+            {
+                Fishing.AwardCatch(bar, rod);
+                if (Game1.activeClickableMenu is BobberBar)
+                    Game1.exitActiveMenu();
+            }
+            else if (step == FishingRecovery.Step.CloseMenu)
+            {
+                if (Game1.activeClickableMenu is BobberBar)
+                    Game1.exitActiveMenu();
+            }
+            else
+            {
+                // An in-progress minigame gets one chance to fade out on its own. A fade that
+                // already missed that window is closed here, without a second bait consumption.
+                if (!bar.fadeOut && !bar.handledFishResult)
+                {
+                    bar.emergencyShutDown();
+                    for (int i = 0; i < FishingRecovery.FadeOutGraceTicks && Game1.activeClickableMenu is BobberBar && !rod.fishCaught; i++)
+                        yield return null;
+                }
+                if (Game1.activeClickableMenu is BobberBar stuck)
+                {
+                    if (stuck.handledFishResult && stuck.distanceFromCatching > FishingRecovery.CatchProgress)
+                        Fishing.AwardCatch(stuck, rod);
+                    else
+                        Fishing.Escape(rod);
+                    Game1.exitActiveMenu();
+                }
+            }
+            // Let tickUpdate poll pullFishFromWater / doneFishing before the caller inspects the rod.
+            for (int i = 0; i < 5 && !rod.fishCaught && !rod.pullingOutOfWater; i++)
+                yield return null;
+        }
+
+        private void ReleaseFishingMinigame(FishingRod rod)
+        {
+            if (rod == null || Game1.activeClickableMenu is not BobberBar bar)
+                return;
+            try
+            {
+                if (bar.handledFishResult && bar.distanceFromCatching > FishingRecovery.CatchProgress)
+                    Fishing.AwardCatch(bar, rod);
+                else if (!rod.fishCaught && !rod.pullingOutOfWater)
+                    Fishing.Escape(rod);
+                Game1.exitActiveMenu();
+                this.mod.Monitor.Log("Closed a fishing minigame left open after fish.", LogLevel.Warn);
+            }
+            catch (Exception ex)
+            {
+                this.mod.Monitor.Log("Could not close the fishing minigame: " + ex.Message, LogLevel.Warn);
+                try
+                {
+                    if (Game1.activeClickableMenu is BobberBar)
+                        Game1.exitActiveMenu();
+                }
+                catch (Exception closeEx)
+                {
+                    this.mod.Monitor.Log("Could not force-close the fishing minigame: " + closeEx.Message, LogLevel.Warn);
+                }
+            }
+        }
+
         private IEnumerable<object> Fish(int casts)
         {
             var loc = Game1.currentLocation;
@@ -1365,6 +1479,8 @@ namespace StardewAutoPilot
             AttachTackle((FishingRod)P.Items[slot]);
             var caught = new List<string>();
             int escaped = 0, noBite = 0;
+            FishingRod openRod = null;
+            bool minigameSettled = true;
             Fishing.Active = true;
             try
             {
@@ -1423,21 +1539,32 @@ namespace StardewAutoPilot
                         continue;
                     }
                     rod.DoFunction(loc, (int)P.Position.X, (int)P.Position.Y, 1, P);
+                    openRod = rod;
+                    Fishing.ResetCast();
+                    minigameSettled = false;
 
                     // the reel minigame (controlled by Fishing.Tick each frame)
                     for (t = 0; t < 600 && Game1.activeClickableMenu is not BobberBar && !rod.fishCaught && !rod.pullingOutOfWater; t++)
                         yield return null;
-                    for (t = 0; t < 60 * 120 && Game1.activeClickableMenu is BobberBar; t++)
-                        yield return null;
+                    foreach (var o in this.PlayMinigame(rod)) yield return o;
 
                     // reeling out / showing the catch / treasure
                     for (t = 0; t < 600 && !rod.fishCaught && (rod.pullingOutOfWater || rod.isReeling); t++)
                         yield return null;
+                    if (!rod.fishCaught && rod.pullingOutOfWater && rod.whichFish != null)
+                    {
+                        // The pull sprite advances on ElapsedGameTime.Milliseconds. Under 1ms frames
+                        // that timer never moves, so finish the catch the sprite's endFunction would have.
+                        // Clear the sprite first so it cannot award the same fish again.
+                        rod.animations.Clear();
+                        rod.playerCaughtFishEndFunction(rod.bossFish);
+                    }
                     if (rod.fishCaught)
                     {
                         string name = rod.whichFish != null ? ItemRegistry.GetDataOrErrorItem(rod.whichFish.QualifiedItemId).DisplayName : "fish";
                         for (t = 0; t < 40; t++) yield return null;
-                        rod.doneHoldingFish(P);
+                        if (rod.fishCaught)
+                            rod.doneHoldingFish(P);
                         caught.Add(name);
                     }
                     else
@@ -1455,11 +1582,16 @@ namespace StardewAutoPilot
                     }
                     for (t = 0; t < 120 && (P.UsingTool || !P.CanMove); t++)
                         yield return null;
+                    if (Game1.activeClickableMenu is BobberBar)
+                        this.ReleaseFishingMinigame(rod);
+                    minigameSettled = Game1.activeClickableMenu is not BobberBar;
                 }
             }
             finally
             {
                 Fishing.Active = false;
+                if (!minigameSettled)
+                    this.ReleaseFishingMinigame(openRod);
             }
             J.Data["caught"] = caught;
             J.Message = $"fished: caught {caught.Count} ({string.Join(", ", caught)})" + (escaped > 0 ? $", {escaped} got away" : "") + (noBite > 0 ? $", {noBite} casts without a bite" : "");

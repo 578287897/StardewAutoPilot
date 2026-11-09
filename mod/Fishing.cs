@@ -2,6 +2,7 @@ using System;
 using Microsoft.Xna.Framework;
 using StardewValley;
 using StardewValley.Menus;
+using StardewValley.Tools;
 
 namespace StardewAutoPilot
 {
@@ -13,6 +14,49 @@ namespace StardewAutoPilot
     internal static class Fishing
     {
         public static bool Active;
+
+        /// <summary>One catch was already queued for this cast. pullFishFromWater is not idempotent.</summary>
+        public static bool CatchQueued;
+
+        /// <summary>doneFishing was already requested for this cast. A second call can consume bait again.</summary>
+        public static bool EscapeQueued;
+
+        public static void ResetCast()
+        {
+            CatchQueued = false;
+            EscapeQueued = false;
+        }
+
+        /// <summary>
+        /// The game only pulls the fish when BobberBar finishes fading out. That fade uses
+        /// ElapsedGameTime.Milliseconds, which stays 0 when a frame is shorter than 1ms
+        /// (vsync off). Queue the same pull the menu would have, at most once.
+        /// </summary>
+        public static bool AwardCatch(BobberBar bar, FishingRod rod)
+        {
+            if (CatchQueued || rod == null || bar == null || rod.fishCaught || rod.pullingOutOfWater || string.IsNullOrEmpty(bar.whichFish))
+                return false;
+            CatchQueued = true;
+            string baitId = rod.GetBait()?.QualifiedItemId;
+            int numCaught = 1;
+            if (!bar.bossFish && baitId == "(O)774" && Game1.random.NextDouble() < 0.25 + Game1.player.DailyLuck / 2.0)
+                numCaught = 2;
+            if (bar.challengeBaitFishes > 0)
+                numCaught = bar.challengeBaitFishes;
+            rod.pullFishFromWater(bar.whichFish, bar.fishSize, bar.fishQuality, (int)bar.difficulty,
+                bar.treasureCaught, bar.perfect, bar.fromFishPond, bar.setFlagOnCatch, bar.bossFish, numCaught);
+            return true;
+        }
+
+        /// <summary>Record a missed fish the way a finished BobberBar does, at most once.</summary>
+        public static bool Escape(FishingRod rod)
+        {
+            if (EscapeQueued || rod == null || rod.fishCaught || rod.pullingOutOfWater)
+                return false;
+            EscapeQueued = true;
+            rod.doneFishing(Game1.player, true);
+            return true;
+        }
 
         public static void Tick()
         {
