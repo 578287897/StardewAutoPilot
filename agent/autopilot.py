@@ -564,7 +564,9 @@ class Agent:
         else:
             self.day.script = morning
             self.replan(st, "新的一天开始了（没有昨晚准备的脚本）。", None)
-            self.day.script = self.enforce_milestone(morning + self.day.script, self.roadmap_progress())
+            progress = self.roadmap_progress()
+            need = needs.immediate(progress, st, self.safe(self.game.bundles, {}))
+            self.day.script = self.enforce_milestone(morning + self.day.script, progress, need)
             self.day.script_total = len(self.day.script)
         log("今日计划：" + " / ".join(self.day.plan))
         self.write_run("plan", {"day": self.day.tag, "plan": self.day.plan, "script": self.day.script,
@@ -946,7 +948,8 @@ class Agent:
             return False
         progress = self.roadmap_progress()
         scene = self.scene_actions()
-        script = self.enforce_milestone(self.clean_script(resp.get("script"), (scene or {}).get("primitives")), progress)
+        need = needs.immediate(progress, st, self.safe(self.game.bundles, {}))
+        script = self.enforce_milestone(self.clean_script(resp.get("script"), (scene or {}).get("primitives")), progress, need)
         if resp.get("plan"):
             self.day.plan = [str(p) for p in resp["plan"]][:8]
         self.set_script(script, f"重写#{self.day.replans}：{resp.get('reason', '')}"[:80], st.get("location"))
