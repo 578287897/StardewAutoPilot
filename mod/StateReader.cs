@@ -109,6 +109,7 @@ namespace StardewAutoPilot
                 ["unread_mail"] = Game1.mailbox.Count,
                 ["festivals"] = Social.Calendar(7),
                 ["community_center"] = Bundles.Stage(),
+                ["community_center_target"] = Bundles.CurrentTarget(),
                 ["villagers_here"] = loc.characters.Where(c => c.IsVillager && c.CanSocialize).Select(Social.Describe).ToList(),
                 ["birthdays_today"] = Utility.getAllVillagers().Where(n => n.isBirthday()).Select(n => n.Name).ToList(),
                 ["save_name"] = Constants.SaveFolderName,

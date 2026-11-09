@@ -1,6 +1,6 @@
 """Stdio MCP server for the running Stardew AutoPilot mod.
 
-Tools read localhost:8765, the SMAPI log, and the local wiki.txt.
+Tools read localhost:8765 and the SMAPI log.
 They do not call pixelharvestwiki.com. Speak MCP over Content-Length frames.
 """
 import json
@@ -9,8 +9,6 @@ import sys
 import urllib.error
 import urllib.request
 from pathlib import Path
-
-import wikitext
 
 GAME = os.environ.get("STARDEW_MOD_URL", "http://localhost:8765").rstrip("/")
 LOG = Path(os.environ.get("APPDATA", "")) / "StardewValley" / "ErrorLogs" / "SMAPI-latest.txt"
@@ -110,11 +108,13 @@ def journal(_args):
     return tool_text(f"{latest}\n\n" + body[-4000:])
 
 
-def wiki(args):
-    query = str(args.get("q") or "").strip()
-    if len(query) < 2:
-        return tool_text("请给 q，至少两个字，例如 铜镐 或 Copper Pickaxe")
-    return tool_text(wikitext.consult([query], limit=int(args.get("limit") or 5)))
+def goals(_args):
+    parts = []
+    for path in ("/tool_upgrades", "/actions", "/quests", "/special_orders", "/achievements"):
+        payload = game_request("GET", path, timeout=30)
+        text = json.dumps(payload, ensure_ascii=False)
+        parts.append(f"## {path}\n" + text[:2500])
+    return tool_text("\n\n".join(parts)[:8000])
 
 
 def act(args):
@@ -147,10 +147,10 @@ TOOLS = {
         "schema": {"type": "object", "properties": {}},
         "fn": journal,
     },
-    "wiki": {
-        "description": "按中文名、英文名或 slug 查本地 wiki.txt，不上网。",
-        "schema": {"type": "object", "properties": {"q": {"type": "string"}, "limit": {"type": "integer"}}, "required": ["q"]},
-        "fn": wiki,
+    "goals": {
+        "description": "读模组的工具阶梯、当前场面动作、任务、特殊订单和成就。不上网，不读本地百科。",
+        "schema": {"type": "object", "properties": {}},
+        "fn": goals,
     },
     "act": {
         "description": "向正在运行的模组提交一个动作。autopilot.py 也在跑时会抢同一个队列，只在它卡住时使用。",

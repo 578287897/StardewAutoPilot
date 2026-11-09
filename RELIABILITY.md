@@ -12,7 +12,7 @@ Python 代理和 Mod 必须一起更新，再重启游戏及代理。新版代�
 dotnet build mod -c Release -p:EnableModDeploy=false -p:EnableModZip=false
 ```
 
-退出游戏后，用新版 `StardewAutoPilot.dll`、`manifest.json`、`wiki.txt` 更新对应 Mod 文件，保留本地配置及 `data/`。进入你的测试存档后，先执行只读检查：
+退出游戏后，用新版 `StardewAutoPilot.dll` 和 `manifest.json` 更新对应 Mod 文件，保留本地配置及 `data/`。0.2.16-pre 起不再读取 `wiki.txt`，Mods 目录里的旧文件可以删掉。进入你的测试存档后，先执行只读检查：
 
 ```powershell
 python agent/check_mod.py

@@ -98,6 +98,24 @@ class Game:
     def recipes(self, cooking=False):
         return self._request("GET", "/recipes" + ("?cooking=1" if cooking else ""), timeout=30)
 
+    def achievements(self):
+        return self._request("GET", "/achievements", timeout=30)
+
+    def collections(self):
+        return self._request("GET", "/collections", timeout=60)
+
+    def quests(self):
+        return self._request("GET", "/quests", timeout=30)
+
+    def special_orders(self):
+        return self._request("GET", "/special_orders", timeout=30)
+
+    def tool_upgrades(self):
+        return self._request("GET", "/tool_upgrades", timeout=30)
+
+    def actions(self):
+        return self._request("GET", "/actions", timeout=30)
+
     def load_save(self, name):
         return self._request("POST", "/load_save", {"name": name}, timeout=30)
 

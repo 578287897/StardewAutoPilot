@@ -88,57 +88,77 @@ def scarecrow(p):
     return {"missing": lack, "step": step, "advances": {"mine", "clear_debris"}}
 
 
-# Clint's upgrade shop, one tier at a time. Level 0 is the starter tool.
-TOOL_NAMES = {"axe": "斧头", "pickaxe": "镐", "watering_can": "水壶", "hoe": "锄头"}
+# Which held tool to advance first. Levels, prices, and bar counts come from GET /tool_upgrades.
 TOOL_ORDER = ("axe", "pickaxe", "watering_can", "hoe")
-TOOL_TIERS = {
-    1: (2000, "Copper Bar", "Copper Ore", "铜"),
-    2: (5000, "Iron Bar", "Iron Ore", "钢"),
-    3: (10000, "Gold Bar", "Gold Ore", "金"),
-    4: (25000, "Iridium Bar", "Iridium Ore", "铱"),
-}
 
 
-def _tool_level(p, name):
-    level = (p.get("tools") or {}).get(name, 0)
-    up = p.get("upgrading") or {}
-    if up.get("tool") == name and up.get("days_left", 1) <= 0:
-        level = max(level, up.get("level", 0))
-    return level
+def _ladder(p, ladder):
+    if isinstance(ladder, dict) and ladder.get("tools"):
+        return ladder
+    if isinstance(p, dict) and isinstance(p.get("tool_ladder"), dict) and p["tool_ladder"].get("tools"):
+        return p["tool_ladder"]
+    return None
 
 
-def tool_upgrades(p):
-    """Next tool tier from the game's upgrade costs. One tool at a time. If the cost is short, gather it; if it is met, upgrade."""
-    up = p.get("upgrading")
+def _next_tier(info):
+    current = info.get("current_level") or 0
+    pending = [tier for tier in info.get("tiers") or [] if (tier.get("level") or 0) > current]
+    pending.sort(key=lambda tier: tier.get("level") or 0)
+    return pending[0] if pending else None
+
+
+def tool_upgrades(p, ladder=None):
+    """Next tool from GET /tool_upgrades. No local price table and no fixed max tier."""
+    ladder = _ladder(p, ladder)
+    if ladder is None:
+        return LATER
+    up = ladder.get("upgrading")
+    if up is None and isinstance(p, dict):
+        up = p.get("upgrading")
     if up:
+        name = up.get("name") or up.get("tool") or "工具"
         if up.get("days_left", 1) <= 0:
-            return {"missing": [f"克林特已经升级好{TOOL_NAMES.get(up.get('tool'), '工具')}，去铁匠铺取回（9:00-16:00）"],
+            return {"missing": [f"克林特已经升级好{name}，去铁匠铺取回（9:00-16:00）"],
                     "step": [{"type": "upgrade_tool"}], "advances": {"upgrade_tool"}}
-        return {"missing": [f"克林特正在升级{TOOL_NAMES.get(up.get('tool'), '工具')}，还要 {up.get('days_left')} 天（一次只能升级一件）"],
+        return {"missing": [f"克林特正在升级{name}，还要 {up.get('days_left')} 天（一次只能升级一件）"],
                 "step": [{"type": "ship_produce"}, {"type": "fish", "casts": 5}],
                 "advances": {"ship_produce", "fish", "mine", "clear_debris", "harvest_crops"}}
-    materials = p.get("materials") or {}
-    max_tier = 4 if "Iridium Bar" in materials else 3
-    nxt = next(((tool, tier) for tier in range(1, max_tier + 1) for tool in TOOL_ORDER if _tool_level(p, tool) < tier), None)
-    if nxt is None:
+    by_key = {tool.get("key"): tool for tool in ladder.get("tools") or [] if tool.get("key")}
+    pending = []
+    for index, key in enumerate(TOOL_ORDER):
+        info = by_key.get(key)
+        if not info or not info.get("held", True):
+            continue
+        tier = _next_tier(info)
+        if tier is not None:
+            pending.append((tier.get("level") or 0, index, key, tier))
+    if not pending:
         return None
-    tool, tier = nxt
-    gold, bar, ore, tier_name = TOOL_TIERS[tier]
-    label = f"{tier_name}{TOOL_NAMES[tool]}"
-    lack = _lack(p, {bar: 5})
-    if p.get("money", 0) < gold:
-        lack.append(f"金钱还差 {gold - p.get('money', 0)}g")
+    _, _, key, tier = min(pending)
+    price = tier.get("price")
+    amount = tier.get("trade_item_amount")
+    item_name = tier.get("trade_item_name") or ""
+    label = tier.get("display_name") or key
+    if price is None or amount is None:
+        return {"missing": [f"下一档是{label}，游戏没有同时返回价格和材料数量"],
+                "step": [], "advances": set()}
+    owned = tier.get("owned")
+    if owned is None:
+        owned = _m(p, item_name) if item_name else 0
+    lack = []
+    if owned < amount:
+        lack.append(f"{tier.get('trade_item_display') or item_name or '材料'} 还差 {amount - owned}")
+    if p.get("money", 0) < price:
+        lack.append(f"金钱还差 {price - p.get('money', 0)}g")
     if not lack:
-        return {"missing": [f"升级要求够了：把{TOOL_NAMES[tool]}升成{label}（{gold}g + 5 个锭，一次一件）"],
-                "step": [{"type": "upgrade_tool", "tool": tool}], "advances": {"upgrade_tool"}}
-    if _m(p, bar) < 5 and _m(p, ore) >= 5 and _m(p, "Coal") >= 1 and _placed(p, "Furnace"):
-        step = [{"type": "load_machines"}]
-    elif _m(p, bar) < 5:
+        return {"missing": [f"升级要求够了：把{key}升成{label}（{price}g + {amount} 个材料，一次一件）"],
+                "step": [{"type": "upgrade_tool", "tool": key}], "advances": {"upgrade_tool"}}
+    if owned < amount:
         step = [{"type": "mine", "floors": 5}]
     else:
         step = [{"type": "ship_produce"}, {"type": "fish", "casts": 5}]
-    return {"missing": [f"下一档是{label}，要求还不够"] + lack, "step": step,
-            "advances": {"mine", "load_machines", "collect_machines", "ship_produce", "fish", "upgrade_tool"}}
+    return {"missing": [f"下一档是{label}（最高 {by_key[key].get('max_level')} 级），要求还不够"] + lack,
+            "step": step, "advances": {"mine", "ship_produce", "fish", "upgrade_tool"}}
 
 
 def mine_gear(p):

@@ -37,7 +37,6 @@ import status
 import needs
 import prompts
 import restart_decision
-import wikitext
 import telemetry
 from game import Game, GameError
 from llm import LLM, LLMError
@@ -528,7 +527,7 @@ class Agent:
     def start_day(self, key, st):
         self.day_key = key
         self.day = DayLog(key, st, self.usage())
-        self.day.progress_start = self.safe(self.game.progress, {})
+        self.day.progress_start = self.roadmap_progress()
         log(f"===== 新的一天：第{key[0]}年 {key[1]} {key[2]} 日，{st['weather']}，金钱 {st['player']['money']}g =====")
         self.backup_save(st)
         self.ensure_farm_plan()
@@ -565,7 +564,7 @@ class Agent:
         else:
             self.day.script = morning
             self.replan(st, "新的一天开始了（没有昨晚准备的脚本）。", None)
-            self.day.script = self.enforce_milestone(morning + self.day.script, self.safe(self.game.progress, {}))
+            self.day.script = self.enforce_milestone(morning + self.day.script, self.roadmap_progress())
             self.day.script_total = len(self.day.script)
         log("今日计划：" + " / ".join(self.day.plan))
         self.write_run("plan", {"day": self.day.tag, "plan": self.day.plan, "script": self.day.script,
@@ -623,7 +622,7 @@ class Agent:
             "llm_calls": calls - d.llm_calls_start, "tokens": tokens - d.tokens_start,
         }
         row.update(telemetry.summarize(d.steps))
-        progress = self.safe(self.game.progress, {})
+        progress = self.roadmap_progress()
         start = d.progress_start
         row["deepest_mine"] = progress.get("deepest_mine")
         row["mine_floors_gained"] = (progress["deepest_mine"] - start["deepest_mine"]
@@ -650,7 +649,7 @@ class Agent:
         summary = (f"日期 {d.tag}；{money_text}；出货估值 {d.shipped_value}g；动作 {len(d.steps)} 个，失败 {len(fails)} 个；"
                    f"动作分布 {dict(types)}；最后动作时间 {last['time'] if last else '-'}；脚本重写 {d.replans} 次；"
                    f"今日计划 {d.plan}；笔记 {d.notes[-10:]}\n\n"
-                   + milestones.describe(self.safe(self.game.progress, {})))
+                   + milestones.describe(self.roadmap_progress()))
         log_lines = [self.fmt_step(s, with_thought=True) for s in d.steps[-40:]]
         fail_counts = collections.Counter(f"{s['action'].get('type')}: {s['message']}" for s in fails)
         failures = "\n".join(f"{n}x {m}" for m, n in fail_counts.most_common(15)) or "无"
@@ -698,10 +697,45 @@ class Agent:
         self.prep_thread.start()
         log("已睡觉：后台开始复盘今天并生成明天的脚本…")
 
-    def wiki_notes(self, progress):
-        """Facts from the downloaded wiki text for the current milestone. No network."""
-        cur = milestones.current(progress) if isinstance(progress, dict) else None
-        return wikitext.consult([cur[0]] if cur else [])
+    def roadmap_progress(self):
+        """/progress plus the live tool ladder. Missing ladder must not fall back to a price table."""
+        progress = self.safe(self.game.progress, {})
+        if not isinstance(progress, dict):
+            return {}
+        ladder = self.safe(self.game.tool_upgrades, None)
+        if isinstance(ladder, dict) and ladder.get("ok") and ladder.get("tools"):
+            progress = {**progress, "tool_ladder": ladder}
+        return progress
+
+    def scene_actions(self):
+        data = self.safe(self.game.actions, None)
+        return data if isinstance(data, dict) and data.get("primitives") else None
+
+    def goal_notes(self, progress):
+        """Prices and the next tier, copied from the tool-upgrade interface."""
+        lines = ["工具阶梯来自 GET /tool_upgrades。没有这一段时，不要按记忆里的铜/钢/金/铱价格升级。"]
+        ladder = (progress or {}).get("tool_ladder") or {}
+        tools = ladder.get("tools") or []
+        if not tools:
+            lines.append("（接口没有返回阶梯）")
+            return "\n".join(lines)
+        for tool in tools:
+            if tool.get("key") not in milestones.TOOL_ORDER or not tool.get("held", True):
+                continue
+            current = tool.get("current_level") or 0
+            nxt = None
+            for tier in sorted(tool.get("tiers") or [], key=lambda item: item.get("level") or 0):
+                if (tier.get("level") or 0) > current:
+                    nxt = tier
+                    break
+            if nxt is None:
+                lines.append(f"- {tool.get('key')} 已到数据里的最高 {tool.get('max_level')} 级")
+            else:
+                lines.append(
+                    f"- {tool.get('key')} 当前 {current} 级，下一档 {nxt.get('display_name') or nxt.get('level')}："
+                    f"{nxt.get('price')}g + {nxt.get('trade_item_amount')}x {nxt.get('trade_item_name')}"
+                    f"（最高 {tool.get('max_level')} 级）")
+        return "\n".join(lines)
 
     def sync_play_logs(self):
         """Push SMAPI and play journals after the night review. Does not start another agent."""
@@ -736,7 +770,8 @@ class Agent:
         year, season, day, weekday = next_date(st["year"], st["season"], st["day"])
         tag = f"Y{year}_{season}_{day:02d}"
         poi = [f"{p['kind']}@({p['x']},{p['y']}) {p['note']}" for p in st.get("points_of_interest", [])]
-        progress = self.safe(self.game.progress, {})
+        progress = self.roadmap_progress()
+        scene = self.scene_actions()
         user = prompts.USER_SCRIPT_NEXT_DAY.format(
             **self.mem.snapshot(),
             year=year, season=season, day=day, weekday=weekday, weather=st.get("weather_tomorrow"), days_left=28 - day,
@@ -748,14 +783,14 @@ class Agent:
                     + "\n" + self.fmt_bundles(st, detail=True) + "\n" + self.fmt_ranch()),
             today="\n".join(self.fmt_step(s) for s in d.steps[-15:]) or "（无）",
             recent_problems=problems.recent_for_prompt(self.mem.problems_path),
-            wiki=self.wiki_notes(progress))
+            goals=self.goal_notes(progress))
         try:
             resp = self.review_json([
-                {"role": "system", "content": prompts.SYSTEM_SCRIPT.format(actions=prompts.ACTIONS_DOC, roadmap=prompts.ROADMAP)},
+                {"role": "system", "content": prompts.SYSTEM_SCRIPT.format(actions=prompts.actions_text(scene), roadmap=prompts.ROADMAP)},
                 {"role": "user", "content": user}])
             bundles = self.safe(self.game.bundles, {})
             need = needs.immediate(progress, st, bundles, festival_in_days=1)
-            script = self.enforce_milestone(self.clean_script(resp.get("script")), progress, need)
+            script = self.enforce_milestone(self.clean_script(resp.get("script"), (scene or {}).get("primitives")), progress, need)
             if script:
                 self.prepared = {"for": tag, "plan": [str(p) for p in resp.get("plan", [])][:8], "script": script}
                 log(f"明天（{tag}）的脚本已准备好：{len(script)} 个动作")
@@ -796,11 +831,15 @@ class Agent:
 
     KNOWN_ACTIONS = actions.KNOWN_ACTIONS
 
-    def clean_script(self, script):
+    def clean_script(self, script, primitives=None):
         if not isinstance(script, list):
             return []
+        if primitives:
+            allowed = set(primitives) | set(actions.AGENT_MACROS)
+        else:
+            allowed = set(self.KNOWN_ACTIONS)
         # dialog_advance is dropped: the mod advances plain dialogue itself, so a scripted one only ever fails
-        out = [a for a in script if isinstance(a, dict) and a.get("type") in self.KNOWN_ACTIONS and a.get("type") != "dialog_advance"]
+        out = [a for a in script if isinstance(a, dict) and a.get("type") in allowed and a.get("type") != "dialog_advance"]
         # Collapse consecutive load_machines (models love to spam them) to a single call.
         cleaned = []
         for a in out:
@@ -893,18 +932,21 @@ class Agent:
                 failed_txt += " | 游戏消息: " + " / ".join(res["game_messages"])
         remaining = json.dumps(self.day.script, ensure_ascii=False) if self.day.script else "（无）"
         try:
+            scene = self.scene_actions()
+            progress = self.roadmap_progress()
             resp = self.llm.chat_json([
-                {"role": "system", "content": prompts.SYSTEM_SCRIPT.format(actions=prompts.ACTIONS_DOC, roadmap=prompts.ROADMAP)},
+                {"role": "system", "content": prompts.SYSTEM_SCRIPT.format(actions=prompts.actions_text(scene), roadmap=prompts.ROADMAP)},
                 {"role": "user", "content": prompts.USER_SCRIPT_REPAIR.format(
                     reason=reason, **self.mem.snapshot(),
                     failed=failed_txt, remaining=remaining, observation=self.observation(st),
-                    wiki=wikitext.consult([failed_txt, reason]))},
+                    goals=self.goal_notes(progress))},
             ], max_tokens=2500)
         except LLMError as e:
             log(f"重写脚本失败：{e}")
             return False
-        progress = self.safe(self.game.progress, {})
-        script = self.enforce_milestone(self.clean_script(resp.get("script")), progress)
+        progress = self.roadmap_progress()
+        scene = self.scene_actions()
+        script = self.enforce_milestone(self.clean_script(resp.get("script"), (scene or {}).get("primitives")), progress)
         if resp.get("plan"):
             self.day.plan = [str(p) for p in resp["plan"]][:8]
         self.set_script(script, f"重写#{self.day.replans}：{resp.get('reason', '')}"[:80], st.get("location"))
@@ -1150,7 +1192,7 @@ class Agent:
             return None
         if self.day.supplemental_queue:
             return self.day.supplemental_queue.pop(0)
-        progress = self.safe(self.game.progress, {})
+        progress = self.roadmap_progress()
         requirement = needs.immediate(progress, st, self.safe(self.game.bundles, {}))
         current = milestones.current(progress)
         candidates = []
@@ -2090,7 +2132,7 @@ class Agent:
     # ---------------- prompt building ----------------
 
     def system_prompt(self):
-        return prompts.SYSTEM_STEP.format(actions=prompts.ACTIONS_DOC, map_help=prompts.MAP_HELP,
+        return prompts.SYSTEM_STEP.format(actions=prompts.actions_text(self.scene_actions()), map_help=prompts.MAP_HELP,
                                           **self.mem.snapshot())
 
     def observation(self, st):
