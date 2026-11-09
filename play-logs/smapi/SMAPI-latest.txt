@@ -117,3 +117,34 @@ Microsoft.Xna.Framework.Audio.NoAudioHardwareException (0x80004005): OpenAL devi
 [18:10:11 TRACE SMAPI]    task complete.
 [18:10:11 TRACE game] SaveGame.Save() completed without exceptions.
 [18:10:12 TRACE SMAPI] Context: after save, starting spring 9 Y4.
+[18:10:18 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "31b04842aa0f456d8a885ebdc800ed8d"}
+[18:10:19 TRACE game] Warping to Farm
+[18:10:21 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "7c56f419639a4410888bc82fc3baf940"}
+[18:10:21 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "a005aae8c2904aa8ac38ac9407a83f23"}
+[18:10:22 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "ceea352ab087452389ab109ac5b92514"}
+[18:10:22 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "076d701ecb684fd3ba34642f77856970"}
+[18:10:40 TRACE game] Warping to Forest
+[18:10:42 TRACE Stardew AutoPilot] Action: {"type": "forage", "request_id": "4c6c2c15df564a49a956d5f75438074d"}
+[18:11:24 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "389aecc6e2ec48dd8647b1e1d0b103ea"}
+[18:11:52 TRACE game] Warping to Farm
+[18:12:13 TRACE Stardew AutoPilot] Action: {"type": "place", "item": "Acorn", "x": 23, "y": 9, "request_id": "97eec9eed9b94133826f7536ff0929ef"}
+[18:12:23 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120, "request_id": "76f2d8bbe0254eb1bce2cac947025cdb"}
+[18:13:49 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[18:13:49 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120, "request_id": "d7cd1b6b24ed47e3934c8cbfece8506b"}
+[18:15:17 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[18:15:17 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120, "request_id": "f3de042fb5ca4e87b3130c7f09b43cf5"}
+[18:16:45 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[18:16:45 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120, "request_id": "73e6efc747254e3c8d67c8b7ad818725"}
+[18:18:13 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[18:18:13 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120, "request_id": "a6525b3ac2704842922013b34a985490"}
+[18:19:41 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[18:19:41 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "4eede1fbd4b24fcd976c3aa7009a8142"}
+[18:19:54 TRACE game] Warping to FarmHouse
+[18:19:59 TRACE SMAPI] Synchronizing 'NewDay' task...
+[18:20:00 TRACE SMAPI]    task complete.
+[18:20:00 TRACE SMAPI] Context: before save.
+[18:20:00 TRACE game] SaveGame.Save() called.
+[18:20:00 TRACE SMAPI] Synchronizing 'Save' task...
+[18:20:00 TRACE game] Saving without compression...
+[18:20:00 TRACE SMAPI]    task complete.
+[18:20:00 TRACE game] SaveGame.Save() completed without exceptions.
