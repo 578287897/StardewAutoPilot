@@ -109,3 +109,11 @@ Microsoft.Xna.Framework.Audio.NoAudioHardwareException (0x80004005): OpenAL devi
 [18:09:46 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "c7b6d7c6661044388ab32e38ff118173"}
 [18:09:59 TRACE game] Warping to FarmHouse
 [18:10:04 TRACE SMAPI] Synchronizing 'NewDay' task...
+[18:10:06 TRACE SMAPI]    task complete.
+[18:10:06 TRACE SMAPI] Context: before save.
+[18:10:06 TRACE game] SaveGame.Save() called.
+[18:10:06 TRACE SMAPI] Synchronizing 'Save' task...
+[18:10:06 TRACE game] Saving without compression...
+[18:10:11 TRACE SMAPI]    task complete.
+[18:10:11 TRACE game] SaveGame.Save() completed without exceptions.
+[18:10:12 TRACE SMAPI] Context: after save, starting spring 9 Y4.
