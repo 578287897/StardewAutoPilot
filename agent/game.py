@@ -13,6 +13,9 @@ class GameError(Exception):
 
 
 class Game:
+    # POST /act waits this long. An unknown receipt must not outlive it.
+    ACTION_TIMEOUT = 330
+
     def __init__(self, base_url="http://localhost:8765", api_token="", pending_path=None):
         self.base = base_url.rstrip("/")
         self.api_token = api_token or ""
@@ -22,7 +25,9 @@ class Game:
         if self.pending_path and self.pending_path.exists():
             self.pending = json.loads(self.pending_path.read_text(encoding="utf-8"))
 
-    def _request(self, method, path, body=None, timeout=330):
+    def _request(self, method, path, body=None, timeout=None):
+        if timeout is None:
+            timeout = self.ACTION_TIMEOUT
         data = json.dumps(body, ensure_ascii=False).encode("utf-8") if body is not None else None
         headers = {"Content-Type": "application/json"}
         if self.api_token:

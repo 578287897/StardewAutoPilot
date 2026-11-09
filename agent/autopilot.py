@@ -986,6 +986,8 @@ class Agent:
                 self.record(st, "(查询先前动作的实际结果，不重放)", recovery["action"], recovery["result"])
                 self.resume_recovered(st, recovery)
                 return
+            elif self.release_unknown_receipt(st, recovery):
+                return
             else:
                 log(f"动作尚未确认（{recovery.get('state')}），暂停派发；操作编号保存在 pending_action.json")
                 time.sleep(5)
@@ -1105,6 +1107,32 @@ class Agent:
             return False
         after = result.get("after") or {}
         return bool(after.get("location")) and isinstance(after.get("time"), int)
+
+    def release_unknown_receipt(self, st, recovery):
+        """Unknown means no receipt was stored. A returned receipt still has to be confirmed."""
+        if recovery.get("state") != "unknown":
+            return False
+        pending = self.game.pending
+        if not isinstance(pending, dict):
+            return False
+        now = time.time()
+        since = pending.get("unknown_since")
+        if not isinstance(since, (int, float)):
+            since = now
+            pending["unknown_since"] = now
+            self.game._save_pending()
+        idle = not st.get("busy_action") and not st.get("menu")
+        if not idle and now - since < Game.ACTION_TIMEOUT:
+            return False
+        why = "游戏已经空闲" if idle else "等待超过动作超时"
+        log(f"未确认回执没有落盘（unknown），{why}，清掉并继续派发")
+        action = recovery.get("action") or pending.get("action") or {}
+        self.game.pending = None
+        self.game._save_pending()
+        self.record(st, "(回执缺失且动作已结束，不再整日等待)", action, {
+            "ok": False, "status": "ACTION_FAILED", "request_id": action.get("request_id"),
+            "message": "no operation receipt after the action ended; not waiting forever"})
+        return True
 
     def release_resolved_sleep(self, st, recovery):
         if not self.resolved_overnight(st, recovery):

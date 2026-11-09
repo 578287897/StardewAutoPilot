@@ -118,6 +118,7 @@ namespace StardewAutoPilot
                         {
                             ["ok"] = true,
                             ["mod"] = "StardewAutoPilot",
+                            ["version"] = this.mod.ModManifest.Version.ToString(),
                             ["action_receipts"] = true,
                             ["world_ready"] = Context.IsWorldReady
                         });

@@ -84,27 +84,53 @@ namespace StardewAutoPilot
                 }
             }
             if (!Context.IsWorldReady)
-                tcs.SetResult(Fail("world not ready"));
-            else if (this.job != null)
-                tcs.SetResult(Fail($"busy with '{this.job.Type}'"));
-            else
+                return this.Reject(requestId, scope, args, "world not ready");
+            if (this.job != null)
+                return this.Reject(requestId, scope, args, $"busy with '{this.job.Type}'");
+            try
             {
-                try
-                {
-                    var routine = this.Build(type, args);
-                    if (!string.IsNullOrEmpty(requestId))
-                        this.receipts.Begin(requestId, scope, args.GetRawText());
-                    this.job = new Job { Type = type, Routine = routine.GetEnumerator(), Tcs = tcs,
-                        RequestId = requestId, MoneyStart = P.Money, StartSeq = this.mod.Log.LastSeq };
-                    if (!string.IsNullOrEmpty(requestId)) this.requests[requestId] = tcs.Task;
-                    this.mod.Monitor.Log($"Action: {args.GetRawText()}", LogLevel.Trace);
-                }
-                catch (ActionFailed ex)
-                {
-                    tcs.SetResult(Fail(ex.Message));
-                }
+                var routine = this.Build(type, args);
+                if (!string.IsNullOrEmpty(requestId))
+                    this.receipts.Begin(requestId, scope, args.GetRawText());
+                this.job = new Job { Type = type, Routine = routine.GetEnumerator(), Tcs = tcs,
+                    RequestId = requestId, MoneyStart = P.Money, StartSeq = this.mod.Log.LastSeq };
+                if (!string.IsNullOrEmpty(requestId)) this.requests[requestId] = tcs.Task;
+                this.mod.Monitor.Log($"Action: {args.GetRawText()}", LogLevel.Trace);
+            }
+            catch (ActionFailed ex)
+            {
+                // Build can fail before Begin, as place does when x,y are missing.
+                // That response is final: persist it or /action_status stays unknown.
+                return this.Reject(requestId, scope, args, ex.Message);
             }
             return tcs.Task;
+        }
+
+        /// <summary>A request that will not run has still finished. Store the failure so /action_status can read it.</summary>
+        private Task<Dictionary<string, object>> Reject(string requestId, string scope, JsonElement args, string message)
+        {
+            var result = Fail(message);
+            if (string.IsNullOrEmpty(requestId))
+                return Task.FromResult(result);
+            result["request_id"] = requestId;
+            try
+            {
+                this.receipts ??= new ActionReceipts(Path.Combine(this.mod.Helper.DirectoryPath, "data", "action-receipts.json"));
+                if (this.receipts.Get(requestId) == null)
+                    this.receipts.Begin(requestId, scope, args.GetRawText());
+                this.receipts.Complete(requestId, result);
+            }
+            catch (Exception ex)
+            {
+                result = new Dictionary<string, object>
+                {
+                    ["ok"] = false,
+                    ["status"] = "ACTION_UNCERTAIN",
+                    ["request_id"] = requestId,
+                    ["message"] = "receipt could not be saved: " + ex.Message
+                };
+            }
+            return Task.FromResult(result);
         }
 
         public object RequestStatus(string id)
