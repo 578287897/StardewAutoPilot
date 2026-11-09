@@ -101,3 +101,10 @@
 [20:01:02 TRACE game] Warping to FarmHouse
 [20:01:07 TRACE SMAPI] Synchronizing 'NewDay' task...
 [20:01:09 TRACE SMAPI]    task complete.
+[20:01:15 TRACE SMAPI] Context: before save.
+[20:01:15 TRACE game] SaveGame.Save() called.
+[20:01:15 TRACE SMAPI] Synchronizing 'Save' task...
+[20:01:15 TRACE game] Saving without compression...
+[20:01:21 TRACE SMAPI]    task complete.
+[20:01:21 TRACE game] SaveGame.Save() completed without exceptions.
+[20:01:22 TRACE SMAPI] Context: after save, starting summer 8 Y4.
