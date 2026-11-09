@@ -35,7 +35,24 @@ try
     bool rejected = false;
     try { _ = new ActionReceipts(path); } catch (System.Text.Json.JsonException) { rejected = true; }
     Check(rejected, "corrupt ledger fails closed instead of forgetting operations");
-    Console.WriteLine($"{checks} receipt checks passed.");
+
+    Check(ShopLocations.RejectReason("FishShop", "Mountain", "Mountain") != null, "FishShop rejected on Mountain");
+    Check(ShopLocations.RejectReason("FishShop", "Beach", "Beach") != null, "FishShop rejected on Beach");
+    Check(ShopLocations.RejectReason("FishShop", "FishShop", "FishShop") == null, "FishShop allowed inside FishShop");
+    Check(ShopLocations.RejectReason("FishShop", null, null) != null, "FishShop rejected when location is unknown");
+    Check(ShopLocations.RejectReason("Carpenter", "ScienceHouse", "ScienceHouse") == null, "Carpenter allowed in ScienceHouse");
+    Check(ShopLocations.RejectReason("Carpenter", "FishShop", "FishShop") != null, "Carpenter rejected in FishShop");
+    Check(ShopLocations.RejectReason("AdventureShop", "AdventureGuild", "AdventureGuild") == null, "AdventureShop allowed in the guild");
+    Check(ShopLocations.RejectReason("AdventureShop", "Mountain", "Mountain") != null, "AdventureShop rejected on Mountain");
+    Check(ShopLocations.RejectReason("Saloon", "Town", "Town") != null, "Saloon rejected outdoors in Town");
+    Check(ShopLocations.RejectReason("Saloon", "Saloon", "Saloon") == null, "Saloon allowed inside Saloon");
+    Check(ShopLocations.RejectReason("Joja", "JojaMart", "JojaMart") == null, "Joja allowed in JojaMart");
+    Check(ShopLocations.RejectReason("NotAShop", "Farm", "Farm") != null, "unknown shop rejected");
+    Check(ShopLocations.MenuMismatch("FishShop", "FishShop") == null, "FishShop menu matches the request");
+    Check(ShopLocations.MenuMismatch("FishShop", "SeedShop") != null, "FishShop request rejects a SeedShop menu");
+    Check(ShopLocations.MenuMismatch("AdventureGuild", "AdventureShop") == null, "AdventureGuild alias matches the AdventureShop menu");
+    Check(ShopLocations.TryResolve("AdventureGuild", out string guild, out string guildMenu) && guild == "AdventureGuild" && guildMenu == "AdventureShop", "AdventureGuild resolves to the guild and the AdventureShop menu");
+    Console.WriteLine($"{checks} protocol checks passed.");
 }
 finally
 {
