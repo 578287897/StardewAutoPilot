@@ -36,6 +36,34 @@ try
     try { _ = new ActionReceipts(path); } catch (System.Text.Json.JsonException) { rejected = true; }
     Check(rejected, "corrupt ledger fails closed instead of forgetting operations");
     Console.WriteLine($"{checks} receipt checks passed.");
+
+    FishingRecovery.Sample Open(bool fadeOut, bool handled, float progress, bool pulling) => new()
+    {
+        MenuOpen = true, FadeOut = fadeOut, ResultHandled = handled, Progress = progress, PullStarted = pulling
+    };
+    Check(FishingRecovery.Decide(10, 10, 0, Open(false, false, 0.3f, false)) == FishingRecovery.Step.Wait,
+        "a moving minigame is left alone");
+    Check(FishingRecovery.Decide(FishingRecovery.FadeInGraceTicks, FishingRecovery.StallTicks, 0, Open(false, false, 0.3f, false)) == FishingRecovery.Step.Wait,
+        "stall during the fade-in grace does not abort");
+    Check(FishingRecovery.Decide(FishingRecovery.FadeInGraceTicks + 1, FishingRecovery.StallTicks, 0, Open(false, false, 0.3f, false)) == FishingRecovery.Step.Escape,
+        "progress that stops changing aborts as an escape");
+    Check(FishingRecovery.Decide(FishingRecovery.MaxMinigameTicks, 0, 0, Open(false, false, 0.4f, false)) == FishingRecovery.Step.Escape,
+        "the minigame has a hard tick cap even while progress changes");
+    Check(FishingRecovery.Decide(100, 100, FishingRecovery.FadeOutGraceTicks - 1, Open(true, true, 1f, false)) == FishingRecovery.Step.Wait,
+        "a normal catch fade-out is not cut short");
+    Check(FishingRecovery.Decide(100, 100, FishingRecovery.FadeOutGraceTicks, Open(true, true, 1f, false)) == FishingRecovery.Step.AwardCatch,
+        "a decided catch whose menu never closes is awarded once");
+    Check(FishingRecovery.Decide(100, 100, FishingRecovery.FadeOutGraceTicks, Open(true, true, 1f, true)) == FishingRecovery.Step.CloseMenu,
+        "a pull that already started only closes the menu");
+    Check(FishingRecovery.Decide(100, 100, FishingRecovery.FadeOutGraceTicks, Open(true, true, 0f, false)) == FishingRecovery.Step.Escape,
+        "a decided miss whose menu never closes does not award a fish");
+    Check(FishingRecovery.Decide(100, 100, FishingRecovery.FadeOutGraceTicks, Open(true, false, 0.95f, false)) == FishingRecovery.Step.Escape,
+        "a high progress bar the game has not accepted is not awarded");
+    var closed = Open(true, true, 1f, false);
+    closed.MenuOpen = false;
+    Check(FishingRecovery.Decide(FishingRecovery.MaxMinigameTicks, FishingRecovery.StallTicks, FishingRecovery.FadeOutGraceTicks, closed) == FishingRecovery.Step.Wait,
+        "a closed menu is not recovered again");
+    Console.WriteLine($"{checks} protocol checks passed.");
 }
 finally
 {

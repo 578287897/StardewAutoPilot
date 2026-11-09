@@ -6,5 +6,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../mod/ActionReceipts.cs" Link="ActionReceipts.cs" />
+    <Compile Include="../../mod/FishingRecovery.cs" Link="FishingRecovery.cs" />
   </ItemGroup>
 </Project>
