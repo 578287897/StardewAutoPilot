@@ -10,7 +10,7 @@
 
 ## 当前结论
 
-**尚未达到长期运行验收标准。**
+**尚未达到长期运行验收标准。** 0.2.16-pre 只把进度和场面动作改到游戏接口，没有完成全成就、全收集、全任务或物品全满级。部署新版本会使 2026-11-09 22:51 起的长跑计时作废，必须用部署后的进程重新起算。这次提交本身没有部署。
 
 ## 验收环境（接手基线）
 
@@ -18,7 +18,7 @@
 | --- | --- |
 | 维护源码目录 | `...\draft-404e0e77-...\StardewAutoPilot-main` |
 | GitHub | https://github.com/578287897/StardewAutoPilot |
-| 基线版本 | **0.2.15-pre**（见 `mod/manifest.json`） |
+| 基线版本 | 源码已到 **0.2.16-pre**（`mod/manifest.json`）。正在计时的那一版仍是部署前的进程；部署后作废，这次不是验收通过 |
 | 游戏 | Stardew Valley 1.6 + SMAPI，`F:\steam\steamapps\common\Stardew Valley` |
 | 存档 | `AI_453272148`（已在接手时备份到 `save-backups/AI_453272148_handback_*`） |
 | 基线游戏日 | 第 4 年 summer 11 日 · 约 06:10 · 金钱约 18892g |

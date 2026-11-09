@@ -95,11 +95,23 @@ namespace StardewAutoPilot
                 if (dates.TryGetValue(key, out string name))
                 {
                     var entry = new Dictionary<string, object> { ["in_days"] = i, ["name"] = name, ["season"] = Utility.getSeasonKey(season), ["day"] = day };
-                    if (Event.tryToLoadFestivalData(key, out _, out _, out string location, out int start, out int end))
+                    if (Event.tryToLoadFestivalData(key, out _, out var data, out string location, out int start, out int end))
                     {
+                        entry["id"] = key;
                         entry["location"] = location;
                         entry["start"] = start;
                         entry["end"] = end;
+                        string activity = QueryRules.FestivalActivity(key, data?.Values);
+                        entry["activity"] = activity;
+                        if (!string.IsNullOrEmpty(location))
+                        {
+                            entry["step"] = new List<Dictionary<string, object>>
+                            {
+                                new() { ["type"] = "goto_location", ["location"] = location },
+                                new() { ["type"] = "festival", ["activity"] = activity }
+                            };
+                            entry["advances"] = new List<string> { "festival" };
+                        }
                     }
                     list.Add(entry);
                 }

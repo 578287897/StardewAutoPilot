@@ -42,12 +42,10 @@ ACTIONS_DOC = """\
 - {"type":"mine","floors":3}           去矿洞（从电梯能到的最深层开始），自动打怪、敲石头找梯子往下走 floors 层。会消耗体力和生命。
                                        安全规则（执行器强制）：生命 <40% 自动吃东西；没吃的就自动出矿。可回血食物 <3 个最多到第 19 层，<5 个最多到第 39 层；
                                        武器平均伤害 <7 最多到第 39 层，<14 最多到第 79 层。被打倒后 3 天内会限制深度。
-- {"type":"festival","activity":"soup"}  节日活动（必须已在节日现场）：soup=夏威夷宴会(夏11,海滩)往汤里放背包里最好的食材；
-                                       grange=星露谷展览会(秋16,镇上)摆 9 件不同种类的好东西参展；dance=花舞节(春24,森林)邀请 4 心以上的单身村民跳舞；
-                                       start=告诉刘易斯准备好了，开始节日主活动（之后节日会结束、回到农场）。
+- {"type":"festival","activity":"soup|grange|dance|start"}  节日活动（必须已在节日现场）。activity 用状态里该节日的 activity，不要按节日名字自己猜。
 - {"type":"decorate"}                   做一件农场装饰：作坊角外种遮挡树（用橡子/枫树种子/松果）、有畜舍后围牧场栅栏和栅栏门、门前两侧花坛种当季花。
 - {"type":"build_road"}                 按农场规划铺下一段 2 格宽的主干道（自动做石砖路面、清杂草碎石，有路灯配方时立路灯）。
-- {"type":"upgrade_tool","tool":"axe"}   去铁匠铺(克林特 9-16 点)升级工具：axe/pickaxe/hoe/watering can。铜级 2000g+5 铜锭，钢级 5000g+5 铁锭；
+- {"type":"upgrade_tool","tool":"axe"}   去铁匠铺(克林特 9-16 点)升级工具：axe/pickaxe/hoe/watering can。费用和材料以 GET /tool_upgrades 为准，不要套用记忆里的固定价。
                                        工具交给克林特 2 天，期间不能用。不写 tool = 取回已经升级好的工具。
                                        禁止用 interact/dialog_answer 找克林特「聊天升级」——那只会寒暄，必须用本动作。
 - {"type":"upgrade_house"}              去罗宾家(ScienceHouse，9-17点，周二休)升级房屋到有厨房：10000g + 450 木头，3 天后完成。材料可从箱子扣。
@@ -93,6 +91,32 @@ SHOP_HOURS = [
     ("Hospital", "Hospital", 900, 1500, {"Tue"}),
     ("Joja", "JojaMart", 900, 2300, set()),
 ]
+
+
+def actions_text(scene):
+    """Parameter notes plus the mod's scene list. ACTIONS_DOC is not the availability source."""
+    lines = ["## 当前场面可执行（GET /actions，以这份为准）"]
+    available = (scene or {}).get("available") if isinstance(scene, dict) else None
+    primitives = (scene or {}).get("primitives") if isinstance(scene, dict) else None
+    if not available:
+        lines.append("（模组没有返回场面清单。不要把下面的参数说明当成“现在就能做”。）")
+    else:
+        for item in available:
+            if isinstance(item, dict):
+                extra = []
+                if item.get("activity"):
+                    extra.append(f"activity={item['activity']}")
+                if item.get("shop_id"):
+                    extra.append(f"shop_id={item['shop_id']}")
+                suffix = (" " + " ".join(extra)) if extra else ""
+                lines.append(f"- {item.get('type')}{suffix}")
+            else:
+                lines.append(f"- {item}")
+    if primitives:
+        lines.append("模组原语（写一整天脚本时可以选这些；立刻执行时只做上面的场面清单）：" + ", ".join(primitives))
+    lines.append("下面只说明参数怎么写。某个 type 没出现在模组原语里，就不要写。")
+    lines.append(ACTIONS_DOC)
+    return "\n".join(lines)
 
 
 def shop_status(time, weekday):
@@ -246,7 +270,7 @@ SYSTEM_SCRIPT = """你是《星露谷物语》自动游玩代理的规划师。�
 - 一整天的脚本以 sleep 结尾（17:00 之后、24:00 之前）；如果是“重写剩余部分”，从当前状态开始写到睡觉为止。
 - 遵守策略和教训。
 - 目标：plan 的第一条写“里程碑：…”（来自长期路线图和策略里的“长期目标”），今天的主活动必须推进它。
-- 「本地资料库」来自已经下载好的 wiki.txt（中文名 / 英文名 / 费用 / 材料 / 获取方式）。规划时以这些条目为准，不要改用记忆里的另一套价格。游戏如果当场拒绝（钱不够、材料不够、商店没开门），按当场结果改脚本。
+- 价格、材料、节日步骤和社区中心目标以游戏接口为准（工具阶梯、作物、配方、收集包、节日 step）。不要改用记忆里的另一套价格。游戏如果当场拒绝（钱不够、材料不够、商店没开门），按当场结果改脚本。
 
 {roadmap}
 
@@ -277,8 +301,8 @@ USER_SCRIPT_NEXT_DAY = """为明天写一整天的脚本（现在是前一晚，
 ## 近期问题（避开重复踩坑）
 {recent_problems}
 
-## 本地资料库（下载后的 wiki 文本，按名字对照）
-{wiki}"""
+## 游戏接口里的当前目标
+{goals}"""
 
 USER_SCRIPT_REPAIR = """{reason}请从当前状态重写今天剩余的脚本（写到睡觉为止）。只改受失败影响的部分，尽量保留原脚本的路线和顺序，不要新增去其他地图的行程。
 
@@ -297,5 +321,5 @@ USER_SCRIPT_REPAIR = """{reason}请从当前状态重写今天剩余的脚本（
 ## 当前状态
 {observation}
 
-## 本地资料库（下载后的 wiki 文本，按名字对照）
-{wiki}"""
+## 游戏接口里的当前目标
+{goals}"""

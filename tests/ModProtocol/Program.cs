@@ -80,6 +80,36 @@ try
     Check(ShopLocations.MenuMismatch("FishShop", "SeedShop") != null, "FishShop request rejects a SeedShop menu");
     Check(ShopLocations.MenuMismatch("AdventureGuild", "AdventureShop") == null, "AdventureGuild alias matches the AdventureShop menu");
     Check(ShopLocations.TryResolve("AdventureGuild", out string guild, out string guildMenu) && guild == "AdventureGuild" && guildMenu == "AdventureShop", "AdventureGuild resolves to the guild and the AdventureShop menu");
+    Check(ShopLocations.ShopAt("FishShop") == "FishShop", "FishShop interior is the fish counter");
+    Check(ShopLocations.ShopAt("Mountain") == null, "Mountain is not a shop counter");
+    Check(ShopLocations.ShopAt("AdventureGuild") == "AdventureShop", "guild interior maps to the AdventureShop id");
+
+    var earned = QueryRules.Achievement(0, "Greenhorn (15k)^Earn 15,000g^true^-1^18", true);
+    Check((int)earned["id"] == 0 && (string)earned["description"] == "Earn 15,000g" && (bool)earned["completed"], "achievement fields come from the data string");
+    var hidden = QueryRules.Achievement(44, "Perfection^Reach the summit.^false^-1^9", false);
+    Check((bool)hidden["show_before_earned"] == false && (int)hidden["prerequisite"] == -1 && (bool)hidden["completed"] == false, "unearned achievement keeps the data flags");
+
+    Check(QueryRules.FestivalActivity("spring13", new[] { "set-up LuauSoup here" }) == "soup", "LuauSoup in the festival data is soup even on another date");
+    Check(QueryRules.FestivalActivity("summer11", new[] { "no soup token" }) == "start", "summer11 without LuauSoup is not guessed");
+    Check(QueryRules.FestivalActivity("spring24", Array.Empty<string>()) == "dance", "spring24 asset is the flower dance");
+    Check(QueryRules.FestivalActivity("fall16", new[] { "Stardew Valley Fair" }) == "grange", "fall16 asset is the grange");
+    Check(QueryRules.FestivalActivity("winter25", new[] { "Luau" }) == "start", "display text Luau is not the soup token");
+
+    var asleep = QueryRules.AvailableTypes(new SceneFacts { WorldReady = false, OnFarm = true, CanFish = true });
+    Check(asleep.Count == 0, "no actions before the world is ready");
+    var cutscene = QueryRules.AvailableTypes(new SceneFacts { WorldReady = true, Cutscene = true, OnFarm = true });
+    Check(cutscene.Count == 0, "a cutscene has no actions");
+    var shop = QueryRules.AvailableTypes(new SceneFacts { WorldReady = true, Menu = "shop", OnFarm = true, CanFish = true });
+    Check(shop.Contains("buy") && shop.Contains("close_menu") && !shop.Contains("fish") && !shop.Contains("mine"), "an open shop only offers shop actions");
+    var festival = QueryRules.AvailableTypes(new SceneFacts { WorldReady = true, Festival = true, OnFarm = true });
+    Check(festival.Contains("festival") && !festival.Contains("mine") && !festival.Contains("sleep"), "a festival does not offer the farm day");
+    var farm = QueryRules.AvailableTypes(new SceneFacts { WorldReady = true, OnFarm = true, CanFish = true, HasKitchen = true, CanDonate = true, UnreadMail = 2, ShopCounter = false });
+    Check(farm.Contains("water_crops") && farm.Contains("fish") && farm.Contains("cook") && farm.Contains("donate") && farm.Contains("check_mail") && farm.Contains("upgrade_tool") && !farm.Contains("open_shop") && !farm.Contains("leave_mine"), "farm scene includes travel and the live flags");
+    var town = QueryRules.AvailableTypes(new SceneFacts { WorldReady = true, OnFarm = false, CanFish = false, HasKitchen = false, ShopCounter = true });
+    Check(town.Contains("open_shop") && town.Contains("mine") && !town.Contains("water_crops") && !town.Contains("fish") && !town.Contains("cook"), "off the farm, water and fish wait for that scene");
+    var mine = QueryRules.AvailableTypes(new SceneFacts { WorldReady = true, InMine = true, OnFarm = false, CanFish = false });
+    Check(mine.Contains("leave_mine") && mine.Contains("fight") && !mine.Contains("sleep") && !mine.Contains("water_crops"), "the mine scene is the mine");
+
     Console.WriteLine($"{checks} protocol checks passed.");
 }
 finally

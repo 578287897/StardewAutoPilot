@@ -8,7 +8,7 @@
 
 基于真实游戏状态的《星露谷物语》AI 自动驾驶系统
 
-[![Version](https://img.shields.io/badge/version-0.2.15--pre-b7d88d?style=flat-square&labelColor=102d28)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.2.16--pre-b7d88d?style=flat-square&labelColor=102d28)](CHANGELOG.md)
 [![SMAPI](https://img.shields.io/badge/SMAPI-4.x-efce82?style=flat-square&labelColor=102d28)](https://smapi.io/)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-9cc8c1?style=flat-square&labelColor=102d28)](agent/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-d2ddd0?style=flat-square&labelColor=102d28)](LICENSE)
@@ -25,7 +25,7 @@
 
 SMAPI Mod 直接读取游戏状态并执行动作，Python 代理负责计划、调度和复盘。代理通过 OpenAI 兼容 API 调用模型，围绕每日脚本完成种植、采集、钓鱼、下矿与经营，并将策略与教训保存下来，供后续计划参考。无需截图或图像识别。
 
-> **当前版本：0.2.15-pre（预发布）** · 代码与单元测试持续迭代；**尚未达到**「连续无人值守 ≥24 小时且 ≥30 游戏日」的长期运行验收标准。可从 [Releases](https://github.com/578287897/StardewAutoPilot/releases) / `main` 获取；更新需同时替换 Mod 与 Python 代理。详见 [CHANGELOG](CHANGELOG.md) 与 [ACCEPTANCE](ACCEPTANCE.md)。
+> **当前版本：0.2.16-pre（预发布）** · 代码与单元测试持续迭代；**尚未达到**「连续无人值守 ≥24 小时且 ≥30 游戏日」的长期运行验收标准，也还没有完成全成就、全收集、全任务和物品全满级。可从 [Releases](https://github.com/578287897/StardewAutoPilot/releases) / `main` 获取；更新需同时替换 Mod 与 Python 代理。详见 [CHANGELOG](CHANGELOG.md) 与 [ACCEPTANCE](ACCEPTANCE.md)。
 
 ## 核心能力
 
@@ -119,8 +119,7 @@ flowchart LR
 | `agent/status.py` | 手机状态页 |
 | `agent/journal.py` | 人能读的每日游玩日志 |
 | `agent/memory/strategy.md` | 初始策略；每次游玩会在 `memory/<profile>/` 里自己改写 |
-| `agent/mcp_game.py` | MCP：实时状态、日志、本地资料库、单步接管 |
-| `agent/wikitext.py` | 读取 `mod/wiki.txt` |
+| `agent/mcp_game.py` | MCP：实时状态、日志、游戏目标接口、单步接管 |
 | `redeploy_at_night.ps1` | 改了 mod 之后：等今晚存档完成再重启游戏并接着玩 |
 
 更新内容见 [CHANGELOG.md](CHANGELOG.md)。
@@ -138,7 +137,7 @@ python -m compileall -q agent
 
 ### HTTP 接口 · localhost:8765
 
-`GET /state` `/map` `/crops` `/farm_grid` `/progress` `/crop_data` `/social` `/recipes` `/bundles` `/ranch` `/items` `/wiki?q=` `/messages` …，`POST /act {"type": ...}` 执行动作（完整列表见 `agent/prompts.py` 的 `ACTIONS_DOC`）。`/wiki` 只查随模组发布的 `wiki.txt`。
+`GET /state` `/map` `/crops` `/farm_grid` `/progress` `/crop_data` `/social` `/recipes` `/bundles` `/ranch` `/items` `/achievements` `/collections` `/quests` `/special_orders` `/tool_upgrades` `/actions` `/messages` …，`POST /act {"type": ...}` 执行动作，`GET /action_status?request_id=` 查结果。场面里能做的动作看 `GET /actions`；`agent/prompts.py` 的 `ACTIONS_DOC` 只说明参数。
 
 实时监控用 MCP（stdio，不另开端口）：
 
@@ -146,7 +145,7 @@ python -m compileall -q agent
 python agent/mcp_game.py
 ```
 
-工具：`status`、`problems`、`journal`、`wiki`、`act`、`cancel`。`autopilot.py` 正在跑时，`act` 会和它抢同一个动作队列，只在它卡住时用。
+工具：`status`、`problems`、`journal`、`goals`、`act`、`cancel`。`autopilot.py` 正在跑时，`act` 会和它抢同一个动作队列，只在它卡住时用。
 
 副作用接口只用 POST：`POST /new_game`、`POST /load_save`（JSON body）。可选在 mod 的 `config.json` 里设 `ApiToken`，代理侧对应填 `mod_api_token`。状态页默认只绑局域网地址（`status_bind`: `lan` / `localhost` / `0.0.0.0`）。
 

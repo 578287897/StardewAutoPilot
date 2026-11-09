@@ -18,7 +18,12 @@ namespace StardewAutoPilot
     ///   GET  /map?radius=10        ASCII map around the player + legend
     ///   GET  /crops?location=Farm  crop summary (needs water / ready / growing)
     ///   GET  /messages?since=N     HUD / dialogue / menu log
-    ///   GET  /wiki?q=铜镐          lookup the downloaded wiki.txt (no network)
+    ///   GET  /achievements         achievement data plus whether this save has each one
+    ///   GET  /collections          shipping, fish, artifacts, minerals, cooking, crafting, museum
+    ///   GET  /quests               quest data plus the live quest log
+    ///   GET  /special_orders       special-order data plus active, available, and completed ids
+    ///   GET  /tool_upgrades        tool ladder from Data/Tools (price and bars resolved by the game)
+    ///   GET  /actions              primitives, and the actions the current scene can start
     ///   POST /new_game {name,...}  create a save from the title screen (POST only)
     ///   POST /load_save {name}     load a save from the title screen (POST only)
     ///   POST /act   {type,...}     run one action and wait until it finishes
@@ -141,18 +146,23 @@ namespace StardewAutoPilot
                         var ids = (q["ids"] ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                         result = await this.mod.OnMainThread(() => (object)ids.Select(id => ItemInfo.Describe(id)).ToList());
                         break;
-                    case "/wiki":
-                        {
-                            string wikiQuery = q["q"] ?? "";
-                            int wikiLimit = int.TryParse(q["limit"], out var wl) ? wl : 5;
-                            var hits = WikiText.Find(wikiQuery, wikiLimit);
-                            result = new Dictionary<string, object>
-                            {
-                                ["ok"] = true,
-                                ["count"] = WikiText.Count,
-                                ["hits"] = hits
-                            };
-                        }
+                    case "/achievements":
+                        result = await this.mod.OnMainThread(() => Context.IsWorldReady ? (object)Completion.Achievements() : new { ok = false, message = "world not ready" });
+                        break;
+                    case "/collections":
+                        result = await this.mod.OnMainThread(() => Context.IsWorldReady ? (object)Completion.Collections() : new { ok = false, message = "world not ready" });
+                        break;
+                    case "/quests":
+                        result = await this.mod.OnMainThread(() => Context.IsWorldReady ? (object)Completion.Quests() : new { ok = false, message = "world not ready" });
+                        break;
+                    case "/special_orders":
+                        result = await this.mod.OnMainThread(() => Context.IsWorldReady ? (object)Completion.SpecialOrders() : new { ok = false, message = "world not ready" });
+                        break;
+                    case "/tool_upgrades":
+                        result = await this.mod.OnMainThread(() => Context.IsWorldReady ? (object)Completion.ToolLadder() : new { ok = false, message = "world not ready" });
+                        break;
+                    case "/actions":
+                        result = await this.mod.OnMainThread(() => (object)SceneActions.Current());
                         break;
                     case "/new_game":
                         if (method != "POST")

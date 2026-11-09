@@ -4,6 +4,7 @@ using System.Linq;
 using StardewValley;
 using StardewValley.Locations;
 using StardewValley.Objects;
+using StardewValley.Quests;
 
 namespace StardewAutoPilot
 {
@@ -29,6 +30,66 @@ namespace StardewAutoPilot
             return "enter_cc: walk into the Community Center (north of Town square, open after Spring 5) to start the bundles";
         }
 
+        /// <summary>The one community-center step the live mail, event, and quest log are asking for.</summary>
+        public static Dictionary<string, object> CurrentTarget()
+        {
+            var player = Game1.player;
+            if (player.mailReceived.Contains("JojaMember") || player.hasCompletedCommunityCenter())
+                return null;
+            foreach (var quest in player.questLog)
+            {
+                if (quest.completed.Value || quest is not GoSomewhereQuest somewhere || string.IsNullOrEmpty(somewhere.whereToGo.Value))
+                    continue;
+                if (somewhere.whereToGo.Value is "WizardHouse" or "CommunityCenter")
+                    return Target(quest.GetName(), somewhere.whereToGo.Value, "quest:" + quest.id.Value);
+            }
+            if (CanDonate || player.eventsSeen.Contains("611439"))
+                return null;
+            if (player.hasOrWillReceiveMail("wizardJunimoNote"))
+            {
+                if (LocationQuest("WizardHouse", out string title, out string where))
+                    return Target(title, where, "mail:wizardJunimoNote");
+                return null;
+            }
+            if (Game1.getLocationFromName("CommunityCenter") != null)
+                return Target("进入社区中心", "CommunityCenter", "not_started");
+            return null;
+        }
+
+        private static bool LocationQuest(string location, out string title, out string where)
+        {
+            title = null;
+            where = null;
+            foreach (var pair in DataLoader.Quests(Game1.content))
+            {
+                string[] fields = pair.Value.Split('/');
+                if (fields.Length < 5 || fields[0] != "Location")
+                    continue;
+                string candidate = fields[4].Split(' ')[0];
+                if (candidate != location || Game1.getLocationFromName(candidate) == null)
+                    continue;
+                title = fields[1];
+                where = candidate;
+                return true;
+            }
+            return false;
+        }
+
+        private static Dictionary<string, object> Target(string name, string location, string source)
+        {
+            return new Dictionary<string, object>
+            {
+                ["name"] = name,
+                ["step"] = new List<Dictionary<string, object>>
+                {
+                    new() { ["type"] = "goto_location", ["location"] = location }
+                },
+                ["advances"] = new List<string> { "goto_location" },
+                ["at"] = "start",
+                ["source"] = source
+            };
+        }
+
         private static int CountOwned(string qualifiedId, int quality)
         {
             int count = 0;
@@ -41,7 +102,7 @@ namespace StardewAutoPilot
 
         public static Dictionary<string, object> Status()
         {
-            var result = new Dictionary<string, object> { ["stage"] = Stage() };
+            var result = new Dictionary<string, object> { ["stage"] = Stage(), ["current_target"] = CurrentTarget() };
             var cc = Game1.getLocationFromName("CommunityCenter") as CommunityCenter;
             if (cc == null)
                 return result;

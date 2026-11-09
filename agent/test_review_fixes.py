@@ -6,7 +6,6 @@ import milestones
 import needs
 import prompts
 import restart_decision
-import wikitext
 from llm import parse_json
 from autopilot import Agent
 
@@ -49,6 +48,17 @@ class TestActionsAndScripts(unittest.TestCase):
         ]
         out = a.clean_script(raw)
         self.assertEqual([x["type"] for x in out], ["load_machines", "fish", "load_machines"])
+
+    def test_clean_script_uses_mod_primitives_not_the_prompt(self):
+        a = FakeAgent()
+        raw = [
+            {"type": "fish", "casts": 1},
+            {"type": "upgrade_house"},
+            {"type": "store_items"},
+        ]
+        self.assertIn("upgrade_house", prompts.ACTIONS_DOC)
+        out = a.clean_script(raw, primitives=["fish", "sleep"])
+        self.assertEqual([x["type"] for x in out], ["fish", "store_items"])
 
     def test_busy_furnace_does_not_block_later_loads(self):
         self.assertFalse(Agent.load_failure_blocks_filler(
@@ -110,26 +120,51 @@ class TestActionsAndScripts(unittest.TestCase):
         self.assertFalse(restart_decision.cooldown_active("100", now=100 + 1300))
 
     def test_game_requirement_comes_before_the_roadmap(self):
-        progress = {"money": 2000, "tools": {"axe": 1, "pickaxe": 1, "watering_can": 0, "hoe": 0},
-                    "materials": {"Copper Bar": 5}, "placed": {"Furnace": 1}, "upgrading": None}
+        progress = {"money": 2000, "tool_ladder": _ladder({"axe": 1, "pickaxe": 1, "watering_can": 0, "hoe": 0}, price=2000, amount=5, item="Copper Bar", owned=5)}
         need = needs.immediate(progress, {"unread_mail": 1, "festivals": []})
         self.assertEqual(need["step"][0]["type"], "check_mail")
-        fest = needs.immediate(progress, {"festivals": [{"in_days": 1, "name": "Luau", "location": "Beach"}]}, festival_in_days=1)
+        named = needs.immediate({"money": 0}, {"festivals": [{"in_days": 1, "name": "Luau", "location": "Beach"}]}, festival_in_days=1)
+        self.assertIsNone(named)
+        fest = needs.immediate(progress, {"festivals": [{
+            "in_days": 1, "name": "Luau", "location": "Beach",
+            "step": [{"type": "goto_location", "location": "Beach"}, {"type": "festival", "activity": "soup"}],
+            "advances": ["festival"],
+        }]}, festival_in_days=1)
         self.assertEqual(fest["step"][1]["activity"], "soup")
+        self.assertIsNone(needs.immediate({}, {"community_center": "visit_wizard: go to the tower"}))
+        wizard = needs.immediate({}, {"community_center_target": {
+            "name": "Meet the Wizard",
+            "step": [{"type": "goto_location", "location": "WizardHouse"}],
+            "advances": ["goto_location"],
+        }})
+        self.assertEqual(wizard["step"][0]["location"], "WizardHouse")
         ready = needs.immediate(progress, {})
         self.assertEqual(ready["step"], [{"type": "upgrade_tool", "tool": "watering_can"}])
 
     def test_tool_upgrade_one_step_when_the_cost_is_met(self):
-        short = {"money": 1912, "tools": {"axe": 1, "pickaxe": 1, "watering_can": 0, "hoe": 0},
-                 "materials": {"Copper Bar": 71}, "placed": {"Furnace": 1}, "upgrading": None}
+        short = {"money": 1912, "tool_ladder": _ladder(
+            {"axe": 1, "pickaxe": 1, "watering_can": 0, "hoe": 0}, price=2000, amount=5, item="Copper Bar", owned=71)}
         info = milestones.tool_upgrades(short)
         self.assertEqual([a["type"] for a in info["step"]], ["ship_produce", "fish"])
         ready = {**short, "money": 2000}
         step = milestones.tool_upgrades(ready)
         self.assertEqual(step["step"], [{"type": "upgrade_tool", "tool": "watering_can"}])
-        steel = {"money": 5000, "tools": {"axe": 1, "pickaxe": 1, "watering_can": 1, "hoe": 1},
-                 "materials": {"Iron Bar": 5}, "placed": {"Furnace": 1}, "upgrading": None}
+        steel = {"money": 5000, "tool_ladder": _ladder(
+            {"axe": 1, "pickaxe": 1, "watering_can": 1, "hoe": 1}, price=5000, amount=5, item="Iron Bar", owned=5, levels_offered=(1, 2))}
         self.assertEqual(milestones.tool_upgrades(steel)["step"], [{"type": "upgrade_tool", "tool": "axe"}])
+
+    def test_tool_upgrade_reads_the_interface_ladder(self):
+        self.assertFalse(hasattr(milestones, "TOOL_TIERS"))
+        missing = milestones.tool_upgrades({"money": 999999, "materials": {"Iridium Bar": 99, "Copper Bar": 99}})
+        self.assertEqual(missing, milestones.LATER)
+        odd = {"money": 1234, "tool_ladder": _ladder(
+            {"axe": 1, "pickaxe": 1, "watering_can": 1, "hoe": 1}, price=1234, amount=7, item="Custom Bar", owned=7, levels_offered=(1, 2))}
+        self.assertEqual(milestones.tool_upgrades(odd)["step"], [{"type": "upgrade_tool", "tool": "axe"}])
+        odd["money"] = 1233
+        self.assertNotEqual(milestones.tool_upgrades(odd)["step"][0].get("type"), "upgrade_tool")
+        done = {"money": 10**9, "tool_ladder": _ladder(
+            {"axe": 2, "pickaxe": 2, "watering_can": 2, "hoe": 2}, price=999, amount=1, item="Custom Bar", owned=1, levels_offered=(1, 2))}
+        self.assertIsNone(milestones.tool_upgrades(done))
 
     def test_second_furnace_waits_for_materials_then_crafts(self):
         base = {"placed": {"Furnace": 1}, "recipes": ["Furnace"], "materials": {"Copper Ore": 10, "Stone": 25}}
@@ -157,34 +192,21 @@ class TestActionsAndScripts(unittest.TestCase):
         self.assertEqual(parse_json('noise {"script":[]} trailing')["script"], [])
 
 
-SAMPLE = """\
-# comment
-items\tcopper-pickaxe\t铜十字镐\tCopper Pickaxe\t矿井敲石头\t升级费用=2000g\t所需材料=铜锭（5）
-items\tsteel-axe\t钢斧头\tSteel Axe\t清大圆木\t升级费用=5000g\t所需材料=铁锭（5）
-items\tcopper-axe\t铜斧头\tCopper Axe\t清大树桩\t升级费用=2000g\t所需材料=铜锭（5）
-"""
-
-
-class TestWikiText(unittest.TestCase):
-    def test_pickaxe_does_not_match_axe(self):
-        rows = wikitext.parse(SAMPLE)
-        pick = wikitext.search(rows, "pickaxe", limit=3)
-        self.assertEqual([row["en"] for row in pick], ["Copper Pickaxe"])
-        axe = wikitext.search(rows, "axe", limit=3)
-        self.assertEqual([row["en"] for row in axe], ["Steel Axe", "Copper Axe"])
-
-    def test_chinese_pickaxe_name_finds_copper_pickaxe(self):
-        rows = wikitext.parse(SAMPLE)
-        hit = wikitext.search(rows, "铜镐", limit=2)
-        self.assertEqual(hit[0]["zh"], "铜十字镐")
-        self.assertNotIn("斧", hit[0]["zh"])
-
-    def test_downloaded_file_has_the_catalog(self):
-        rows = wikitext.load()
-        self.assertGreater(len(rows), 3000)
-        copper = wikitext.search(rows, "Copper Pickaxe", limit=1)
-        self.assertEqual(copper[0]["attrs"]["升级费用"], "2000g")
-        self.assertIn("铜锭", copper[0]["attrs"]["所需材料"])
+def _ladder(levels, price, amount, item, owned, levels_offered=(1,)):
+    tools = []
+    for key, current in levels.items():
+        tools.append({
+            "key": key,
+            "held": True,
+            "current_level": current,
+            "max_level": max(levels_offered),
+            "tiers": [
+                {"level": level, "price": price, "trade_item_amount": amount, "trade_item_name": item,
+                 "trade_item_display": item, "display_name": f"{item} {level}", "owned": owned}
+                for level in levels_offered
+            ],
+        })
+    return {"ok": True, "tools": tools, "upgrading": None}
 
 
 if __name__ == "__main__":

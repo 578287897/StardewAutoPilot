@@ -113,7 +113,11 @@ pre{{overflow-x:auto;font:11px/1.15 "Cascadia Mono",Consolas,monospace;margin:0}
         d = agent.day
         p = st.get("player", {}) if isinstance(st, dict) else {}
         if now - self.progress_at > 60:
-            self.progress = agent.safe(agent.game.progress, {}) or {}
+            progress = agent.safe(agent.game.progress, {}) or {}
+            ladder = agent.safe(agent.game.tool_upgrades, None)
+            if isinstance(progress, dict) and isinstance(ladder, dict) and ladder.get("ok"):
+                progress = {**progress, "tool_ladder": ladder}
+            self.progress = progress
             self.progress_at = now
         if now - self.map_at > 600 and agent.farm_plan():
             g = agent.safe(agent.game.farm_grid, {})

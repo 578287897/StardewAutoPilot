@@ -35,6 +35,22 @@ namespace StardewAutoPilot
             return true;
         }
 
+        /// <summary>Shop id whose counter is this interior, or null when the player is not at one.</summary>
+        public static string ShopAt(string locationName)
+        {
+            if (string.IsNullOrWhiteSpace(locationName))
+                return null;
+            string found = null;
+            foreach (var pair in Locations)
+            {
+                if (!pair.Value.Equals(locationName.Trim(), StringComparison.OrdinalIgnoreCase))
+                    continue;
+                string id = pair.Key.Equals("AdventureGuild", StringComparison.OrdinalIgnoreCase) ? "AdventureShop" : pair.Key;
+                found = found == null ? id : found;
+            }
+            return found;
+        }
+
         /// <summary>Null when this player location is the counter for shopId. Otherwise a failure the agent can act on.</summary>
         public static string RejectReason(string shopId, string locationName, string locationUniqueName)
         {

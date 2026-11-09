@@ -1,5 +1,15 @@
 # 更新记录
 
+## 2026-11-09 · 0.2.16-pre 进度和场面动作改走游戏接口（预发布）
+
+- **触发**：里程碑把工具价格、材料数量和最高档写死成 2000/5000/10000/25000 与 `max_tier = 4`；社区中心阶段和节日活动按字符串前缀、节日名字猜；可执行动作只写在 `prompts.ACTIONS_DOC`。日计划还用本地 `wiki.txt` 对照价格。
+- **表现**：钱和锭是否够升、下一档是什么，不跟存档里克林特商店的真实数据走。节日中文名一对就写成汤、展览或跳舞。规划模型可以把说明里有、当前场面做不了的动作写进脚本。
+- **影响**：工具会停在写死的档位，或者在数据并不是那一档时仍去交钱。社区中心和节日步骤跟游戏当前目标脱节。这不是全成就、全收集、全任务或物品全满级，也不能当成长期运行验收。
+- **根因**：这些目标被抄进 Python 和下载的百科，没有在运行时读 SMAPI 已经加载的 `Data/Achievements`、`Data/Objects`、`Data/Quests`、`Data/SpecialOrders`、`Data/Tools` 和当前玩家对象。
+- **修复**：模组增加 `GET /achievements`、`/collections`、`/quests`、`/special_orders`、`/tool_upgrades`、`/actions`。工具阶梯用 `ShopBuilder.GetToolUpgradeConventionalPrice` 和游戏的常规材料方法，最高级是数据里的 `UpgradeLevel`。节日 `step` 来自节日数据和资产 id，社区中心 `current_target` 来自当前信件、事件和任务。`GET /actions` 按当前场面给可执行清单；`ACTIONS_DOC` 只保留参数说明。结果确认仍是 `POST /act` 和 `GET /action_status`。对照之后，日计划不再读 `mod/wiki.txt`，该文件和读取代码已删除。
+- **验证**：Python 回归覆盖“没有阶梯就不套旧价格”“阶梯给出的价格和最高级说了算”“节日名字 Luau 本身不产生 soup”“社区中心阶段字符串本身不产生寻路”“场面原语清单可以丢掉说明里有的动作”。`tests/ModProtocol` 覆盖成就字段、节日活动标记和场面筛选。本环境没有游戏目录，Mod 工程按 `EnableModDeploy=false` 尝试编译，结果以当次构建输出为准，不能写成已经在游戏里跑过。
+- **配置**：不需要改 `config.json`。必须同时换上 Mod DLL 和 Python 代理，并重启游戏和代理。版本是 **0.2.16-pre**，不是稳定版。部署会让 2026-11-09 22:51 起的长跑计时作废；这次没有部署。全成就、全收集、全任务和物品全满级仍未验收。
+
 ## 2026-11-09 · 0.2.15-pre 商店必须在对应地点打开（预发布）
 
 - **触发**：SMAPI 日志（`84d833e7` 当时的 `play-logs/smapi/SMAPI-latest.txt`）里，玩家最后一次传送停在 Mountain（03:33:45、03:54:27）或 Beach（23:30:54），没有进入 FishShop。同一秒内依次出现 `open_shop FishShop`、`buy Bait ×20`、`close_menu`。Mountain 上买完后的下一跳是 Backwoods；Beach 上买完后的下一跳是 Town。脚本只有在上一步返回成功时才会继续买和关菜单。

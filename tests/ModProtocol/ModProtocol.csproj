@@ -8,5 +8,6 @@
     <Compile Include="../../mod/ActionReceipts.cs" Link="ActionReceipts.cs" />
     <Compile Include="../../mod/FishingRecovery.cs" Link="FishingRecovery.cs" />
     <Compile Include="../../mod/ShopLocations.cs" Link="ShopLocations.cs" />
+    <Compile Include="../../mod/QueryRules.cs" Link="QueryRules.cs" />
   </ItemGroup>
 </Project>
