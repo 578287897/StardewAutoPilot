@@ -133,3 +133,62 @@
 [20:26:55 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "f493b61df3db45e48e3aaf0df6d04340"}
 [20:26:55 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "02a605c7c0bf456fb9623ba82e94f5c3"}
 [20:26:57 TRACE game] Warping to Farm
+[20:27:13 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "67677e4a062040eea8113043288f8621"}
+[20:27:17 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "3d83cac0282c4ceaa45f1369ee87bc45"}
+[20:27:17 TRACE Stardew AutoPilot] Action: {"type": "store", "items": ["Cobblestone Path", "Bamboo Pole", "Rice Shoot", "Coffee Bean", "Lost Axe", "Stone"], "request_id": "50c1d471e40b45bb92a79a88291e486c"}
+[20:27:22 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Mountain", "request_id": "69b00ca73cb24a279d6a6c7258d73598"}
+[20:27:36 TRACE game] Warping to Backwoods
+[20:27:51 TRACE game] Warping to Mountain
+[20:27:52 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120, "request_id": "9d656c64f5a44e999e5e4f3d30c589b6"}
+[20:29:13 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[20:29:14 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 20, "request_id": "624c5a1ce0984c94bc97d88be851babf"}
+[20:29:29 TRACE Stardew AutoPilot] Action: {"type": "open_shop", "shop_id": "FishShop", "request_id": "51a750f1cfc94a18b178198634694347"}
+[20:29:33 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "3fc3e918fc9648a1b2ef85c3e36fa766"}
+[20:29:41 TRACE game] Warping to Town
+[20:30:20 TRACE game] Warping to Forest
+[20:30:21 TRACE Stardew AutoPilot] Action: {"type": "fish", "casts": 4, "request_id": "7d1ee02a6b3c46389370e33607fc5125"}
+[20:31:45 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[20:31:45 TRACE Stardew AutoPilot] Action: {"type": "fish", "casts": 4, "request_id": "7479ca8b7b6e48589f5eb78c7f3654dd"}
+[20:32:53 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[20:32:53 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Mine", "request_id": "6c5f5202449e4410bdf3c27c47f1ceec"}
+[20:33:00 TRACE game] Warping to Town
+[20:33:38 TRACE game] Warping to Mountain
+[20:33:55 TRACE game] Warping to Mine
+[20:33:57 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[20:33:57 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 3, "request_id": "fe9f478a7c8d48a4b2d64ec1dd437044"}
+[20:34:00 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 3, "request_id": "5020ade9d50d4e4ca6e37953caa6595c"}
+[20:34:01 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Farm", "request_id": "98fe07618cdc46058f9ac1421bac85a3"}
+[20:34:01 TRACE game] Warping to Mountain
+[20:34:19 TRACE game] Warping to Backwoods
+[20:34:32 TRACE game] Warping to Farm
+[20:34:34 TRACE Stardew AutoPilot] Action: {"type": "store", "items": [], "request_id": "5442a0eaca9b48a5a517abde94e890d2"}
+[20:34:49 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "item": "Iron Ore", "request_id": "9876eea95daa4a6c9c5a8dc0790e3626"}
+[20:34:50 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "dbb5aace0bd341ba975db0502bee917b"}
+[20:34:50 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "4895440d2610403e94a1ee7b6527de3c"}
+[20:34:50 TRACE Stardew AutoPilot] Action: {"type": "mine", "floors": 5, "request_id": "702f40b3ef164d0a9fd43709491252b1"}
+[20:34:51 TRACE Stardew AutoPilot] Action: {"type": "goto_location", "location": "Forest", "request_id": "7292f35ac9e54fe9915773cafab347ba"}
+[20:35:14 TRACE game] Warping to Forest
+[20:35:16 TRACE Stardew AutoPilot] Action: {"type": "craft", "item": "Cobblestone Path", "count": 23, "request_id": "e058f88a237f49508157844f96a9a98b"}
+[20:35:16 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[58, 9], [58, 8], [58, 7], [58, 6], [59, 6], [60, 6], [61, 6], [62, 6], [63, 6], [64, 6], [65, 6], [66, 6], [67, 6], [68, 6], [69, 6], [70, 6], [71, 6], [72, 6], [73, 6], [74, 6], [75, 6], [76, 6], [77, 6], [78, 6]], "item": "Cobblestone Path", "request_id": "d66217aa5e3e4beab6d54d482b66022d"}
+[20:35:16 TRACE game] Warping to Farm
+[20:35:37 TRACE Stardew AutoPilot] Action: {"type": "lay_path", "tiles": [[78, 7], [78, 8], [78, 9], [78, 10], [78, 11], [78, 12], [78, 13], [78, 14], [59, 9], [59, 8], [59, 7], [57, 6], [59, 7], [60, 7], [61, 7], [62, 7], [63, 7], [64, 7], [65, 7], [66, 7], [67, 7], [68, 7], [69, 5], [70, 5]], "item": "Cobblestone Path", "request_id": "0f291bf5afea4d11ac0c9bb88037a938"}
+[20:35:53 TRACE Stardew AutoPilot] Action: {"type": "wait", "minutes": 120, "request_id": "fd555c6528e345968c932951f29f5cba"}
+[20:37:17 INFO  Stardew AutoPilot] Agent disconnected: game clock paused until it reconnects.
+[20:37:18 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "44508970274b49b783b6ee61f867f334"}
+[20:37:26 TRACE game] Warping to FarmHouse
+[20:37:31 TRACE SMAPI] Synchronizing 'NewDay' task...
+[20:37:32 TRACE SMAPI]    task complete.
+[20:37:38 TRACE SMAPI] Context: before save.
+[20:37:38 TRACE game] SaveGame.Save() called.
+[20:37:38 TRACE SMAPI] Synchronizing 'Save' task...
+[20:37:38 TRACE game] Saving without compression...
+[20:37:38 TRACE SMAPI]    task complete.
+[20:37:38 TRACE game] SaveGame.Save() completed without exceptions.
+[20:37:40 TRACE SMAPI] Context: after save, starting summer 10 Y4.
+[20:37:45 TRACE Stardew AutoPilot] Action: {"type": "check_mail", "request_id": "717c8d8243c74afab49a051cf699f103"}
+[20:37:46 TRACE game] Warping to Farm
+[20:37:50 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "f4f419be771749978d13dad09f05ed9f"}
+[20:37:50 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops", "request_id": "19c496958ab340fc9df2b63ef88d60ae"}
+[20:37:50 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "68c7a9d47ba644149a7fbd79d8223d19"}
+[20:37:51 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "b5e3f665e47849439b62c01f863e689e"}
+[20:37:52 TRACE Stardew AutoPilot] Action: {"type": "donate", "request_id": "484f3999785445119d158f6faa5e8cb9"}
