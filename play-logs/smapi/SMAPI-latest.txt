@@ -804,3 +804,18 @@ Microsoft.Xna.Framework.Audio.NoAudioHardwareException (0x80004005): OpenAL devi
 [19:35:18 TRACE Stardew AutoPilot] Action: {"type": "sleep", "request_id": "c03a41fa52d34d0b8421eb18626a6d97"}
 [19:35:31 TRACE game] Warping to FarmHouse
 [19:35:37 TRACE SMAPI] Synchronizing 'NewDay' task...
+[19:35:37 TRACE SMAPI]    task complete.
+[19:35:37 TRACE SMAPI] Context: before save.
+[19:35:37 TRACE game] SaveGame.Save() called.
+[19:35:37 TRACE SMAPI] Synchronizing 'Save' task...
+[19:35:37 TRACE game] Saving without compression...
+[19:35:37 TRACE SMAPI]    task complete.
+[19:35:37 TRACE game] SaveGame.Save() completed without exceptions.
+[19:35:39 TRACE SMAPI] Context: after save, starting summer 7 Y4.
+[19:35:39 TRACE Stardew AutoPilot] Action: {"type": "collect_machines", "request_id": "d140b6e31738432bae725e1b7219f8c2"}
+[19:35:41 TRACE game] Warping to Farm
+[19:35:42 TRACE Stardew AutoPilot] Action: {"type": "load_machines", "request_id": "341d144657c94463acd6e02fff349fce"}
+[19:35:43 TRACE Stardew AutoPilot] Action: {"type": "store", "items": [], "request_id": "6b2cb4d5f642474a9f56136be55a491f"}
+[19:35:49 TRACE Stardew AutoPilot] Action: {"type": "harvest_crops", "request_id": "5c3d013cc0864c30b16a24419471978d"}
+[19:35:49 TRACE Stardew AutoPilot] Action: {"type": "water_crops", "request_id": "a4696286be394028b249fee106dd0fb5"}
+[19:35:50 TRACE Stardew AutoPilot] Action: {"type": "ship_produce", "request_id": "1f57698ff9d740fc8f022363fcb6d2ef"}

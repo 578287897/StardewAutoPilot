@@ -117,13 +117,15 @@ def load_config(path):
         "review_model": (mod_cfg or {}).get("ReviewModel") or "",
     }
     for key in ("base_url", "model", "api_key", "review_model"):
-        agent_val = agent_llm.get(key) or ""
-        mod_val = mod_vals.get(key) or ""
+        agent_val = (agent_llm.get(key) or "").strip() if isinstance(agent_llm.get(key), str) else (agent_llm.get(key) or "")
+        mod_val = (mod_vals.get(key) or "").strip() if isinstance(mod_vals.get(key), str) else (mod_vals.get(key) or "")
         if prefer_agent:
             llm[key] = agent_val or mod_val
         else:
             llm[key] = mod_val or agent_val
-    llm["api_key"] = llm.get("api_key") or os.environ.get("STARDEW_LLM_API_KEY", "")
+    llm["api_key"] = (llm.get("api_key") or os.environ.get("STARDEW_LLM_API_KEY", "") or "").strip()
+    llm["base_url"] = (llm.get("base_url") or "").strip()
+    llm["model"] = (llm.get("model") or "").strip()
     if mod_cfg and "LlmDecidesGameRestart" in mod_cfg:
         cfg["llm_decides_restart"] = bool(mod_cfg.get("LlmDecidesGameRestart"))
     else:
@@ -410,6 +412,29 @@ class Agent:
                               4000, timeout=300, options=c.get("review_options"))
         return True
 
+    def review_json(self, messages, max_tokens=None):
+        """Call the review model; reload F8 settings once if the gateway rejects the key."""
+        if self.review_llm is None and not self.try_init_llm():
+            raise LLMError("LLM 未配置：请在游戏内按 F8 填写网关与 API Key 并保存")
+        try:
+            return self.review_llm.chat_json(messages, max_tokens=max_tokens)
+        except LLMError as e:
+            msg = str(e)
+            if "auth failed" not in msg:
+                raise
+            log("复盘鉴权失败，正在重新读取 F8 / 配置后重试一次…")
+            if not self.try_init_llm():
+                raise LLMError("auth failed：F8 里没有可用的 API Key（请重新填写并保存）") from e
+            try:
+                return self.review_llm.chat_json(messages, max_tokens=max_tokens)
+            except LLMError as e2:
+                if "auth failed" in str(e2):
+                    raise LLMError(
+                        "auth failed (401)：网关不认当前 API Key。"
+                        "请在游戏内按 F8 更新 ApiBaseUrl / ApiKey 后保存（不要把 Key 写进仓库）"
+                    ) from e2
+                raise
+
     # ---------------- main loop ----------------
 
     def run(self, max_days=None, max_steps=None):
@@ -571,7 +596,7 @@ class Agent:
     def make_step_plan(self, st):
         crops = self.safe(lambda: self.game.crops("Farm"), {})
         try:
-            resp = self.review_llm.chat_json([
+            resp = self.review_json([
                 {"role": "system", "content": prompts.SYSTEM_PLAN},
                 {"role": "user", "content": prompts.USER_PLAN.format(
                     **self.mem.snapshot(),
@@ -631,7 +656,7 @@ class Agent:
         failures = "\n".join(f"{n}x {m}" for m, n in fail_counts.most_common(15)) or "无"
         auto_problems = problems.from_failed_steps(fails)
         try:
-            resp = self.review_llm.chat_json([
+            resp = self.review_json([
                 {"role": "system", "content": prompts.SYSTEM_REFLECT},
                 {"role": "user", "content": prompts.USER_REFLECT.format(
                     summary=summary, log="\n".join(log_lines) or "（无）", failures=failures,
@@ -725,7 +750,7 @@ class Agent:
             recent_problems=problems.recent_for_prompt(self.mem.problems_path),
             wiki=self.wiki_notes(progress))
         try:
-            resp = self.review_llm.chat_json([
+            resp = self.review_json([
                 {"role": "system", "content": prompts.SYSTEM_SCRIPT.format(actions=prompts.ACTIONS_DOC, roadmap=prompts.ROADMAP)},
                 {"role": "user", "content": user}])
             bundles = self.safe(self.game.bundles, {})

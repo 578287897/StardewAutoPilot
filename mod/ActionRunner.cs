@@ -748,16 +748,61 @@ namespace StardewAutoPilot
 
         private IEnumerable<object> WalkToShippingBin()
         {
+            foreach (var o in this.EnsureFree()) yield return o;
             if (Game1.currentLocation is not Farm)
                 foreach (var o in this.GotoLocation("Farm")) yield return o;
-            var farm = (Farm)Game1.currentLocation;
+            foreach (var o in this.EnsureFree()) yield return o;
+            var farm = Game1.currentLocation as Farm
+                ?? throw new ActionFailed("expected to be on the Farm to ship");
             var bin = World.ShippingBin(farm) ?? throw new ActionFailed("no shipping bin on the farm");
             var tiles = World.BuildingTiles(bin).ToList();
             if (tiles.Any(t => World.Chebyshev(t, P.TilePoint) <= 1))
                 yield break;
+
+            // Same fallbacks as WalkTo(adjacent): Manhattan first, then diagonal.
             var path = World.FindPath(farm, P.TilePoint, p => tiles.Any(t => World.Manhattan(p, t) == 1))
-                ?? throw new ActionFailed("can't reach the shipping bin");
-            foreach (var o in this.WalkPath(path)) yield return o;
+                ?? World.FindPath(farm, P.TilePoint, p => tiles.Any(t => World.Chebyshev(p, t) == 1));
+            if (path != null)
+            {
+                foreach (var o in this.WalkPath(path)) yield return o;
+                yield break;
+            }
+
+            // Crops, debris or fences can wall off the bin. Prefer standing south of it (vanilla lid).
+            Point? stand = null;
+            int best = int.MaxValue;
+            var offsets = new[]
+            {
+                new Point(0, 1), new Point(0, -1), new Point(-1, 0), new Point(1, 0),
+                new Point(-1, 1), new Point(1, 1), new Point(-1, -1), new Point(1, -1),
+            };
+            foreach (var t in tiles)
+            {
+                foreach (var d in offsets)
+                {
+                    var p = new Point(t.X + d.X, t.Y + d.Y);
+                    if (!World.IsWalkable(farm, p.X, p.Y))
+                        continue;
+                    int score = (d.X == 0 && d.Y == 1 ? 0 : 10) + World.Manhattan(p, P.TilePoint);
+                    if (score < best)
+                    {
+                        best = score;
+                        stand = p;
+                    }
+                }
+            }
+            if (stand is Point dest)
+            {
+                P.Position = World.PositionFor(dest);
+                P.FacingDirection = World.DirectionTo(dest, tiles[0]);
+                this.mod.Monitor.Log($"Shipping bin path blocked; stood at ({dest.X},{dest.Y}).", LogLevel.Info);
+                for (int i = 0; i < 5; i++)
+                    yield return null;
+                yield break;
+            }
+
+            // ShipItem writes straight into the bin; walking is only for authenticity.
+            this.mod.Monitor.Log("Shipping bin has no walkable adjacent tile; shipping in place.", LogLevel.Warn);
         }
 
         private int ShipItem(Item item, int count)

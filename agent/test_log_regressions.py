@@ -4,6 +4,7 @@ from unittest.mock import Mock
 
 from autopilot import Agent
 from execution_guard import ExecutionGuard
+from llm import LLMError
 
 
 class LogRegressionTests(unittest.TestCase):
@@ -175,3 +176,27 @@ class RecoveryAndPlanningTests(unittest.TestCase):
         guard.observe(state, action, {"ok": False, "progress_count": 0})
         state["farm_resources"]["(O)Mod.Stone"] = 2
         self.assertFalse(guard.blocked(state, action))
+
+
+class ReviewAuthRetryTests(unittest.TestCase):
+    def test_review_json_reloads_key_after_401(self):
+        agent = Agent.__new__(Agent)
+        agent.review_llm = Mock()
+        agent.review_llm.chat_json.side_effect = [
+            LLMError('auth failed (401): api key not found'),
+            {"analysis": "ok"},
+        ]
+        agent.try_init_llm = Mock(return_value=True)
+        self.assertEqual(agent.review_json([{"role": "user", "content": "x"}]), {"analysis": "ok"})
+        agent.try_init_llm.assert_called_once()
+        self.assertEqual(agent.review_llm.chat_json.call_count, 2)
+
+    def test_review_json_explains_persistent_401(self):
+        agent = Agent.__new__(Agent)
+        agent.review_llm = Mock()
+        agent.review_llm.chat_json.side_effect = LLMError('auth failed (401): api key not found')
+        agent.try_init_llm = Mock(return_value=True)
+        with self.assertRaises(LLMError) as ctx:
+            agent.review_json([{"role": "user", "content": "x"}])
+        self.assertIn("F8", str(ctx.exception))
+        self.assertIn("401", str(ctx.exception))
