@@ -52,6 +52,8 @@ namespace StardewAutoPilot
             {
                 var step = Target("打开社区中心的祝尼魔卷轴", "CommunityCenter", "event:611439");
                 ((List<Dictionary<string, object>>)step["step"]).Add(new Dictionary<string, object> { ["type"] = "donate" });
+                // Any other trip is also a goto. Only skip injection when donate itself is already planned.
+                step["advances"] = new List<string> { "donate" };
                 return step;
             }
             if (player.hasOrWillReceiveMail("wizardJunimoNote"))
