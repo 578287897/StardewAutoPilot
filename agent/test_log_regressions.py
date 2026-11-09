@@ -84,6 +84,26 @@ class RecoveryAndPlanningTests(unittest.TestCase):
             "script_action": {"type": "decorate"}, "result": {"ok": True}})
         agent.replan.assert_called_once()
 
+    def test_uncertain_sleep_after_pass_out_does_not_block_the_morning(self):
+        agent = self.agent()
+        agent.record = Mock()
+        agent.game.pending = {"action": {"type": "sleep", "request_id": "abc"}}
+        agent.game._save_pending = Mock()
+        st = {"ready": True, "time": 610, "location": "FarmHouse"}
+        recovery = {"state": "uncertain", "action": {"type": "sleep", "request_id": "abc"},
+                    "result": {"ok": False, "status": "ACTION_UNCERTAIN",
+                               "message": "player is busy (usingTool=False, eating=False, warping=True, fade=False)",
+                               "after": {"location": "FarmHouse", "time": 610, "money": 16512}}}
+        self.assertTrue(agent.release_resolved_sleep(st, recovery))
+        self.assertIsNone(agent.game.pending)
+        agent.game._save_pending.assert_called_once()
+        agent.record.assert_called_once()
+        purchase = {"state": "uncertain", "action": {"type": "upgrade_tool"},
+                    "result": {"ok": False, "status": "ACTION_UNCERTAIN", "after": {"location": "Blacksmith", "time": 900}}}
+        agent.game.pending = {"action": {"type": "upgrade_tool"}}
+        self.assertFalse(agent.release_resolved_sleep(st, purchase))
+        self.assertIsNotNone(agent.game.pending)
+
     def test_recovered_sleep_finishes_day(self):
         agent = self.agent()
         agent.on_went_to_sleep = Mock()

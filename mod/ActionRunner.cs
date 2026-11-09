@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
+using System.Reflection;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
@@ -1000,8 +1001,71 @@ namespace StardewAutoPilot
             J.Message = $"waited until {Game1.getTimeOfDayString(Game1.timeOfDay)}";
         }
 
+        private int DayCount()
+        {
+            try { return (int)Game1.stats.DaysPlayed; }
+            catch { return -1; }
+        }
+
+        /// <summary>Pass-out or the bed already rolled the calendar. A leftover warp must not become an uncertain receipt.</summary>
+        private bool NightPassed(int dayStart)
+        {
+            if (Game1.newDay)
+                return true;
+            int now = this.DayCount();
+            if (dayStart >= 0 && now >= 0 && now != dayStart)
+                return true;
+            // The save between days drops world-ready while the clock is already past midnight or on the next morning.
+            return !Context.IsWorldReady && (Game1.timeOfDay >= 2400 || Game1.timeOfDay < 700);
+        }
+
+        private void ClearStuckWarp()
+        {
+            if (!Context.IsWorldReady || Game1.activeClickableMenu != null || Game1.eventUp || !Game1.isWarping)
+                return;
+            // isWarping has a private setter; the morning after a pass-out can leave it true.
+            typeof(Game1).GetProperty("isWarping", BindingFlags.Public | BindingFlags.Static)
+                ?.GetSetMethod(true)
+                ?.Invoke(null, new object[] { false });
+            Game1.fadeToBlack = false;
+            this.mod.Monitor.Log("Cleared a warp flag that stayed set after sleep.", LogLevel.Warn);
+        }
+
+        private IEnumerable<object> WaitUntilFreeOrNight(int dayStart)
+        {
+            var wait = this.EnsureFree().GetEnumerator();
+            while (true)
+            {
+                bool more = false;
+                ActionFailed failed = null;
+                try { more = wait.MoveNext(); }
+                catch (ActionFailed ex) { failed = ex; }
+                if (failed != null)
+                {
+                    // Money changed because of the pass-out penalty. Finish() would mark that uncertain and the agent would wait forever.
+                    if (failed.Message.Contains("warping") && this.NightPassed(dayStart))
+                    {
+                        this.ClearStuckWarp();
+                        J.Message = "went to sleep; poll /state until the new day is ready";
+                        yield break;
+                    }
+                    throw failed;
+                }
+                if (!more)
+                    yield break;
+                if (this.NightPassed(dayStart))
+                {
+                    this.ClearStuckWarp();
+                    J.Message = "went to sleep; poll /state until the new day is ready";
+                    yield break;
+                }
+                yield return wait.Current;
+            }
+        }
+
         private IEnumerable<object> Sleep()
         {
+            int dayStart = this.DayCount();
             if (Game1.currentLocation is not FarmHouse)
             {
                 var walk = this.GotoLocation("FarmHouse").GetEnumerator();
@@ -1022,9 +1086,17 @@ namespace StardewAutoPilot
                 for (int i = 0; i < 90 && (Game1.currentLocation is not FarmHouse || Game1.isWarping || Game1.fadeToBlack); i++)
                     yield return null;
             }
+            if (this.NightPassed(dayStart))
+            {
+                this.ClearStuckWarp();
+                J.Message = "went to sleep; poll /state until the new day is ready";
+                yield break;
+            }
             if (Game1.currentLocation is not FarmHouse)
                 throw new ActionFailed("couldn't enter the farmhouse to sleep");
-            foreach (var o in this.EnsureFree()) yield return o;
+            foreach (var o in this.WaitUntilFreeOrNight(dayStart)) yield return o;
+            if (this.NightPassed(dayStart))
+                yield break;
             var house = (FarmHouse)Game1.currentLocation;
             var bed = house.GetPlayerBedSpot();
             // walking can be interrupted by a popup; close it and keep going until we're at the bed

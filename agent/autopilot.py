@@ -910,13 +910,16 @@ class Agent:
                 log(f"等待未确认动作的结果：{e}")
                 time.sleep(5)
                 return
-            if recovery.get("state") == "completed":
+            if self.release_resolved_sleep(st, recovery):
+                pass  # night already happened; play the morning instead of polling the old receipt
+            elif recovery.get("state") == "completed":
                 self.record(st, "(查询先前动作的实际结果，不重放)", recovery["action"], recovery["result"])
                 self.resume_recovered(st, recovery)
+                return
             else:
                 log(f"动作尚未确认（{recovery.get('state')}），暂停派发；操作编号保存在 pending_action.json")
                 time.sleep(5)
-            return
+                return
         if st.get("busy_action"):
             time.sleep(1)  # a timed-out HTTP call may still be executing in the mod
             return
@@ -1013,6 +1016,29 @@ class Agent:
             # No mutation was sent; keep the task at the front of the script.
             self.day.script.insert(0, dict(action))
             self.day.script_total += 1
+
+    def resolved_overnight(self, st, recovery):
+        """Sleep marked uncertain only because the pass-out penalty changed money. The night already finished."""
+        action = recovery.get("action") or {}
+        if action.get("type") != "sleep" or not st.get("ready") or st.get("menu"):
+            return False
+        if recovery.get("state") not in ("uncertain", "unknown"):
+            return False
+        result = recovery.get("result") or {}
+        if result.get("status") != "ACTION_UNCERTAIN":
+            return False
+        after = result.get("after") or {}
+        return bool(after.get("location")) and isinstance(after.get("time"), int)
+
+    def release_resolved_sleep(self, st, recovery):
+        if not self.resolved_overnight(st, recovery):
+            return False
+        log("睡觉已经过夜（回执因金钱变化未确认），按当前这一天继续，不重放")
+        self.game.pending = None
+        self.game._save_pending()
+        result = recovery.get("result") or {"ok": False, "status": "ACTION_UNCERTAIN"}
+        self.record(st, "(过夜已经完成，不再等待那次 sleep)", recovery.get("action") or {"type": "sleep"}, result)
+        return True
 
     def resume_recovered(self, st, recovery):
         result = recovery["result"]
