@@ -2130,6 +2130,9 @@ namespace StardewAutoPilot
                 Face(note);
                 cc.checkAction(new xTile.Dimensions.Location(note.X, note.Y), Game1.viewport, P);
                 for (int i = 0; i < 30 && Game1.activeClickableMenu is not JunimoNoteMenu; i++) yield return null;
+                if (Game1.activeClickableMenu is not JunimoNoteMenu)
+                    Game1.activeClickableMenu = new JunimoNoteMenu(true, area, false);
+                for (int i = 0; i < 10 && Game1.activeClickableMenu is not JunimoNoteMenu; i++) yield return null;
                 if (Game1.activeClickableMenu is not JunimoNoteMenu menu)
                     continue;
 
