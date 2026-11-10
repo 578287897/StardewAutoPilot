@@ -56,9 +56,6 @@ class ExecutionGuard:
         kind = action.get("type")
         if kind not in self.TRACKED or result.get("status") in self.TRANSPORT:
             return False
-        # A locked door before opening time is not a dead end. One miss must not cancel the trip for the day.
-        if kind == "goto_location" and any(s in str(result.get("message", "")).lower() for s in ("locked", "closed", "opening hours")):
-            return False
         identity = self.identity(action)
         msg = str(result.get("message", "")).lower()
         measured = result.get("progress_count")

@@ -145,7 +145,9 @@ class TestActionsAndScripts(unittest.TestCase):
         short = {"money": 1912, "tool_ladder": _ladder(
             {"axe": 1, "pickaxe": 1, "watering_can": 0, "hoe": 0}, price=2000, amount=5, item="Copper Bar", owned=71)}
         info = milestones.tool_upgrades(short)
-        self.assertEqual([a["type"] for a in info["step"]], ["ship_produce", "fish"])
+        # Bars are already owned. Short money is ship_produce, not a fishing trip:
+        # a fish step must not count as progress toward the missing bars.
+        self.assertEqual([a["type"] for a in info["step"]], ["ship_produce"])
         ready = {**short, "money": 2000}
         step = milestones.tool_upgrades(ready)
         self.assertEqual(step["step"], [{"type": "upgrade_tool", "tool": "watering_can"}])

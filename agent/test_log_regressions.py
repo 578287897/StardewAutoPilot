@@ -42,6 +42,21 @@ class LogRegressionTests(unittest.TestCase):
         agent.act_and_record.assert_not_called()
         calls = agent.dispatch.call_args_list or agent.game.act.call_args_list
         self.assertEqual(calls[0].args[-1]["item"], "Cobblestone Path")
+        self.assertEqual(calls[0].args[-1]["tiles"], [[0, 0]])
+
+    def test_later_road_tiles_must_touch_a_paved_tile(self):
+        agent = Agent.__new__(Agent)
+        agent.day = SimpleNamespace(road_skip=set())
+        agent.ensure_farm_plan = Mock(return_value={"plaza": [], "roads": [{"tiles": [[0, 0], [1, 0], [2, 0]]}]})
+        agent.game = Mock()
+        agent.game.farm_grid.return_value = {"rows": ["p.."]}
+        agent.game.tile.return_value = {"passable": True}
+        agent.game.recipes.return_value = []
+        agent.safe = lambda call, default: call()
+        agent.dispatch = Mock(return_value={"ok": True})
+        agent.act_and_record = Mock()
+        agent.build_road({"location": "Farm", "inventory": [{"name": "Cobblestone Path", "stack": 3}]})
+        self.assertEqual(agent.dispatch.call_args.args[-1]["tiles"], [[1, 0]])
 
 
 class RecoveryAndPlanningTests(unittest.TestCase):

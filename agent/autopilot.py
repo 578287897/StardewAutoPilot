@@ -294,6 +294,7 @@ class DayLog:
         self.empty_debris_spots = set()
         self.craft_blocked = set()  # items that already failed craft today (don't spam)
         self.place_blocked = set()  # items with no tidy spot left today
+        self.take_blocked = set()  # take already failed today; do not repeat it
         self.execution_guard = ExecutionGuard()
         self.progress_start = {}
         self.llm_calls_start, self.tokens_start = usage
@@ -1435,18 +1436,15 @@ class Agent:
         if gated is not None:
             return gated
 
-        if t == "mine" and st.get("inventory_free_slots", 99) < 5:
-            keep = self.items_to_hold(st)
-            names = [it.get("name") for it in st.get("inventory") or [] if it and it.get("name") not in keep and "tool_level" not in it]
-            if not names:
-                return {"ok": False, "message": "backpack still has fewer than 5 free slots after store_items"}
-            stored = self.store_items(st, {"type": "store_items", "items": names})
-            self.record(st, "(背包不够 5 格，先把不急用的存箱再下矿)", {"type": "store_items", "items": names}, stored)
-            if not stored.get("ok") or stored.get("status") in ("AGENT_UNAVAILABLE", "ACTION_UNCERTAIN"):
-                return stored
-            st = self.safe(self.game.state, st)
-            if st.get("inventory_free_slots", 0) < 5:
-                return {"ok": False, "message": "backpack still has fewer than 5 free slots after store_items"}
+        if t == "take" and self.take_is_blocked(action):
+            return {"ok": False, "status": "CIRCUIT_OPEN", "reason_code": "BLOCKED",
+                    "message": f"take {action.get('item')} already failed; not retrying today"}
+        if t in ("take", "mine") and st.get("inventory_free_slots", 99) < (1 if t == "take" else 5):
+            st, blocked = self.ensure_backpack(st, 1 if t == "take" else 5)
+            if blocked:
+                if t == "take":
+                    self.block_take(action)
+                return blocked
         if t == "mine":
             lim = self.mem.mine_limit(abs_day(st))
             if lim:
@@ -1598,6 +1596,15 @@ class Agent:
             self.unclaim_spot(claimed)
             if "没有空位" in str(res.get("message", "")) or "occupied" in str(res.get("message", "")).lower():
                 self.day.place_blocked.add(str(action.get("item") or "").lower())
+        if t == "take":
+            item = str(action.get("item") or "")
+            fresh = self.safe(self.game.state, {})
+            held = {it.get("name") for it in (fresh.get("inventory") or []) if it}
+            if res.get("ok") and item and item not in held:
+                res = {**res, "ok": False, "reason_code": "STATE_MISMATCH",
+                       "message": str(res.get("message") or "") + " but the backpack check did not find it"}
+            if not res.get("ok"):
+                self.block_take(action)
         if t == "sleep" and res.get("ok"):
             self.day.ended = True
             self.on_went_to_sleep(st, crops)
@@ -1793,7 +1800,52 @@ class Agent:
             for item in ((col or {}).get(key) or {}).get("items") or []:
                 if (item.get("count") or 0) > 0 and not item.get("donated") and item.get("name"):
                     keep.add(item["name"])
+        keep.update({"Copper Ore", "Copper Bar", "Iron Ore", "Iron Bar", "Gold Ore", "Gold Bar",
+                     "Iridium Ore", "Iridium Bar", "Coal"})
         return keep
+
+    def take_is_blocked(self, action):
+        blocked = getattr(self.day, "take_blocked", None)
+        if blocked is None:
+            return False
+        return str(action.get("item") or "").lower() in blocked
+
+    def block_take(self, action):
+        if not hasattr(self.day, "take_blocked") or self.day.take_blocked is None:
+            self.day.take_blocked = set()
+        name = str(action.get("item") or "").lower()
+        if name:
+            self.day.take_blocked.add(name)
+
+    def ensure_backpack(self, st, need):
+        """Free slots by storing items the current bundle, museum, and tool goals do not need."""
+        free = st.get("inventory_free_slots")
+        if free is None:
+            return st, {"ok": False, "reason_code": "BACKPACK_UNKNOWN",
+                        "message": "inventory_free_slots is missing from /state"}
+        if free >= need:
+            return st, None
+        keep = self.items_to_hold(st)
+        names = []
+        for it in st.get("inventory") or []:
+            if not it or "tool_level" in it:
+                continue
+            if it.get("name") in keep or it.get("category") in ("Artifact",):
+                continue
+            names.append(it.get("name"))
+        if not names:
+            return st, {"ok": False, "reason_code": "BACKPACK_FULL", "inventory_free_slots": free,
+                        "message": f"backpack has {free} free slots, need {need}, and only goal items are left"}
+        stored = self.store_items(st, {"type": "store_items", "items": names})
+        self.record(st, "(背包没有空位，先把非目标物品存箱)", {"type": "store_items", "items": names}, stored)
+        if stored.get("status") in ("AGENT_UNAVAILABLE", "ACTION_UNCERTAIN"):
+            return st, stored
+        after = self.safe(self.game.state, {})
+        after_free = after.get("inventory_free_slots") if isinstance(after, dict) else None
+        if not stored.get("ok") or after_free is None or after_free < need:
+            return after or st, {"ok": False, "reason_code": "BACKPACK_FULL", "inventory_free_slots": after_free,
+                                 "message": f"store did not free enough slots (have {after_free}, need {need})"}
+        return after, None
 
     def store_items(self, st, action):
         """Put materials into a chest; craft and place a chest in the storage row first if the farm has none."""
@@ -2093,6 +2145,15 @@ class Agent:
 
     PATH_ITEMS = ("Cobblestone Path", "Wood Path", "Stone Floor", "Gravel Path")
 
+    def farm_tile_passable(self, st, tile):
+        """Live /tile only counts on the Farm. Tests with no location keep the grid tile."""
+        if st.get("location") != "Farm":
+            return True
+        info = self.safe(lambda x=tile[0], y=tile[1]: self.game.tile(x, y), {})
+        if not isinstance(info, dict) or "passable" not in info:
+            return True
+        return info.get("passable") is True
+
     def farm_rows(self):
         g = self.safe(self.game.farm_grid, {})
         if isinstance(g, dict) and isinstance(g.get("rows"), list):
@@ -2192,20 +2253,22 @@ class Agent:
             x, y = tile
             return any((x + dx, y + dy) in paved for dx in (-1, 0, 1) for dy in (-1, 0, 1) if dx or dy)
 
-        # Extend the road that already exists. The first free tiles in plan order can be
-        # a disconnected strip, and laying those comes back as 0 tiles.
-        todo = [t for t in ordered if rows[t[1]][t[0]] in ".d" and t not in self.day.road_skip and touches_paved(t)]
+        # Nothing paved yet: one legal start tile. Later tiles must touch a paved road tile.
+        free = [t for t in ordered if rows[t[1]][t[0]] in ".d" and t not in self.day.road_skip]
+        candidates = free[:1] if not paved else [t for t in free if touches_paved(t)]
         # /tile is the current map. Off the farm it describes a different place with the same numbers.
-        if todo and st.get("location") != "Farm":
+        if candidates and st.get("location") not in (None, "", "Farm"):
             arrived = self.act_and_record(st, {"type": "goto_location", "location": "Farm"}, "(回农场再看哪些路格走得上去)")
             if not arrived.get("ok") or arrived.get("status") in ("AGENT_UNAVAILABLE", "ACTION_UNCERTAIN"):
                 return arrived
             st = self.safe(self.game.state, st)
         walkable = []
-        for tile in todo:
-            info = self.safe(lambda x=tile[0], y=tile[1]: self.game.tile(x, y), {})
-            if info.get("passable") is True:
-                walkable.append(tile)
+        for tile in candidates:
+            if not self.farm_tile_passable(st, tile):
+                continue
+            walkable.append(tile)
+            if not paved:
+                break
         todo = walkable[:max_tiles]
         if not todo:
             return {"ok": False, "progress_count": 0, "reason_code": "NO_WORK",

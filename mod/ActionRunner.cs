@@ -2196,7 +2196,10 @@ namespace StardewAutoPilot
                 }
             }
             J.Data["donated"] = donated;
-            J.Message = donated.Count == 0 ? "opened the bundles but nothing could be deposited" : $"donated: {string.Join("; ", donated)}";
+            J.Data["progress_count"] = donated.Count;
+            if (donated.Count == 0)
+                throw new ActionFailed("opened the bundles but nothing could be deposited");
+            J.Message = $"donated: {string.Join("; ", donated)}";
         }
 
         private IEnumerable<object> DonateMuseum()
@@ -2216,14 +2219,39 @@ namespace StardewAutoPilot
                     break;
                 }
             }
+            var already = new HashSet<string>();
+            foreach (string id in Game1.netWorldState.Value.MuseumPieces.Values)
+                if (!string.IsNullOrEmpty(id))
+                    already.Add(id);
+            if (chosen == null || already.Contains(chosen.ItemId))
+            {
+                chosen = null;
+                foreach (var item in P.Items)
+                {
+                    if (item != null && !already.Contains(item.ItemId) && museum.isItemSuitableForDonation(item))
+                    {
+                        chosen = item;
+                        break;
+                    }
+                }
+            }
             if (chosen == null)
                 throw new ActionFailed("nothing in the backpack can be donated to the museum");
             Vector2 spot = museum.getFreeDonationSpot();
             if (!museum.isTileSuitableForMuseumPiece((int)spot.X, (int)spot.Y))
                 throw new ActionFailed($"the museum returned no free tile (got {(int)spot.X},{(int)spot.Y})");
             string itemId = chosen.ItemId;
+            if (already.Contains(itemId))
+                throw new ActionFailed($"{chosen.DisplayName} is already in the museum; not removing it again");
             string name = chosen.DisplayName;
+            int before = already.Count;
             Game1.netWorldState.Value.MuseumPieces.Add(spot, itemId);
+            int after = 0;
+            foreach (string id in Game1.netWorldState.Value.MuseumPieces.Values)
+                if (!string.IsNullOrEmpty(id))
+                    after++;
+            if (after <= before)
+                throw new ActionFailed($"museum piece count did not increase for {name}");
             if (chosen.Stack > 1)
                 chosen.Stack--;
             else
