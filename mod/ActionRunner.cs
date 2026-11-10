@@ -459,6 +459,12 @@ namespace StardewAutoPilot
 
         private IEnumerable<object> GotoLocation(string name)
         {
+            string festival = FestivalRoute.Block(name, Game1.timeOfDay, FestivalRoute.Windows(Social.Calendar(1)));
+            if (festival != null)
+            {
+                J.Data["reason_code"] = "FESTIVAL_BLOCKED";
+                throw new ActionFailed(festival);
+            }
             if (Game1.currentLocation is MineShaft && !string.Equals(name, Game1.currentLocation.NameOrUniqueName, StringComparison.OrdinalIgnoreCase))
                 foreach (var o in this.LeaveMine()) yield return o;
             var blocked = new HashSet<(string, string)>();
@@ -1313,9 +1319,7 @@ namespace StardewAutoPilot
 
         private IEnumerable<object> Take(string query, int count, Point? at)
         {
-            string q = query.ToLowerInvariant();
-            bool Match(Item i) => i != null && (i.DisplayName.ToLowerInvariant().Contains(q)
-                || i.Name.ToLowerInvariant().Contains(q) || i.QualifiedItemId.ToLowerInvariant() == q);
+            bool Match(Item i) => i != null && ItemMatch.IsExact(query, i.DisplayName, i.Name, i.ItemId, i.QualifiedItemId);
 
             StardewValley.Objects.Chest chest = null;
             Point tile = default;

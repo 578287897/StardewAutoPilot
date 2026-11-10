@@ -97,6 +97,16 @@ namespace StardewAutoPilot
                 ["inventory_free_slots"] = p.Items.Count(i => i == null) + Math.Max(0, p.MaxItems - p.Items.Count),
                 ["exits"] = World.GetExits(loc).Select(e => e.ToJson()).ToList(),
                 ["event"] = Game1.eventUp,
+                ["event_id"] = Game1.CurrentEvent?.id,
+                ["event_festival"] = Game1.CurrentEvent?.isFestival == true,
+                ["warping"] = Game1.isWarping || Game1.fadeToBlack,
+                ["presence"] = Presence.Classify(
+                    Game1.eventUp,
+                    Game1.CurrentEvent?.isFestival == true,
+                    Game1.isWarping || Game1.fadeToBlack,
+                    loc?.Name,
+                    Game1.activeClickableMenu?.GetType().Name,
+                    MenuAutomation.TempAge),
                 ["menu"] = Game1.activeClickableMenu == null ? null : MenuAutomation.Describe(mod, Game1.activeClickableMenu),
                 ["quests"] = p.questLog.Where(qu => !qu.IsHidden()).Select(qu => new Dictionary<string, object>
                 {

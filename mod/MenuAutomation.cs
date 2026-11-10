@@ -17,6 +17,8 @@ namespace StardewAutoPilot
         private int menuAge;
         private int eventAge;
         private string lastEventKey;
+        private int tempAge;
+        public static int TempAge { get; private set; }
 
         public MenuAutomation(ModEntry mod) { this.mod = mod; }
 
@@ -56,6 +58,20 @@ namespace StardewAutoPilot
             }
             if (eventKey != null)
                 this.eventAge++;
+
+            bool warping = Game1.isWarping || Game1.fadeToBlack;
+            bool bareTemp = Game1.currentLocation?.Name == "Temp" && Game1.eventUp && ev == null && !warping;
+            this.tempAge = bareTemp ? this.tempAge + 1 : 0;
+            TempAge = this.tempAge;
+            string presence = Presence.Classify(Game1.eventUp, ev?.isFestival == true, warping, Game1.currentLocation?.Name, menu?.GetType().Name, this.tempAge);
+            if (Presence.ShouldWarpHome(presence))
+            {
+                this.tempAge = 0;
+                TempAge = 0;
+                this.mod.Log.Add("event", "Temp had no event for 15s; warping home without restarting the process");
+                Game1.warpFarmer("FarmHouse", 9, 9, 2);
+                return;
+            }
 
             if (Game1.eventUp && ev != null && this.mod.Config.AutoSkipEvents && !ev.skipped && !ev.isFestival)
             {

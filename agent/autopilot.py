@@ -37,6 +37,7 @@ import status
 import needs
 import prompts
 import restart_decision
+import travel
 import telemetry
 from game import Game, GameError
 from llm import LLM, LLMError
@@ -815,13 +816,26 @@ class Agent:
             for key in ("artifacts", "minerals"):
                 for item in (col.get(key) or {}).get("items") or []:
                     if (item.get("count") or 0) > 0 and not item.get("donated"):
-                        held.append(item.get("name"))
+                        held.append(item)
         if not held:
             return script
         st = self.safe(self.game.state, {})
         pack = {it.get("name") for it in (st.get("inventory") or []) if it}
-        log("收集里还有没捐的博物馆物品（" + "、".join(str(n) for n in held[:4] if n) + "），先去考古馆")
-        takes = [{"type": "take", "item": name, "count": 1} for name in held if name and name not in pack][:6]
+        names = [item.get("name") if isinstance(item, dict) else item for item in held[:4]]
+        log("收集里还有没捐的博物馆物品（" + "、".join(str(n) for n in names if n) + "），先去考古馆")
+        takes = []
+        for item in held:
+            if not isinstance(item, dict):
+                name = item
+                item_id = None
+            else:
+                name = item.get("name")
+                item_id = item.get("id")
+            if not name or name in pack:
+                continue
+            takes.append({"type": "take", "item": item_id or name, "item_name": name, "count": 1})
+            if len(takes) >= 6:
+                break
         return takes + [{"type": "goto_location", "location": "ArchaeologyHouse"}, {"type": "donate_museum"}] + script
 
     def upgrade_not_ready(self, action):
@@ -1044,10 +1058,16 @@ class Agent:
         if st.get("busy_action"):
             time.sleep(1)  # a timed-out HTTP call may still be executing in the mod
             return
-        if st.get("event"):
-            # AutoSkipEvents handles skippable cutscenes; non-skippable ones must play out.
-            # Do not spam sleep/work against "a cutscene/event is running".
-            log("过场/事件进行中，等待自动跳过或播完…")
+        if st.get("event") or st.get("location") == "Temp":
+            kind = st.get("presence") or travel.classify_presence(st)
+            if kind == "stuck":
+                log("人停在 Temp 且没有节日事件。模组会送回农场，这里不重启进程。")
+            elif kind == "legal_festival":
+                log("节日事件进行中，不跳过，也不重启。")
+            elif kind == "waiting_dialogue":
+                log("对话还开着，等它自己翻页。")
+            else:
+                log("过场或临时地图中，等待播完。不把这一态当成死机。")
             time.sleep(3)
             return
         menu = (st.get("menu") or {}).get("type")
@@ -1435,6 +1455,9 @@ class Agent:
         gated = self.defer_until_open(st, action)
         if gated is not None:
             return gated
+        festival = self.festival_gate(st, action)
+        if festival is not None:
+            return festival
 
         if t == "take" and self.take_is_blocked(action):
             return {"ok": False, "status": "CIRCUIT_OPEN", "reason_code": "BLOCKED",
@@ -1597,10 +1620,14 @@ class Agent:
             if "没有空位" in str(res.get("message", "")) or "occupied" in str(res.get("message", "")).lower():
                 self.day.place_blocked.add(str(action.get("item") or "").lower())
         if t == "take":
-            item = str(action.get("item") or "")
             fresh = self.safe(self.game.state, {})
             held = {it.get("name") for it in (fresh.get("inventory") or []) if it}
-            if res.get("ok") and item and item not in held:
+            expect = str(action.get("item_name") or action.get("item") or "")
+            taken = ""
+            match = re.search(r"took \d+x (.+) from", str(res.get("message") or ""))
+            if match:
+                taken = match.group(1)
+            if res.get("ok") and expect and taken and taken.lower() != expect.lower() and expect not in held:
                 res = {**res, "ok": False, "reason_code": "STATE_MISMATCH",
                        "message": str(res.get("message") or "") + " but the backpack check did not find it"}
             if not res.get("ok"):
@@ -1672,6 +1699,21 @@ class Agent:
             res = {**res, "message": (res.get("message") or "") + f" (waiting for {target} to open at {opens // 100}:00)"}
         return res
 
+    def festival_gate(self, st, action):
+        """Do not walk into a festival map. The item stays where it is."""
+        kind = action.get("type")
+        if kind == "goto_location":
+            destination = action.get("location")
+        elif kind == "donate":
+            destination = "CommunityCenter"
+        else:
+            return None
+        reason = travel.festival_block(st.get("festivals"), st.get("time") or 0, destination)
+        if not reason:
+            return None
+        log(reason)
+        return {"ok": False, "status": "FESTIVAL_BLOCKED", "reason_code": "FESTIVAL_BLOCKED", "message": reason}
+
     def check_knocked_out(self, st, res):
         """Passing out in the mine costs money and items: cap the depth 10 floors shallower for 3 days."""
         msg = str(res.get("message", ""))
@@ -1699,7 +1741,7 @@ class Agent:
         log(("✓ " if entry["ok"] else "✗ ") + self.fmt_step(entry, with_thought=True))
         if entry["ok"]:
             self.restart_declined = False
-        elif self.day is not None and res.get("status") not in ("AGENT_UNAVAILABLE", "ACTION_UNCERTAIN", "CIRCUIT_OPEN"):
+        elif self.day is not None and res.get("status") not in ("AGENT_UNAVAILABLE", "ACTION_UNCERTAIN", "CIRCUIT_OPEN", "FESTIVAL_BLOCKED"):
             self.consider_restart(st)
         if self.status:
             self.status.refresh(self, self.safe(self.game.state, st))
@@ -1707,6 +1749,8 @@ class Agent:
     def consider_restart(self, st):
         """The model configured in-game decides. A no is remembered until something succeeds."""
         if self.mock or self.llm is None or self.restart_declined:
+            return
+        if travel.classify_presence(st) in ("stuck", "temporary_map", "legal_festival", "legal_cutscene", "waiting_dialogue"):
             return
         self.cfg = load_config(self.config_path)
         if not self.cfg.get("llm_decides_restart", True):
@@ -2253,9 +2297,10 @@ class Agent:
             x, y = tile
             return any((x + dx, y + dy) in paved for dx in (-1, 0, 1) for dy in (-1, 0, 1) if dx or dy)
 
-        # Nothing paved yet: one legal start tile. Later tiles must touch a paved road tile.
+        # Nothing paved yet: the first passable tile in plan order. Later tiles must touch a paved tile.
+        # Tiles that are already 'p' are not in this list, so an existing path is not sent again.
         free = [t for t in ordered if rows[t[1]][t[0]] in ".d" and t not in self.day.road_skip]
-        candidates = free[:1] if not paved else [t for t in free if touches_paved(t)]
+        candidates = free if not paved else [t for t in free if touches_paved(t)]
         # /tile is the current map. Off the farm it describes a different place with the same numbers.
         if candidates and st.get("location") not in (None, "", "Farm"):
             arrived = self.act_and_record(st, {"type": "goto_location", "location": "Farm"}, "(回农场再看哪些路格走得上去)")
@@ -2269,7 +2314,7 @@ class Agent:
             walkable.append(tile)
             if not paved:
                 break
-        todo = walkable[:max_tiles]
+        todo = walkable[:1] if not paved else walkable[:max_tiles]
         if not todo:
             return {"ok": False, "progress_count": 0, "reason_code": "NO_WORK",
                     "message": "规划道路边没有还能走上去的空格，不再对走不了的格子铺 0 格"}

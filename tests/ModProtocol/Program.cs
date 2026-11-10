@@ -110,6 +110,28 @@ try
     var mine = QueryRules.AvailableTypes(new SceneFacts { WorldReady = true, InMine = true, OnFarm = false, CanFish = false });
     Check(mine.Contains("leave_mine") && mine.Contains("fight") && !mine.Contains("sleep") && !mine.Contains("water_crops"), "the mine scene is the mine");
 
+    var feast = new List<Dictionary<string, object>>
+    {
+        new() { ["in_days"] = 0, ["name"] = "Feast of the Winter Star", ["location"] = "Town", ["start"] = 900, ["end"] = 1400 }
+    };
+    string feastBlock = FestivalRoute.Block("CommunityCenter", 910, FestivalRoute.Windows(feast));
+    Check(feastBlock != null && feastBlock.Contains("CommunityCenter"), "a Town festival removes the community center door");
+    Check(FestivalRoute.Explain("no reachable route from Mountain to CommunityCenter (unreachable exits: mountain->town)", feastBlock) == "festival_map_limit", "failed Town exits during a festival are the festival map");
+    Check(FestivalRoute.Block("CommunityCenter", 1500, FestivalRoute.Windows(feast)) == null, "after the festival the door is a normal route again");
+    Check(FestivalRoute.Explain("no reachable route from Farm to WizardHouse", null) == "real_unreachable", "no exit list means the graph has no path");
+    Check(FestivalRoute.Explain("no reachable route from Farm to Town (unreachable exits: farm->town)", null) == "exit_failed", "an exit that failed outside a festival is not a missing edge");
+    Check(Presence.Classify(true, false, true, "Temp", null, 0) == "temporary_map", "a warp fade on Temp is still the temporary map");
+    Check(Presence.Classify(true, false, false, "Temp", "DialogueBox", Presence.StuckTicks) == "waiting_dialogue", "an open dialogue is not a stuck map");
+    Check(Presence.Classify(true, true, false, "Temp", null, Presence.StuckTicks) == "legal_festival", "a festival event is not skipped and is not stuck");
+    Check(Presence.Classify(true, false, false, "Town", null, 0) == "legal_cutscene", "a normal event is a cutscene");
+    Check(Presence.Classify(true, false, false, "Temp", null, Presence.StuckTicks - 1) == "temporary_map", "Temp is not stuck before the age threshold");
+    Check(Presence.Classify(true, false, false, "Temp", null, Presence.StuckTicks) == "stuck", "Temp with no event and no dialogue is stuck");
+    Check(Presence.ShouldWarpHome("stuck") && !Presence.ShouldWarpHome("legal_festival") && !Presence.ShouldWarpHome("temporary_map"), "only a confirmed stuck map warps home");
+    Check(ItemMatch.IsExact("Quartz", "Quartz", "Quartz", "80", "(O)80"), "Quartz matches its own name and id");
+    Check(!ItemMatch.IsExact("Quartz", "Refined Quartz", "Refined Quartz", "338", "(O)338"), "Refined Quartz is not Quartz");
+    Check(ItemMatch.IsExact("80", "Quartz", "Quartz", "80", "(O)80"), "an item id matches that item only");
+    Check(!ItemMatch.IsExact("80", "Refined Quartz", "Refined Quartz", "338", "(O)338"), "Quartz's id does not match Refined Quartz");
+
     Console.WriteLine($"{checks} protocol checks passed.");
 }
 finally

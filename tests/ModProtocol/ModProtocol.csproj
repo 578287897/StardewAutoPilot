@@ -9,5 +9,8 @@
     <Compile Include="../../mod/FishingRecovery.cs" Link="FishingRecovery.cs" />
     <Compile Include="../../mod/ShopLocations.cs" Link="ShopLocations.cs" />
     <Compile Include="../../mod/QueryRules.cs" Link="QueryRules.cs" />
+    <Compile Include="../../mod/FestivalRoute.cs" Link="FestivalRoute.cs" />
+    <Compile Include="../../mod/Presence.cs" Link="Presence.cs" />
+    <Compile Include="../../mod/ItemMatch.cs" Link="ItemMatch.cs" />
   </ItemGroup>
 </Project>

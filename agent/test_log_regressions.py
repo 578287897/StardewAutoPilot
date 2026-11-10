@@ -57,6 +57,21 @@ class LogRegressionTests(unittest.TestCase):
         agent.act_and_record = Mock()
         agent.build_road({"location": "Farm", "inventory": [{"name": "Cobblestone Path", "stack": 3}]})
         self.assertEqual(agent.dispatch.call_args.args[-1]["tiles"], [[1, 0]])
+        self.assertNotIn([0, 0], agent.dispatch.call_args.args[-1]["tiles"])
+
+    def test_first_road_tile_skips_an_impassable_start(self):
+        agent = Agent.__new__(Agent)
+        agent.day = SimpleNamespace(road_skip=set())
+        agent.ensure_farm_plan = Mock(return_value={"plaza": [], "roads": [{"tiles": [[0, 0], [1, 0]]}]})
+        agent.game = Mock()
+        agent.game.farm_grid.return_value = {"rows": [".."]}
+        agent.game.tile.side_effect = lambda x, y: {"passable": (x, y) != (0, 0)}
+        agent.game.recipes.return_value = []
+        agent.safe = lambda call, default: call()
+        agent.dispatch = Mock(return_value={"ok": True, "message": "laid 1"})
+        agent.act_and_record = Mock()
+        agent.build_road({"location": "Farm", "inventory": [{"name": "Cobblestone Path", "stack": 2}]})
+        self.assertEqual(agent.dispatch.call_args.args[-1]["tiles"], [[1, 0]])
 
 
 class RecoveryAndPlanningTests(unittest.TestCase):
