@@ -2158,6 +2158,12 @@ class Agent:
         # Extend the road that already exists. The first free tiles in plan order can be
         # a disconnected strip, and laying those comes back as 0 tiles.
         todo = [t for t in ordered if rows[t[1]][t[0]] in ".d" and t not in self.day.road_skip and touches_paved(t)]
+        # /tile is the current map. Off the farm it describes a different place with the same numbers.
+        if todo and st.get("location") != "Farm":
+            arrived = self.act_and_record(st, {"type": "goto_location", "location": "Farm"}, "(回农场再看哪些路格走得上去)")
+            if not arrived.get("ok") or arrived.get("status") in ("AGENT_UNAVAILABLE", "ACTION_UNCERTAIN"):
+                return arrived
+            st = self.safe(self.game.state, st)
         walkable = []
         for tile in todo:
             info = self.safe(lambda x=tile[0], y=tile[1]: self.game.tile(x, y), {})
