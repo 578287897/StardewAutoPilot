@@ -817,8 +817,11 @@ class Agent:
                         held.append(item.get("name"))
         if not held:
             return script
-        log("收集里还有没捐的博物馆物品（" + "、".join(held[:4]) + "），先去考古馆")
-        return [{"type": "goto_location", "location": "ArchaeologyHouse"}] + script
+        st = self.safe(self.game.state, {})
+        pack = {it.get("name") for it in (st.get("inventory") or []) if it}
+        log("收集里还有没捐的博物馆物品（" + "、".join(str(n) for n in held[:4] if n) + "），先去考古馆")
+        takes = [{"type": "take", "item": name, "count": 1} for name in held if name and name not in pack][:6]
+        return takes + [{"type": "goto_location", "location": "ArchaeologyHouse"}] + script
 
     def upgrade_not_ready(self, action):
         """Live /tool_upgrades says the next tier's bars are short. Do not repeat the failing upgrade."""
@@ -1432,6 +1435,18 @@ class Agent:
         if gated is not None:
             return gated
 
+        if t == "mine" and st.get("inventory_free_slots", 99) < 5:
+            keep = self.items_to_hold(st)
+            names = [it.get("name") for it in st.get("inventory") or [] if it and it.get("name") not in keep and "tool_level" not in it]
+            if not names:
+                return {"ok": False, "message": "backpack still has fewer than 5 free slots after store_items"}
+            stored = self.store_items(st, {"type": "store_items", "items": names})
+            self.record(st, "(背包不够 5 格，先把不急用的存箱再下矿)", {"type": "store_items", "items": names}, stored)
+            if not stored.get("ok") or stored.get("status") in ("AGENT_UNAVAILABLE", "ACTION_UNCERTAIN"):
+                return stored
+            st = self.safe(self.game.state, st)
+            if st.get("inventory_free_slots", 0) < 5:
+                return {"ok": False, "message": "backpack still has fewer than 5 free slots after store_items"}
         if t == "mine":
             lim = self.mem.mine_limit(abs_day(st))
             if lim:
@@ -1611,7 +1626,8 @@ class Agent:
 
     # Locations the agent commonly visits for shopping; values are open time in military hours.
     SHOP_OPEN = {loc: start for _, loc, start, _, _ in prompts.SHOP_HOURS}
-    SHOP_OPEN.update({"AdventureGuild": 1400, "Saloon": 1200, "Blacksmith": 900, "SeedShop": 900})
+    SHOP_OPEN.update({"AdventureGuild": 1400, "Saloon": 1200, "Blacksmith": 900, "SeedShop": 900,
+                      "ArchaeologyHouse": 800})
 
     def defer_until_open(self, st, action):
         """If the next shop trip is before opening time, wait (and re-queue the action) instead of failing the chain."""
@@ -1757,6 +1773,27 @@ class Agent:
         if res.get("status") in ("AGENT_UNAVAILABLE", "ACTION_UNCERTAIN"):
             raise ActionInterrupted(res)
         return res
+
+    def items_to_hold(self, st):
+        """Bundle items the API still needs, and museum pieces not yet donated."""
+        keep = set()
+        bundles = self.safe(self.game.bundles, {})
+        for area in (bundles or {}).get("areas") or []:
+            for bundle in area.get("bundles") or []:
+                if bundle.get("complete"):
+                    continue
+                for item in bundle.get("still_needed") or []:
+                    name = str(item.get("item") or "")
+                    if name.endswith("g") and name[:-1].isdigit():
+                        continue
+                    if item.get("owned", 0) >= item.get("count", 1) and name:
+                        keep.add(name)
+        col = self.safe(self.game.collections, {})
+        for key in ("artifacts", "minerals"):
+            for item in ((col or {}).get(key) or {}).get("items") or []:
+                if (item.get("count") or 0) > 0 and not item.get("donated") and item.get("name"):
+                    keep.add(item["name"])
+        return keep
 
     def store_items(self, st, action):
         """Put materials into a chest; craft and place a chest in the storage row first if the farm has none."""

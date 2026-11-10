@@ -2109,12 +2109,9 @@ namespace StardewAutoPilot
                 foreach (var o in this.OpenCommunityCenterNote()) yield return o;
                 yield break;
             }
-            var usable = P.Items.Where(i => i is SObject o && Game1.RequireLocation<CommunityCenter>("CommunityCenter").couldThisIngredienteBeUsedInABundle(o)).ToList();
-            if (usable.Count == 0)
-            {
-                J.Message = "nothing in the backpack is needed by an open bundle (see bundles in /state); take items out of chests first";
-                yield break;
-            }
+            // couldThisIngredienteBeUsedInABundle reads the location's bundle list, which stays
+            // empty until the Community Center is loaded. The backpack can already hold Copper Bar
+            // and Bat Wing while that check still says nothing matches. Open the note and match there.
             if (Game1.currentLocation is not CommunityCenter)
                 foreach (var o in this.GotoLocation("CommunityCenter")) yield return o;
             var cc = (CommunityCenter)Game1.currentLocation;
