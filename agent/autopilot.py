@@ -821,7 +821,7 @@ class Agent:
         pack = {it.get("name") for it in (st.get("inventory") or []) if it}
         log("收集里还有没捐的博物馆物品（" + "、".join(str(n) for n in held[:4] if n) + "），先去考古馆")
         takes = [{"type": "take", "item": name, "count": 1} for name in held if name and name not in pack][:6]
-        return takes + [{"type": "goto_location", "location": "ArchaeologyHouse"}] + script
+        return takes + [{"type": "goto_location", "location": "ArchaeologyHouse"}, {"type": "donate_museum"}] + script
 
     def upgrade_not_ready(self, action):
         """Live /tool_upgrades says the next tier's bars are short. Do not repeat the failing upgrade."""

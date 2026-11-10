@@ -41,7 +41,7 @@ namespace StardewAutoPilot
         {
             "move_to", "goto_location", "use_tool", "interact", "place", "select", "eat", "ship", "ship_produce",
             "open_shop", "buy", "dialog_answer", "dialog_advance", "menu_click", "choose_profession", "close_menu",
-            "wait", "sleep", "check_mail", "craft", "store", "take", "fish", "mine", "leave_mine", "fight", "donate", "build", "buy_animal", "care_animals", "clear_area", "load_machines", "collect_machines", "cook", "buy_backpack", "buy_weapon", "lay_path", "upgrade_tool", "upgrade_house", "festival", "water_crops", "harvest_crops", "clear_debris", "plant_seeds", "forage"
+            "wait", "sleep", "check_mail", "craft", "store", "take", "fish", "mine", "leave_mine", "fight", "donate", "donate_museum", "build", "buy_animal", "care_animals", "clear_area", "load_machines", "collect_machines", "cook", "buy_backpack", "buy_weapon", "lay_path", "upgrade_tool", "upgrade_house", "festival", "water_crops", "harvest_crops", "clear_debris", "plant_seeds", "forage"
         };
 
         // categories sold by ship_produce: vegetable, fruit, flower, forage, fish, egg, milk, artisan, animal goods, mineral, gem, syrup, monster loot
@@ -254,6 +254,7 @@ namespace StardewAutoPilot
                 case "mine": return this.Mine(Math.Clamp(Int(a, "floors", 3), 1, 20), Math.Clamp(Int(a, "max_floor", 120), 1, 120));
                 case "leave_mine": return this.LeaveMine();
                 case "donate": return this.Donate();
+                case "donate_museum": return this.DonateMuseum();
                 case "build": return this.Build(Req(a, "building"), XY(a));
                 case "buy_animal": return this.BuyAnimal(Req(a, "animal"));
                 case "care_animals": return this.CareAnimals();
@@ -2130,8 +2131,9 @@ namespace StardewAutoPilot
                 Face(note);
                 cc.checkAction(new xTile.Dimensions.Location(note.X, note.Y), Game1.viewport, P);
                 for (int i = 0; i < 30 && Game1.activeClickableMenu is not JunimoNoteMenu; i++) yield return null;
+                // (true, area, false) is the area overview. The plaque click uses the area plus the live completion map.
                 if (Game1.activeClickableMenu is not JunimoNoteMenu)
-                    Game1.activeClickableMenu = new JunimoNoteMenu(true, area, false);
+                    Game1.activeClickableMenu = new JunimoNoteMenu(area, cc.bundlesDict());
                 for (int i = 0; i < 10 && Game1.activeClickableMenu is not JunimoNoteMenu; i++) yield return null;
                 if (Game1.activeClickableMenu is not JunimoNoteMenu menu)
                     continue;
@@ -2161,7 +2163,7 @@ namespace StardewAutoPilot
                         var item = P.Items.FirstOrDefault(i => i != null && Fits(i)
                             && (bundle.canAcceptThisItem(i, slot) || bundle.ingredients.Any(ing => IdMatch(i, ing))));
                         if (item == null)
-                            break;
+                            continue;
                         int index = P.Items.IndexOf(item);
                         string name = item.DisplayName;
                         int before = item.Stack;
@@ -2195,6 +2197,38 @@ namespace StardewAutoPilot
             }
             J.Data["donated"] = donated;
             J.Message = donated.Count == 0 ? "opened the bundles but nothing could be deposited" : $"donated: {string.Join("; ", donated)}";
+        }
+
+        private IEnumerable<object> DonateMuseum()
+        {
+            if (GameData.LockedNow("ArchaeologyHouse", out int opens))
+                throw new ActionFailed($"ArchaeologyHouse is locked until {opens / 100}:{opens % 100:00}");
+            if (Game1.currentLocation is not LibraryMuseum)
+                foreach (var o in this.GotoLocation("ArchaeologyHouse")) yield return o;
+            if (Game1.currentLocation is not LibraryMuseum museum)
+                throw new ActionFailed("could not enter the museum");
+            Item chosen = null;
+            foreach (var item in P.Items)
+            {
+                if (item != null && museum.isItemSuitableForDonation(item))
+                {
+                    chosen = item;
+                    break;
+                }
+            }
+            if (chosen == null)
+                throw new ActionFailed("nothing in the backpack can be donated to the museum");
+            Vector2 spot = museum.getFreeDonationSpot();
+            if (!museum.isTileSuitableForMuseumPiece((int)spot.X, (int)spot.Y))
+                throw new ActionFailed($"the museum returned no free tile (got {(int)spot.X},{(int)spot.Y})");
+            string itemId = chosen.ItemId;
+            string name = chosen.DisplayName;
+            Game1.netWorldState.Value.MuseumPieces.Add(spot, itemId);
+            if (chosen.Stack > 1)
+                chosen.Stack--;
+            else
+                P.removeItemFromInventory(chosen);
+            J.Message = $"donated {name} ({itemId}) to the museum at ({(int)spot.X},{(int)spot.Y})";
         }
 
         private static bool ShopkeeperHere(string npc) =>

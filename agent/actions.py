@@ -13,7 +13,7 @@ KNOWN_ACTIONS = {
     "move_to", "goto_location", "use_tool", "interact", "place", "select", "eat", "ship", "ship_produce",
     "open_shop", "buy", "dialog_answer", "dialog_advance", "menu_click", "choose_profession", "close_menu",
     "wait", "sleep", "check_mail", "water_crops", "harvest_crops", "clear_debris", "plant_seeds", "forage",
-    "craft", "store", "take", "store_items", "fish", "mine", "leave_mine", "fight", "donate",
+    "craft", "store", "take", "store_items", "fish", "mine", "leave_mine", "fight", "donate", "donate_museum",
     "build", "buy_animal", "care_animals", "clear_area", "load_machines", "collect_machines", "cook",
     "buy_backpack", "buy_weapon", "build_road", "upgrade_tool", "upgrade_house", "decorate", "festival",
 }
