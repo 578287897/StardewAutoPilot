@@ -1397,11 +1397,17 @@ class Agent:
             res = self.store_items(st, {"type": "store_items"})
             self.record(st, "(背包快满，先存进箱子)", {"type": "store_items"}, res)
             st = self.safe(self.game.state, st)
+        if t == "place" and st.get("location") != "Farm":
+            res = self.act_and_record(st, {"type": "goto_location", "location": "Farm"}, "(先回到农场再放置)")
+            if not res.get("ok") or res.get("status") in ("AGENT_UNAVAILABLE", "ACTION_UNCERTAIN"):
+                return res
+            st = self.safe(self.game.state, st)
         on_farm = st.get("location") in self.HOME
         planted = any(k in str(action.get("item", "")).lower() for k in self.HAND_PLACED)
         if self.farm_plan() and on_farm and t in ("place", "build") and "x" in action and not planted:
-            log(f"{t}：忽略模型给的坐标，按农场分区放置")
-            action = {k: v for k, v in action.items() if k not in ("x", "y")}
+            if not (t == "place" and self.keep_place_coordinate(action)):
+                log(f"{t}：忽略模型给的坐标，按农场分区放置")
+                action = {k: v for k, v in action.items() if k not in ("x", "y")}
 
         # take: never trust model chest coords (journals kept hitting empty (74,15)); mod scans all farm chests.
         if t == "take" and ("x" in action or "y" in action):
@@ -1504,6 +1510,17 @@ class Agent:
                 action = {k: v for k, v in action.items() if k not in ("x", "y")}
                 action["plot"] = {k: plot[k] for k in ("x", "y", "w", "h")}
         crops = self.safe(lambda: self.game.crops("Farm"), {}) if t == "sleep" else None
+        if t == "place" and "x" in action and "y" in action:
+            x, y = int(action["x"]), int(action["y"])
+            st, cleared, was = self.clear_live_tile(st, x, y, f"(放置前按地图清掉 ({x},{y}))")
+            if cleared is not None and cleared.get("status") in ("AGENT_UNAVAILABLE", "ACTION_UNCERTAIN"):
+                return cleared
+            rows = self.farm_rows()
+            if was == "t" and rows and rows[y][x] == "t":
+                self.unclaim_spot((x, y))
+                if cleared is not None and not cleared.get("ok"):
+                    return cleared
+                return {"ok": False, "message": f"tree still at ({x},{y})"}
         claimed = (action.get("x"), action.get("y")) if t == "place" and "x" in action else None
         try:
             res = self.dispatch(st, action)
@@ -1744,11 +1761,10 @@ class Agent:
                     return self.claim_spot(layout, spot)
             return None
         if "sprinkler" in name or "洒水器" in name:
-            for plot in layout.get("plots", []):
-                for dx, dy in ((1, 1), (4, 1), (2, 3), (5, 3)):
-                    spot = (plot["x"] + dx, plot["y"] + dy)
-                    if dx < plot["w"] and dy < plot["h"] and spot not in taken and self.placeable(spot):
-                        return self.claim_spot(layout, spot)
+            zone = (plan or {}).get("zones", {}).get("crops")
+            spot = self.crop_place_tile(zone, self.farm_rows(), taken)
+            if spot:
+                return self.claim_spot(layout, spot)
             return None
         if "scarecrow" in name or "稻草人" in name:
             zone = (layout.get("plan") or {}).get("zones", {}).get("crops")
@@ -1990,6 +2006,76 @@ class Agent:
 
     PATH_ITEMS = ("Cobblestone Path", "Wood Path", "Stone Floor", "Gravel Path")
 
+    def farm_rows(self):
+        g = self.safe(self.game.farm_grid, {})
+        if isinstance(g, dict) and isinstance(g.get("rows"), list):
+            return g["rows"]
+        return None
+
+    def keep_place_coordinate(self, action):
+        """A crop-zone tile the live grid can still take. tidy_spot must not throw that coordinate away."""
+        zone = ((self.farm_plan() or {}).get("zones") or {}).get("crops")
+        rows = self.farm_rows()
+        if not zone or not rows or "x" not in action or "y" not in action:
+            return False
+        try:
+            x, y = int(action["x"]), int(action["y"])
+        except (TypeError, ValueError):
+            return False
+        zx, zy, zw, zh = zone
+        if not (zx <= x < zx + zw and zy <= y < zy + zh):
+            return False
+        if y < 0 or y >= len(rows) or x < 0 or x >= len(rows[y]):
+            return False
+        return rows[y][x] in ".td:"
+
+    def crop_place_tile(self, zone, rows, taken):
+        """Next sprinkler tile: an empty crop-zone tile, or a tree/debris tile there when none is empty."""
+        if not zone or not rows:
+            return None
+        x, y, w, h = zone
+        empty, blocked = [], []
+        for j in range(y, y + h):
+            if j < 0 or j >= len(rows):
+                continue
+            row = rows[j]
+            for i in range(x, x + w):
+                if i < 0 or i >= len(row) or (i, j) in taken:
+                    continue
+                if row[i] in ".:":
+                    empty.append((i, j))
+                elif row[i] in "td":
+                    blocked.append((i, j))
+        if empty:
+            return empty[0]
+        return blocked[0] if blocked else None
+
+    def plan_road_tiles(self, plan):
+        seen, out = set(), []
+        raw = list(plan.get("plaza") or [])
+        for road in plan.get("roads") or []:
+            raw.extend(road.get("tiles") or [])
+        for t in raw:
+            key = (int(t[0]), int(t[1]))
+            if key not in seen:
+                seen.add(key)
+                out.append(key)
+        return out
+
+    def clear_live_tile(self, st, x, y, why):
+        """Chop a live-grid tree or clear live-grid debris. Other tiles are left alone."""
+        rows = self.farm_rows()
+        if not rows or y < 0 or y >= len(rows) or x < 0 or x >= len(rows[y]):
+            return st, None, None
+        ch = rows[y][x]
+        if ch == "t":
+            res = self.act_and_record(st, {"type": "use_tool", "tool": "axe", "x": x, "y": y, "until_cleared": True}, why)
+            return self.safe(self.game.state, st), res, ch
+        if ch == "d":
+            res = self.act_and_record(st, {"type": "clear_debris", "x": x, "y": y, "max": 4}, why)
+            return self.safe(self.game.state, st), res, ch
+        return st, None, ch
+
     def build_road(self, st, max_tiles=24):
         """Pave the next stretch of planned road (crafting path tiles first), then put up a lamp post if possible."""
         plan = self.ensure_farm_plan()
@@ -1999,8 +2085,21 @@ class Agent:
         if not isinstance(g, dict) or "rows" not in g:
             return {"ok": False, "message": "读不到农场地图"}
         rows = g["rows"]
-        todo = [tuple(t) for t in plan.get("plaza", [])] + [tuple(t) for r in plan["roads"] for t in r["tiles"]]
-        todo = [t for t in todo if rows[t[1]][t[0]] in ".d" and t not in self.day.road_skip][:max_tiles]
+        ordered = self.plan_road_tiles(plan)
+        blockers = [t for t in ordered if t not in self.day.road_skip and rows[t[1]][t[0]] in "td"]
+        for x, y in blockers:
+            kind = "树" if rows[y][x] == "t" else "杂物"
+            st, cleared, _ = self.clear_live_tile(st, x, y, f"(规划道路上的{kind} ({x},{y}))")
+            if cleared is not None and cleared.get("status") in ("AGENT_UNAVAILABLE", "ACTION_UNCERTAIN"):
+                return cleared
+        fresh_rows = self.farm_rows()
+        if fresh_rows:
+            rows = fresh_rows
+        still_trees = [t for t in blockers if rows[t[1]][t[0]] == "t"]
+        if still_trees:
+            return {"ok": False, "progress_count": 0, "reason_code": "BLOCKED",
+                    "message": "规划道路上的树还在: " + ", ".join(f"({x},{y})" for x, y in still_trees)}
+        todo = [t for t in ordered if rows[t[1]][t[0]] in ".d" and t not in self.day.road_skip][:max_tiles]
         if not todo:
             return {"ok": False, "progress_count": 0, "reason_code": "NO_WORK", "message": "规划的路都铺好了，或剩下的路段被树/作物挡住（升级斧头后再清）"}
         recipes = self.safe(self.game.recipes, [])
@@ -2025,7 +2124,7 @@ class Agent:
             res = {"ok": False, "status": "AGENT_UNAVAILABLE", "message": str(e)}
         after = self.safe(self.game.farm_grid, {})
         if isinstance(after, dict) and "rows" in after:
-            self.day.road_skip |= {t for t in todo if after["rows"][t[1]][t[0]] != "p"}
+            self.day.road_skip |= {t for t in todo if after["rows"][t[1]][t[0]] not in ("p", "t", "d")}
         lamp = next((n for n, r in recipes.items() if "Lamp" in n and r.get("can_make", 0) > 0), None)
         if res.get("ok") and lamp:
             fresh = self.safe(self.game.state, st)
