@@ -6,16 +6,30 @@ mod, a bundle we can already donate, and a tool upgrade whose cost the ladder sa
 import milestones
 
 
-def _bundle_ready(bundles):
+def _is_gold(item):
+    name = str(item.get("item") or "")
+    return name.endswith("g") and name[:-1].isdigit()
+
+
+def _ready_bundle_items(bundles):
+    """Item names the bundles API already counts as owned. Gold bundles are paid, not taken."""
+    names = []
     for area in (bundles or {}).get("areas") or []:
         for bundle in area.get("bundles") or []:
             if bundle.get("complete"):
                 continue
-            needed = bundle.get("still_needed") or []
-            if needed and all(item.get("owned", 0) >= item.get("count", 1) for item in needed if "g" not in str(item.get("item"))):
-                return True
-            if any(item.get("owned", 0) >= item.get("count", 1) and "g" not in str(item.get("item")) for item in needed):
-                return True
+            for item in bundle.get("still_needed") or []:
+                if _is_gold(item):
+                    continue
+                if item.get("owned", 0) >= item.get("count", 1) and item.get("item"):
+                    names.append(str(item["item"]))
+    return list(dict.fromkeys(names))
+
+
+def _in_backpack(state, name):
+    for it in (state or {}).get("inventory") or []:
+        if it and it.get("name") == name and it.get("stack", 0) > 0:
+            return True
     return False
 
 
@@ -50,9 +64,15 @@ def immediate(progress, state=None, bundles=None, festival_in_days=0):
     if found:
         return found
     stage = state.get("community_center") or ""
-    # wait_letter / visit_wizard are not "we already own a bundle item".
-    if (stage.startswith("donate") or stage == "") and _bundle_ready(bundles):
-        return {"name": "收集包里已经有的东西", "step": [{"type": "donate"}], "advances": {"donate"}, "at": "start"}
+    # donate reads the backpack only. Owned counts include chests, so take those out first.
+    # visit_wizard is a different stage; this branch runs only after canReadJunimoText.
+    if stage.startswith("donate") or stage == "":
+        ready = _ready_bundle_items(bundles)
+        if ready:
+            step = [{"type": "take", "item": name, "count": 1} for name in ready[:6] if not _in_backpack(state, name)]
+            step.append({"type": "donate"})
+            return {"name": "收集包里已经有的东西", "step": step,
+                    "advances": {"take"} if len(step) > 1 else {"donate"}, "at": "start"}
     if isinstance(progress, dict):
         info = milestones.tool_upgrades(progress)
         step = info.get("step") if isinstance(info, dict) else []

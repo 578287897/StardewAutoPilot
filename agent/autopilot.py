@@ -568,7 +568,7 @@ class Agent:
             self.replan(st, "新的一天开始了（没有昨晚准备的脚本）。", None)
             progress = self.roadmap_progress()
             need = needs.immediate(progress, st, self.safe(self.game.bundles, {}))
-            self.day.script = self.enforce_milestone(morning + self.day.script, progress, need)
+            self.day.script = self.with_collection_gaps(self.enforce_milestone(morning + self.day.script, progress, need))
             self.day.script_total = len(self.day.script)
         log("今日计划：" + " / ".join(self.day.plan))
         self.write_run("plan", {"day": self.day.tag, "plan": self.day.plan, "script": self.day.script,
@@ -794,7 +794,7 @@ class Agent:
                 {"role": "user", "content": user}])
             bundles = self.safe(self.game.bundles, {})
             need = needs.immediate(progress, st, bundles, festival_in_days=1)
-            script = self.enforce_milestone(self.clean_script(resp.get("script"), (scene or {}).get("primitives")), progress, need)
+            script = self.with_collection_gaps(self.enforce_milestone(self.clean_script(resp.get("script"), (scene or {}).get("primitives")), progress, need))
             if script:
                 self.prepared = {"for": tag, "plan": [str(p) for p in resp.get("plan", [])][:8], "script": script}
                 log(f"明天（{tag}）的脚本已准备好：{len(script)} 个动作")
@@ -803,6 +803,49 @@ class Agent:
             log(f"明日脚本生成失败（明早再生成）：{e}")
 
     # ---------------- scripts ----------------
+
+    def with_collection_gaps(self, script):
+        """Museum pieces the collection API already holds, and that are not donated yet."""
+        if not script or any(a.get("location") == "ArchaeologyHouse" for a in script):
+            return script
+        col = self.safe(self.game.collections, {})
+        held = []
+        if isinstance(col, dict):
+            for key in ("artifacts", "minerals"):
+                for item in (col.get(key) or {}).get("items") or []:
+                    if (item.get("count") or 0) > 0 and not item.get("donated"):
+                        held.append(item.get("name"))
+        if not held:
+            return script
+        log("收集里还有没捐的博物馆物品（" + "、".join(held[:4]) + "），先去考古馆")
+        return [{"type": "goto_location", "location": "ArchaeologyHouse"}] + script
+
+    def upgrade_not_ready(self, action):
+        """Live /tool_upgrades says the next tier's bars are short. Do not repeat the failing upgrade."""
+        data = self.safe(self.game.tool_upgrades, {})
+        tools = data.get("tools") if isinstance(data, dict) else None
+        if not tools:
+            return None, ""
+        want = str(action.get("tool") or "").lower()
+        info = next((t for t in tools if want and want == str(t.get("key") or "").lower()), None)
+        if info is None:
+            info = next((t for t in tools if t.get("key") in ("hoe", "axe", "pickaxe", "watering_can") and t.get("held")), None)
+        if not info:
+            return None, ""
+        current = info.get("current_level") or 0
+        tier = next((item for item in sorted(info.get("tiers") or [], key=lambda item: item.get("level") or 0)
+                     if (item.get("level") or 0) > current), None)
+        if not tier or tier.get("owned") is None or tier.get("trade_item_amount") is None:
+            return None, ""
+        if tier["owned"] >= tier["trade_item_amount"]:
+            return None, ""
+        name = tier.get("trade_item_name") or "material"
+        ore = {"Iron Bar": "Iron Ore", "Gold Bar": "Gold Ore", "Copper Bar": "Copper Ore"}.get(name)
+        progress = self.safe(self.game.progress, {})
+        mats = progress.get("materials") if isinstance(progress, dict) else {}
+        if ore and (mats or {}).get(ore, 0) >= 5 and (mats or {}).get("Coal", 0) >= 1:
+            return {"type": "load_machines", "item": ore}, f"{name} 只有 {tier['owned']}/{tier['trade_item_amount']}，先熔 {ore}"
+        return {"type": "mine", "floors": 5}, f"{name} 只有 {tier['owned']}/{tier['trade_item_amount']}，先采矿，不重复升级"
 
     @staticmethod
     def enforce_milestone(script, progress, need=None):
@@ -951,7 +994,7 @@ class Agent:
         progress = self.roadmap_progress()
         scene = self.scene_actions()
         need = needs.immediate(progress, st, self.safe(self.game.bundles, {}))
-        script = self.enforce_milestone(self.clean_script(resp.get("script"), (scene or {}).get("primitives")), progress, need)
+        script = self.with_collection_gaps(self.enforce_milestone(self.clean_script(resp.get("script"), (scene or {}).get("primitives")), progress, need))
         if resp.get("plan"):
             self.day.plan = [str(p) for p in resp["plan"]][:8]
         self.set_script(script, f"重写#{self.day.replans}：{resp.get('reason', '')}"[:80], st.get("location"))
@@ -1399,6 +1442,11 @@ class Agent:
             res = self.store_items(st, {"type": "store_items"})
             self.record(st, "(背包快满，先存进箱子)", {"type": "store_items"}, res)
             st = self.safe(self.game.state, st)
+        if t == "upgrade_tool":
+            replacement, why = self.upgrade_not_ready(action)
+            if replacement:
+                log(why)
+                return self._execute(st, replacement, forced)
         if t == "place" and st.get("location") != "Farm":
             res = self.act_and_record(st, {"type": "goto_location", "location": "Farm"}, "(先回到农场再放置)")
             if not res.get("ok") or res.get("status") in ("AGENT_UNAVAILABLE", "ACTION_UNCERTAIN"):
@@ -2110,9 +2158,15 @@ class Agent:
         # Extend the road that already exists. The first free tiles in plan order can be
         # a disconnected strip, and laying those comes back as 0 tiles.
         todo = [t for t in ordered if rows[t[1]][t[0]] in ".d" and t not in self.day.road_skip and touches_paved(t)]
-        todo = (todo or [t for t in ordered if rows[t[1]][t[0]] in ".d" and t not in self.day.road_skip])[:max_tiles]
+        walkable = []
+        for tile in todo:
+            info = self.safe(lambda x=tile[0], y=tile[1]: self.game.tile(x, y), {})
+            if info.get("passable") is True:
+                walkable.append(tile)
+        todo = walkable[:max_tiles]
         if not todo:
-            return {"ok": False, "progress_count": 0, "reason_code": "NO_WORK", "message": "规划的路都铺好了，或剩下的路段被树/作物挡住（升级斧头后再清）"}
+            return {"ok": False, "progress_count": 0, "reason_code": "NO_WORK",
+                    "message": "规划道路边没有还能走上去的空格，不再对走不了的格子铺 0 格"}
         recipes = self.safe(self.game.recipes, [])
         recipes = {r["name"]: r for r in recipes} if isinstance(recipes, list) else {}
         stock = {}

@@ -154,11 +154,16 @@ def tool_upgrades(p, ladder=None):
         return {"missing": [f"升级要求够了：把{key}升成{label}（{price}g + {amount} 个材料，一次一件）"],
                 "step": [{"type": "upgrade_tool", "tool": key}], "advances": {"upgrade_tool"}}
     if owned < amount:
-        step = [{"type": "mine", "floors": 5}]
-    else:
-        step = [{"type": "ship_produce"}, {"type": "fish", "casts": 5}]
+        ore = {"Iron Bar": "Iron Ore", "Gold Bar": "Gold Ore", "Copper Bar": "Copper Ore"}.get(item_name)
+        if ore and _m(p, ore) >= 5 and _m(p, "Coal") >= 1:
+            step = [{"type": "load_machines", "item": ore}]
+        else:
+            step = [{"type": "mine", "floors": 5}]
+        # Fishing does not make the missing bars. A fish step must not count as this milestone.
+        return {"missing": [f"下一档是{label}（最高 {by_key[key].get('max_level')} 级），要求还不够"] + lack,
+                "step": step, "advances": {"mine", "load_machines"}}
     return {"missing": [f"下一档是{label}（最高 {by_key[key].get('max_level')} 级），要求还不够"] + lack,
-            "step": step, "advances": {"mine", "ship_produce", "fish", "upgrade_tool"}}
+            "step": [{"type": "ship_produce"}], "advances": {"ship_produce", "mine"}}
 
 
 def mine_gear(p):
