@@ -546,6 +546,8 @@ class Agent:
         # Try loading in the morning; the execution guard suppresses empty repeats.
         if any(not m.get("contains") for m in machines):
             morning.append({"type": "load_machines"})
+        # Open the next planned road before the day's placing. Trees on it are chopped first.
+        morning.append({"type": "build_road"})
 
         prepared = self.prepared
         self.prepared = None
@@ -2099,7 +2101,16 @@ class Agent:
         if still_trees:
             return {"ok": False, "progress_count": 0, "reason_code": "BLOCKED",
                     "message": "规划道路上的树还在: " + ", ".join(f"({x},{y})" for x, y in still_trees)}
-        todo = [t for t in ordered if rows[t[1]][t[0]] in ".d" and t not in self.day.road_skip][:max_tiles]
+        paved = {t for t in ordered if rows[t[1]][t[0]] == "p"}
+
+        def touches_paved(tile):
+            x, y = tile
+            return any((x + dx, y + dy) in paved for dx in (-1, 0, 1) for dy in (-1, 0, 1) if dx or dy)
+
+        # Extend the road that already exists. The first free tiles in plan order can be
+        # a disconnected strip, and laying those comes back as 0 tiles.
+        todo = [t for t in ordered if rows[t[1]][t[0]] in ".d" and t not in self.day.road_skip and touches_paved(t)]
+        todo = (todo or [t for t in ordered if rows[t[1]][t[0]] in ".d" and t not in self.day.road_skip])[:max_tiles]
         if not todo:
             return {"ok": False, "progress_count": 0, "reason_code": "NO_WORK", "message": "规划的路都铺好了，或剩下的路段被树/作物挡住（升级斧头后再清）"}
         recipes = self.safe(self.game.recipes, [])
