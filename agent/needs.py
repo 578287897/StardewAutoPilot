@@ -3,6 +3,7 @@
 Mail, the festival step from the calendar, the community-center target from the
 mod, a bundle we can already donate, and a tool upgrade whose cost the ladder says is met.
 """
+import bundle_lock
 import milestones
 
 
@@ -14,7 +15,11 @@ def _is_gold(item):
 def _ready_bundle_items(bundles):
     """Item names the bundles API already counts as owned. Gold bundles are paid, not taken."""
     names = []
+    complete = bundle_lock._complete_count(bundles)
     for area in (bundles or {}).get("areas") or []:
+        index = bundle_lock.AREA_INDEX.get(area.get("area"))
+        if index is not None and not bundle_lock.scroll_unlocked(index, complete):
+            continue
         for bundle in area.get("bundles") or []:
             if bundle.get("complete"):
                 continue

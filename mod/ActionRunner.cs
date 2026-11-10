@@ -2114,6 +2114,13 @@ namespace StardewAutoPilot
                 foreach (var o in this.OpenCommunityCenterNote()) yield return o;
                 yield break;
             }
+            var locked = Bundles.LockedDecision();
+            if (locked != null)
+            {
+                foreach (var pair in locked)
+                    J.Data[pair.Key] = pair.Value;
+                throw new ActionFailed((string)locked["message"]);
+            }
             // couldThisIngredienteBeUsedInABundle reads the location's bundle list, which stays
             // empty until the Community Center is loaded. The backpack can already hold Copper Bar
             // and Bat Wing while that check still says nothing matches. Open the note and match there.

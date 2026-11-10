@@ -111,6 +111,77 @@ namespace StardewAutoPilot
             return count;
         }
 
+        /// <summary>Held item belongs to a bundle whose scroll is not visible yet. Null when donate can try a visible scroll.</summary>
+        public static Dictionary<string, object> LockedDecision()
+        {
+            var cc = Game1.getLocationFromName("CommunityCenter") as CommunityCenter;
+            if (cc == null || !CanDonate)
+                return null;
+            int complete = cc.numberOfCompleteBundles();
+            var held = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var item in Game1.player.Items)
+            {
+                if (item is not StardewValley.Object obj)
+                    continue;
+                held.Add(obj.DisplayName);
+                if (!string.IsNullOrEmpty(obj.QualifiedItemId))
+                    held.Add(obj.QualifiedItemId);
+                if (!string.IsNullOrEmpty(obj.ItemId))
+                    held.Add(obj.ItemId);
+            }
+            Dictionary<string, object> locked = null;
+            string nextGoal = null;
+            string nextPartial = null;
+            var done = cc.bundlesDict();
+            foreach (var pair in Game1.netWorldState.Value.BundleData)
+            {
+                string[] key = pair.Key.Split('/');
+                if (key.Length < 2)
+                    continue;
+                string areaName = key[0];
+                int area = CommunityCenter.getAreaNumberFromName(areaName);
+                bool unlocked = area >= 0 && cc.shouldNoteAppearInArea(area);
+                string[] fields = pair.Value.Split('/');
+                string name = fields.Length > 6 && !string.IsNullOrEmpty(fields[6]) ? fields[6] : fields[0];
+                string[] items = ArgUtility.SplitBySpace(fields.Length > 2 ? fields[2] : "");
+                int index = Convert.ToInt32(key[1]);
+                bool[] completed = done.TryGetValue(index, out var flags) ? flags : new bool[items.Length / 3];
+                int slots = fields.Length > 4 && int.TryParse(fields[4], out int parsed) && parsed > 0 ? parsed : items.Length / 3;
+                int filled = completed.Take(items.Length / 3).Count(slot => slot);
+                if (filled >= slots)
+                    continue;
+                if (unlocked && nextPartial == null && filled > 0)
+                    nextPartial = name;
+                if (unlocked && nextGoal == null)
+                    nextGoal = name;
+                string heldName = null;
+                for (int i = 0; i + 2 < items.Length; i += 3)
+                {
+                    if (items[i] == "-1" || (completed.Length > i / 3 && completed[i / 3]))
+                        continue;
+                    string qid = ItemRegistry.QualifyItemId(items[i]) ?? items[i];
+                    string display = ItemRegistry.GetDataOrErrorItem(qid).DisplayName;
+                    if (held.Contains(display) || held.Contains(qid) || held.Contains(items[i]))
+                    {
+                        heldName = display;
+                        break;
+                    }
+                }
+                if (heldName == null)
+                    continue;
+                if (unlocked)
+                    return null;
+                if (locked == null)
+                    locked = BundleLock.Locked(name, areaName, area, complete, heldName, "");
+            }
+            if (locked == null)
+                return null;
+            locked["next_goal"] = nextPartial ?? nextGoal ?? "";
+            locked["message"] = locked["bundle"] + " scroll is locked (" + locked["missing"] + "). "
+                + "The item stays in the backpack. Next visible bundle: " + locked["next_goal"] + ".";
+            return locked;
+        }
+
         public static Dictionary<string, object> Status()
         {
             var result = new Dictionary<string, object> { ["stage"] = Stage(), ["current_target"] = CurrentTarget() };

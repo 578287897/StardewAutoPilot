@@ -131,6 +131,13 @@ try
     Check(!ItemMatch.IsExact("Quartz", "Refined Quartz", "Refined Quartz", "338", "(O)338"), "Refined Quartz is not Quartz");
     Check(ItemMatch.IsExact("80", "Quartz", "Quartz", "80", "(O)80"), "an item id matches that item only");
     Check(!ItemMatch.IsExact("80", "Refined Quartz", "Refined Quartz", "338", "(O)338"), "Quartz's id does not match Refined Quartz");
+    Check(!BundleLock.ScrollUnlocked(3, 0, false), "the boiler room scroll stays locked with no bundles done");
+    Check(BundleLock.ScrollUnlocked(3, 2, false), "two complete bundles open the boiler room scroll");
+    Check(BundleLock.ScrollUnlocked(1, 0, false), "the crafts room scroll is available immediately");
+    var locked = BundleLock.Locked("Blacksmith's", "Boiler Room", 3, 0, "Copper Bar", "Construction");
+    Check((string)locked["reason_code"] == "BUNDLE_LOCKED", "a locked scroll is BUNDLE_LOCKED");
+    Check(!((string)locked["message"]).Contains("nothing could be deposited") && !((string)locked["message"]).Contains("no reachable route"), "a locked scroll is not a path or deposit failure");
+    Check((string)locked["next_goal"] == "Construction" && (string)locked["unlock"] == "locked", "the receipt names the unlock state and one next bundle");
 
     Console.WriteLine($"{checks} protocol checks passed.");
 }

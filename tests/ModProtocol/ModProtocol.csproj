@@ -12,5 +12,6 @@
     <Compile Include="../../mod/FestivalRoute.cs" Link="FestivalRoute.cs" />
     <Compile Include="../../mod/Presence.cs" Link="Presence.cs" />
     <Compile Include="../../mod/ItemMatch.cs" Link="ItemMatch.cs" />
+    <Compile Include="../../mod/BundleLock.cs" Link="BundleLock.cs" />
   </ItemGroup>
 </Project>

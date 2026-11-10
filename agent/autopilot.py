@@ -26,6 +26,7 @@ from datetime import datetime
 from pathlib import Path
 
 import actions
+import bundle_lock
 from execution_guard import ExecutionGuard
 from storage import atomic_write, synchronized, read_json
 import cropplan
@@ -296,6 +297,8 @@ class DayLog:
         self.craft_blocked = set()  # items that already failed craft today (don't spam)
         self.place_blocked = set()  # items with no tidy spot left today
         self.take_blocked = set()  # take already failed today; do not repeat it
+        self.bundle_seen = set()   # (bundle, precondition) already reported locked
+        self.bundle_prompt = ""
         self.execution_guard = ExecutionGuard()
         self.progress_start = {}
         self.llm_calls_start, self.tokens_start = usage
@@ -724,7 +727,6 @@ class Agent:
         tools = ladder.get("tools") or []
         if not tools:
             lines.append("（接口没有返回阶梯）")
-            return "\n".join(lines)
         for tool in tools:
             if tool.get("key") not in milestones.TOOL_ORDER or not tool.get("held", True):
                 continue
@@ -741,6 +743,9 @@ class Agent:
                     f"- {tool.get('key')} 当前 {current} 级，下一档 {nxt.get('display_name') or nxt.get('level')}："
                     f"{nxt.get('price')}g + {nxt.get('trade_item_amount')}x {nxt.get('trade_item_name')}"
                     f"（最高 {tool.get('max_level')} 级）")
+        note = getattr(getattr(self, "day", None), "bundle_prompt", "")
+        if note:
+            lines.append(note)
         return "\n".join(lines)
 
     def sync_play_logs(self):
@@ -1458,6 +1463,10 @@ class Agent:
         festival = self.festival_gate(st, action)
         if festival is not None:
             return festival
+        if t == "donate":
+            locked = self.bundle_lock_gate(st)
+            if locked is not None:
+                return locked
 
         if t == "take" and self.take_is_blocked(action):
             return {"ok": False, "status": "CIRCUIT_OPEN", "reason_code": "BLOCKED",
@@ -1714,6 +1723,26 @@ class Agent:
         log(reason)
         return {"ok": False, "status": "FESTIVAL_BLOCKED", "reason_code": "FESTIVAL_BLOCKED", "message": reason}
 
+    def bundle_lock_gate(self, st):
+        """Refuse a donate whose scroll is hidden. The same bundle is not tried again until the precondition changes."""
+        bundles = self.safe(self.game.bundles, {})
+        decision = bundle_lock.decide(bundles, st.get("inventory") or [])
+        if decision is None:
+            return None
+        seen = getattr(self.day, "bundle_seen", None)
+        if seen is None:
+            self.day.bundle_seen = set()
+            seen = self.day.bundle_seen
+        key = (decision["bundle"], decision["precondition"])
+        if not bundle_lock.allow_repeat("BUNDLE_LOCKED", decision["bundle"], decision["precondition"], seen):
+            return {"ok": False, "status": "CIRCUIT_OPEN", "reason_code": "BUNDLE_LOCKED",
+                    "class": "do-not-retry",
+                    "message": f"donate {decision['bundle']} already blocked while {decision['precondition']}"}
+        seen.add(key)
+        self.day.bundle_prompt = decision.get("prompt") or ""
+        log(decision["message"])
+        return decision
+
     def check_knocked_out(self, st, res):
         """Passing out in the mine costs money and items: cap the depth 10 floors shallower for 3 days."""
         msg = str(res.get("message", ""))
@@ -1741,7 +1770,7 @@ class Agent:
         log(("✓ " if entry["ok"] else "✗ ") + self.fmt_step(entry, with_thought=True))
         if entry["ok"]:
             self.restart_declined = False
-        elif self.day is not None and res.get("status") not in ("AGENT_UNAVAILABLE", "ACTION_UNCERTAIN", "CIRCUIT_OPEN", "FESTIVAL_BLOCKED"):
+        elif self.day is not None and res.get("status") not in ("AGENT_UNAVAILABLE", "ACTION_UNCERTAIN", "CIRCUIT_OPEN", "FESTIVAL_BLOCKED", "BUNDLE_LOCKED"):
             self.consider_restart(st)
         if self.status:
             self.status.refresh(self, self.safe(self.game.state, st))
