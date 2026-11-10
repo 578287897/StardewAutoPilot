@@ -2137,7 +2137,16 @@ namespace StardewAutoPilot
                 {
                     if (bundle.complete || !ReferenceEquals(Game1.activeClickableMenu, menu))
                         continue;
-                    bool Fits(Item item) => item is SObject && bundle.ingredients.Any(ing => !ing.completed && bundle.IsValidItemForThisIngredientDescription(item, ing));
+                    bool IdMatch(Item item, BundleIngredientDescription ing)
+                    {
+                        if (ing.completed || item is not SObject obj || obj.Quality < ing.quality)
+                            return false;
+                        return obj.QualifiedItemId == ing.id || obj.ItemId == ing.id
+                            || obj.ParentSheetIndex.ToString() == ing.id
+                            || (ing.category != 0 && obj.Category == ing.category);
+                    }
+                    bool Fits(Item item) => bundle.ingredients.Any(ing =>
+                        bundle.IsValidItemForThisIngredientDescription(item, ing) || IdMatch(item, ing));
                     if (!P.Items.Any(Fits))
                         continue;
                     reflection.GetMethod(menu, "setUpBundleSpecificPage").Invoke(bundle);
@@ -2146,7 +2155,8 @@ namespace StardewAutoPilot
                     {
                         if (slot.item != null)
                             continue;
-                        var item = P.Items.FirstOrDefault(i => i != null && Fits(i) && bundle.canAcceptThisItem(i, slot));
+                        var item = P.Items.FirstOrDefault(i => i != null && Fits(i)
+                            && (bundle.canAcceptThisItem(i, slot) || bundle.ingredients.Any(ing => IdMatch(i, ing))));
                         if (item == null)
                             break;
                         int index = P.Items.IndexOf(item);
