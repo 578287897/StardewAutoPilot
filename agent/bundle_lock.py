@@ -141,6 +141,50 @@ def decide(bundles, inventory, joja_seen=False):
     }
 
 
+def _owned_name(bundle):
+    """An ingredient the player already owns somewhere, including a chest."""
+    for item in bundle.get("still_needed") or []:
+        name = str(item.get("item") or "")
+        if name.endswith("g") and name[:-1].isdigit():
+            continue
+        if name and item.get("owned", 0) >= item.get("count", 1):
+            return name
+    return None
+
+
+def note_for_replan(bundles, joja_seen=False):
+    """Prompt text for the next replan when a visible bundle is the real next goal.
+
+    This does not require the locked item to be in the backpack, and it does not
+    insert a script step.
+    """
+    complete = _complete_count(bundles)
+    locked = None
+    next_goal = None
+    next_partial = None
+    for area in (bundles or {}).get("areas") or []:
+        area_name = area.get("area") or ""
+        index = AREA_INDEX.get(area_name)
+        if index is None:
+            continue
+        unlocked = scroll_unlocked(index, complete, joja_seen)
+        for bundle in area.get("bundles") or []:
+            if bundle.get("complete"):
+                continue
+            if unlocked and next_partial is None and not str(bundle.get("slots") or "").startswith("0/"):
+                next_partial = bundle.get("name")
+            if unlocked and next_goal is None:
+                next_goal = bundle.get("name")
+            owned = _owned_name(bundle)
+            if owned and not unlocked and locked is None:
+                locked = (bundle.get("name"), area_name, index, owned)
+    goal = next_partial or next_goal
+    if locked is None or not goal:
+        return ""
+    bundle, area_name, index, owned = locked
+    return prompt_text(bundle, area_name, missing_precondition(index, complete), owned, goal, complete)
+
+
 def prompt_text(bundle, area, missing, held_item, next_goal, complete_bundles):
     """Text added to the existing replan prompt. It does not force the next script."""
     return (

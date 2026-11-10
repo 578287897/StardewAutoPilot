@@ -68,6 +68,13 @@ class BundleLockTests(unittest.TestCase):
         state = {"community_center": "donate: can donate", "inventory": [{"name": "Copper Bar", "stack": 1}]}
         self.assertIsNone(immediate({}, state, bundles()))
 
+    def test_replan_mentions_the_visible_bundle_when_copper_is_only_in_a_chest(self):
+        text = bundle_lock.note_for_replan(bundles())
+        self.assertIn("Blacksmith's", text)
+        self.assertIn("unlock=locked", text)
+        self.assertIn("Construction", text)
+        self.assertNotIn("nothing could be deposited", text)
+
     def test_block_classes_and_repeat_rule(self):
         self.assertEqual(bundle_lock.classify_block("BLOCKED"), "temporary")
         self.assertEqual(bundle_lock.classify_block("NO_WORK"), "temporary")

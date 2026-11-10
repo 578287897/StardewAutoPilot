@@ -783,6 +783,7 @@ class Agent:
         poi = [f"{p['kind']}@({p['x']},{p['y']}) {p['note']}" for p in st.get("points_of_interest", [])]
         progress = self.roadmap_progress()
         scene = self.scene_actions()
+        self.refresh_bundle_prompt()
         user = prompts.USER_SCRIPT_NEXT_DAY.format(
             **self.mem.snapshot(),
             year=year, season=season, day=day, weekday=weekday, weather=st.get("weather_tomorrow"), days_left=28 - day,
@@ -1004,6 +1005,7 @@ class Agent:
         try:
             scene = self.scene_actions()
             progress = self.roadmap_progress()
+            self.refresh_bundle_prompt()
             resp = self.llm.chat_json([
                 {"role": "system", "content": prompts.SYSTEM_SCRIPT.format(actions=prompts.actions_text(scene), roadmap=prompts.ROADMAP)},
                 {"role": "user", "content": prompts.USER_SCRIPT_REPAIR.format(
@@ -1722,6 +1724,15 @@ class Agent:
             return None
         log(reason)
         return {"ok": False, "status": "FESTIVAL_BLOCKED", "reason_code": "FESTIVAL_BLOCKED", "message": reason}
+
+    def refresh_bundle_prompt(self):
+        """Fill the existing goals section when a visible bundle is the next one."""
+        if getattr(self, "day", None) is None:
+            return ""
+        note = bundle_lock.note_for_replan(self.safe(self.game.bundles, {}))
+        if note:
+            self.day.bundle_prompt = note
+        return note
 
     def bundle_lock_gate(self, st):
         """Refuse a donate whose scroll is hidden. The same bundle is not tried again until the precondition changes."""
