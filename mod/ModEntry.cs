@@ -154,7 +154,9 @@ namespace StardewAutoPilot
                 Game1.addHUDMessage(new HUDMessage("AutoPilot 已暂停：AI 代理未连接（时间已冻结）", HUDMessage.error_type));
                 this.Monitor.Log("Agent disconnected: game clock paused until it reconnects.", LogLevel.Info);
             }
-            bool freeze = (this.Config.FreezeTimeWhileAgentThinks && connected && !this.Runner.Busy || agentLost) && Context.IsPlayerFree;
+            bool wantFreeze = (this.Config.FreezeTimeWhileAgentThinks && connected && !this.Runner.Busy || agentLost) && Context.IsPlayerFree;
+            bool onTemp = string.Equals(Game1.currentLocation?.Name, "Temp", StringComparison.OrdinalIgnoreCase);
+            bool freeze = FestivalHold.PinClock(Game1.eventUp, Game1.CurrentEvent?.isFestival == true, onTemp, wantFreeze);
             if (freeze)
             {
                 if (this.frozenTimeInterval < 0)

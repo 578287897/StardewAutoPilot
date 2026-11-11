@@ -49,13 +49,17 @@ namespace StardewAutoPilot
             {
                 if (festival.InDays != 0 || string.IsNullOrEmpty(festival.Location))
                     continue;
-                if (time < festival.Start || time >= festival.End)
+                // Before the start the game refuses the warp ("festival is being set up") and can
+                // still drop the farmer on the Temp map if the clock ticks over mid-walk.
+                if (time >= festival.End)
                     continue;
                 bool sameMap = destination.Equals(festival.Location, StringComparison.OrdinalIgnoreCase);
                 bool townDoor = festival.Location.Equals("Town", StringComparison.OrdinalIgnoreCase)
                     && Array.Exists(TownDoors, door => door.Equals(destination, StringComparison.OrdinalIgnoreCase));
                 if (!sameMap && !townDoor)
                     continue;
+                if (time < festival.Start)
+                    return $"{festival.Name} is being set up in {festival.Location} until {festival.Start}; {destination} has no door yet";
                 return $"{festival.Name} occupies {festival.Location} from {festival.Start} until {festival.End}; {destination} has no door until that map returns";
             }
             return null;

@@ -241,3 +241,45 @@ class ReviewAuthRetryTests(unittest.TestCase):
             agent.step({"ready": True, "event": True, "time": 1100, "menu": None, "busy_action": None})
         sleeper.assert_called()
         agent.execute.assert_not_called()
+
+    def test_step_waits_on_a_stranded_festival_map_without_acting(self):
+        from unittest.mock import patch
+        agent = Agent.__new__(Agent)
+        agent.game = Mock(pending=None)
+        agent.day = SimpleNamespace(script=[{"type": "goto_location", "location": "ArchaeologyHouse"}], steps=[])
+        agent.execute = Mock()
+        state = {
+            "ready": True, "event": True, "location": "Temp", "warping": True,
+            "event_festival": True, "presence": "temporary_map", "time": 910,
+            "menu": None, "busy_action": None, "player": {"x": 1, "y": 90, "free": False},
+        }
+        with patch("autopilot.time.sleep") as sleeper, patch("autopilot.log") as logger:
+            agent.step(state)
+        sleeper.assert_called()
+        agent.execute.assert_not_called()
+        self.assertTrue(any("不会自己结束" in str(c) for c in logger.call_args_list))
+
+    def test_step_keeps_acting_when_the_festival_is_playable(self):
+        from unittest.mock import patch
+        agent = Agent.__new__(Agent)
+        agent.game = Mock(pending=None)
+        agent.day = SimpleNamespace(
+            awaiting_script=False, prep_thread=None, prepared=None, steps=[],
+            script=[{"type": "festival", "activity": "start"}], script_total=1,
+        )
+        agent.cfg = {"max_steps_per_day": 100}
+        agent.auto_menu_waits = 0
+        agent.mode = "script"
+        agent.execute = Mock(return_value={"ok": True, "message": "started"})
+        agent.preserve_interrupted = Mock()
+        agent.record = Mock()
+        state = {
+            "ready": True, "event": True, "location": "Temp", "warping": False,
+            "event_festival": True, "presence": "legal_festival", "time": 910,
+            "menu": None, "busy_action": None,
+            "player": {"free": True, "stamina": 100, "max_stamina": 270, "health": 100},
+        }
+        with patch("autopilot.time.sleep") as sleeper:
+            agent.step(state)
+        agent.execute.assert_called()
+        sleeper.assert_not_called()

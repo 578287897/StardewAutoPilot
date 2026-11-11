@@ -3,7 +3,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock
 
 from autopilot import Agent
-from travel import classify_presence, explain_route, festival_block
+from travel import classify_presence, cutscene_hold, explain_route, festival_block
 
 FEAST = [{
     "in_days": 0, "name": "Feast of the Winter Star", "location": "Town",
@@ -17,6 +17,11 @@ class TravelTests(unittest.TestCase):
         self.assertIn("Feast of the Winter Star", reason)
         self.assertIn("1400", reason)
         self.assertIsNone(festival_block(FEAST, 1500, "CommunityCenter"))
+        setup = festival_block(FEAST, 800, "ArchaeologyHouse")
+        self.assertIn("being set up", setup)
+        self.assertIn("900", setup)
+        self.assertIn("ArchaeologyHouse", setup)
+        self.assertIsNone(festival_block(FEAST, 800, "Farm"))
         self.assertEqual(
             explain_route("no reachable route from Mountain to CommunityCenter (unreachable exits: mountain->town)", reason),
             "festival_map_limit")
@@ -27,6 +32,21 @@ class TravelTests(unittest.TestCase):
         self.assertEqual(classify_presence({"location": "Temp", "event": True, "menu": {"type": "DialogueBox"}}), "waiting_dialogue")
         self.assertEqual(classify_presence({"location": "Temp", "event": True, "event_festival": True}), "legal_festival")
         self.assertEqual(classify_presence({"location": "Temp", "event": True, "temp_stuck": True}), "stuck")
+        stranded = {
+            "location": "Temp", "event": True, "event_festival": False, "warping": True,
+            "presence": "temporary_map", "time": 910,
+            "player": {"x": 1, "y": 90, "free": False},
+        }
+        self.assertEqual(cutscene_hold(stranded), "stranded")
+        self.assertIsNone(cutscene_hold({
+            "location": "Temp", "event": True, "event_festival": True, "warping": False,
+            "presence": "legal_festival", "player": {"free": True},
+        }))
+        self.assertEqual(cutscene_hold({"event": True, "location": "FarmHouse", "time": 1100}), "cutscene")
+        self.assertEqual(cutscene_hold({
+            "location": "Temp", "event": True, "event_festival": False, "warping": False,
+            "player": {"free": False},
+        }), "cutscene")
         agent = Agent.__new__(Agent)
         agent.mock = False
         agent.llm = Mock()

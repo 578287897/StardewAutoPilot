@@ -459,7 +459,8 @@ namespace StardewAutoPilot
 
         private IEnumerable<object> GotoLocation(string name)
         {
-            string festival = FestivalRoute.Block(name, Game1.timeOfDay, FestivalRoute.Windows(Social.Calendar(1)));
+            var windows = FestivalRoute.Windows(Social.Calendar(1));
+            string festival = FestivalRoute.Block(name, Game1.timeOfDay, windows);
             if (festival != null)
             {
                 J.Data["reason_code"] = "FESTIVAL_BLOCKED";
@@ -471,6 +472,12 @@ namespace StardewAutoPilot
             for (int leg = 0; leg < 40; leg++)
             {
                 foreach (var o in this.EnsureFree()) yield return o;
+                festival = FestivalRoute.Block(name, Game1.timeOfDay, windows);
+                if (festival != null)
+                {
+                    J.Data["reason_code"] = "FESTIVAL_BLOCKED";
+                    throw new ActionFailed(festival);
+                }
                 var cur = Game1.currentLocation;
                 if (string.Equals(cur.NameOrUniqueName, name, StringComparison.OrdinalIgnoreCase) || string.Equals(cur.Name, name, StringComparison.OrdinalIgnoreCase))
                 {
@@ -480,6 +487,18 @@ namespace StardewAutoPilot
                 var route = World.FindRoute(cur.NameOrUniqueName, name, blocked)
                     ?? throw new ActionFailed($"no reachable route from {cur.NameOrUniqueName} to {name}" + (blocked.Count > 0 ? $" (unreachable exits: {string.Join(", ", blocked.Select(b => b.Item1 + "->" + b.Item2))})" : ""));
                 string next = route[0];
+                // Re-check at every door. A walk that started before 9:00 can reach Town as the feast begins.
+                string hop = FestivalRoute.Block(next, Game1.timeOfDay, windows);
+                if (hop != null)
+                {
+                    blocked.Add((cur.NameOrUniqueName.ToLowerInvariant(), next.ToLowerInvariant()));
+                    if (string.Equals(next, name, StringComparison.OrdinalIgnoreCase))
+                    {
+                        J.Data["reason_code"] = "FESTIVAL_BLOCKED";
+                        throw new ActionFailed(hop);
+                    }
+                    continue;
+                }
                 var exit = World.ReachableExit(cur, next);
                 if (exit == null)
                 {
@@ -1105,10 +1124,20 @@ namespace StardewAutoPilot
         private IEnumerable<object> Wait(int minutes)
         {
             int start = ToMinutes(Game1.timeOfDay);
+            int held = 0;
             for (int i = 0; i < 60 * 60 * 5; i++)
             {
                 if (ToMinutes(Game1.timeOfDay) - start >= minutes)
                     break;
+                // Wait only watches the clock. An event or the Temp map will not move it, so stop
+                // instead of occupying the runner for the whole 18000-tick cap.
+                bool onTemp = string.Equals(Game1.currentLocation?.Name, "Temp", StringComparison.OrdinalIgnoreCase);
+                held = FestivalHold.ClockCanAdvance(Game1.eventUp, onTemp) ? 0 : held + 1;
+                if (held >= FestivalHold.WaitGiveUpTicks)
+                {
+                    J.Message = $"stopped waiting at {Game1.getTimeOfDayString(Game1.timeOfDay)}; the clock is not advancing";
+                    yield break;
+                }
                 yield return null;
             }
             J.Message = $"waited until {Game1.getTimeOfDayString(Game1.timeOfDay)}";

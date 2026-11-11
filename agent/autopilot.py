@@ -1065,14 +1065,16 @@ class Agent:
         if st.get("busy_action"):
             time.sleep(1)  # a timed-out HTTP call may still be executing in the mod
             return
-        if st.get("event") or st.get("location") == "Temp":
-            kind = st.get("presence") or travel.classify_presence(st)
-            if kind == "stuck":
+        hold = travel.cutscene_hold(st)
+        if hold:
+            if hold == "stuck":
                 log("人停在 Temp 且没有节日事件。模组会送回农场，这里不重启进程。")
-            elif kind == "legal_festival":
+            elif hold == "festival":
                 log("节日事件进行中，不跳过，也不重启。")
-            elif kind == "waiting_dialogue":
+            elif hold == "waiting_dialogue":
                 log("对话还开着，等它自己翻页。")
+            elif hold == "stranded":
+                log("节日临时地图不会自己结束，时钟也不会走。等模组把人送出这块地图。")
             else:
                 log("过场或临时地图中，等待播完。不把这一态当成死机。")
             time.sleep(3)

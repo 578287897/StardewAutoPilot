@@ -118,6 +118,15 @@ try
     Check(feastBlock != null && feastBlock.Contains("CommunityCenter"), "a Town festival removes the community center door");
     Check(FestivalRoute.Explain("no reachable route from Mountain to CommunityCenter (unreachable exits: mountain->town)", feastBlock) == "festival_map_limit", "failed Town exits during a festival are the festival map");
     Check(FestivalRoute.Block("CommunityCenter", 1500, FestivalRoute.Windows(feast)) == null, "after the festival the door is a normal route again");
+    string setupBlock = FestivalRoute.Block("ArchaeologyHouse", 800, FestivalRoute.Windows(feast));
+    Check(setupBlock != null && setupBlock.Contains("being set up") && setupBlock.Contains("ArchaeologyHouse"), "before the feast the museum door is already gone");
+    Check(FestivalHold.ShouldLeave(true, true, true, true, false, false, FestivalHold.StrandedTicks), "a festival Temp map with a stuck warp is left");
+    Check(!FestivalHold.ShouldLeave(true, true, true, true, false, true, FestivalHold.StrandedTicks), "a running action is not pulled off the Temp map");
+    Check(!FestivalHold.ShouldLeave(true, true, false, false, false, false, FestivalHold.StrandedTicks), "a story cutscene on Temp is not a festival leave");
+    Check(!FestivalHold.ShouldLeave(true, true, true, false, true, false, FestivalHold.StrandedTicks), "a playable festival is not left at the stranded threshold");
+    Check(FestivalHold.ShouldLeave(true, true, true, false, true, false, FestivalHold.IdleFestivalTicks), "an idle playable festival is left once the wait has gone on");
+    Check(!FestivalHold.ClockCanAdvance(true, false) && !FestivalHold.ClockCanAdvance(false, true) && FestivalHold.ClockCanAdvance(false, false), "an event or the Temp map means the clock cannot advance");
+    Check(!FestivalHold.PinClock(true, true, true, true) && !FestivalHold.PinClock(false, false, true, true) && FestivalHold.PinClock(false, false, false, true) && !FestivalHold.PinClock(false, false, false, false), "thinking does not pin the clock during an event or on Temp");
     Check(FestivalRoute.Explain("no reachable route from Farm to WizardHouse", null) == "real_unreachable", "no exit list means the graph has no path");
     Check(FestivalRoute.Explain("no reachable route from Farm to Town (unreachable exits: farm->town)", null) == "exit_failed", "an exit that failed outside a festival is not a missing edge");
     Check(Presence.Classify(true, false, true, "Temp", null, 0) == "temporary_map", "a warp fade on Temp is still the temporary map");

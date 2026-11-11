@@ -10,6 +10,7 @@
     <Compile Include="../../mod/ShopLocations.cs" Link="ShopLocations.cs" />
     <Compile Include="../../mod/QueryRules.cs" Link="QueryRules.cs" />
     <Compile Include="../../mod/FestivalRoute.cs" Link="FestivalRoute.cs" />
+    <Compile Include="../../mod/FestivalHold.cs" Link="FestivalHold.cs" />
     <Compile Include="../../mod/Presence.cs" Link="Presence.cs" />
     <Compile Include="../../mod/ItemMatch.cs" Link="ItemMatch.cs" />
     <Compile Include="../../mod/BundleLock.cs" Link="BundleLock.cs" />

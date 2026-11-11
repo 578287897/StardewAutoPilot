@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewValley;
@@ -18,6 +19,8 @@ namespace StardewAutoPilot
         private int eventAge;
         private string lastEventKey;
         private int tempAge;
+        private int strandedAge;
+        private bool releasedStranded;
         public static int TempAge { get; private set; }
 
         public MenuAutomation(ModEntry mod) { this.mod = mod; }
@@ -60,10 +63,37 @@ namespace StardewAutoPilot
                 this.eventAge++;
 
             bool warping = Game1.isWarping || Game1.fadeToBlack;
-            bool bareTemp = Game1.currentLocation?.Name == "Temp" && Game1.eventUp && ev == null && !warping;
+            bool onTemp = string.Equals(Game1.currentLocation?.Name, "Temp", StringComparison.OrdinalIgnoreCase);
+            bool runnerBusy = this.mod.Runner.Busy;
+            bool festival = ev?.isFestival == true;
+            bool playable = festival && ev.playerControlSequence && !warping && Context.IsPlayerFree;
+            if (!onTemp || !Game1.eventUp)
+            {
+                this.strandedAge = 0;
+                this.releasedStranded = false;
+            }
+            else if (!runnerBusy)
+                this.strandedAge++;
+            else
+                this.strandedAge = 0;
+            if (onTemp && Game1.eventUp && !runnerBusy && this.releasedStranded && this.strandedAge >= FestivalHold.StrandedTicks)
+            {
+                this.strandedAge = 0;
+                this.HardLeaveTemp();
+                return;
+            }
+            if (FestivalHold.ShouldLeave(onTemp, Game1.eventUp, festival, warping, playable, runnerBusy, this.strandedAge) && !this.releasedStranded)
+            {
+                this.releasedStranded = true;
+                this.strandedAge = 0;
+                this.ReleaseStrandedMap(ev);
+                return;
+            }
+
+            bool bareTemp = onTemp && Game1.eventUp && ev == null && !warping;
             this.tempAge = bareTemp ? this.tempAge + 1 : 0;
             TempAge = this.tempAge;
-            string presence = Presence.Classify(Game1.eventUp, ev?.isFestival == true, warping, Game1.currentLocation?.Name, menu?.GetType().Name, this.tempAge);
+            string presence = Presence.Classify(Game1.eventUp, festival, warping, Game1.currentLocation?.Name, menu?.GetType().Name, this.tempAge);
             if (Presence.ShouldWarpHome(presence))
             {
                 this.tempAge = 0;
@@ -143,6 +173,69 @@ namespace StardewAutoPilot
                     levelUp.okButtonClicked();
                     break;
             }
+        }
+
+        /// <summary>
+        /// Leave a festival Temp map without the vanilla jump to 22:00.
+        /// <see cref="Event.exitEvent"/> fast-forwards machines by the minutes until 22:00 and then
+        /// sets <c>timeOfDayAfterFade</c>. Setting the clock to 22:00 first makes that span zero,
+        /// and putting the saved time back keeps 9:10 (or whenever the farmer was pulled in).
+        /// </summary>
+        private void ReleaseStrandedMap(Event ev)
+        {
+            int kept = Game1.timeOfDay;
+            if (ev != null && ev.isFestival)
+            {
+                try
+                {
+                    // Span until 22:00 is zero, so machines are not fast-forwarded. Restored below.
+                    Game1.timeOfDay = 2200;
+                    ev.exitEvent();
+                }
+                finally
+                {
+                    Game1.timeOfDay = kept;
+                    Game1.timeOfDayAfterFade = kept;
+                }
+                foreach (var npc in Utility.getAllVillagers())
+                {
+                    if (npc != null)
+                        npc.ignoreScheduleToday = false;
+                }
+                this.mod.Log.Add("event", $"Festival Temp map was not going to end; left it and kept the clock at {kept}.");
+                this.mod.Monitor.Log($"Left a stranded festival map. Clock kept at {kept} instead of jumping to 2200.", LogLevel.Warn);
+                return;
+            }
+            this.HardLeaveTemp();
+        }
+
+        /// <summary>The festival fade did not finish. Drop the event flag and warp home at the current time.</summary>
+        private void HardLeaveTemp()
+        {
+            int kept = Game1.timeOfDay;
+            var ev = Game1.currentLocation?.currentEvent;
+            if (ev != null)
+            {
+                ev.isFestival = false;
+                try { ev.cleanup(); }
+                catch (Exception ex) { this.mod.Monitor.Log("Temp cleanup failed: " + ex.Message, LogLevel.Warn); }
+            }
+            if (Game1.currentLocation != null)
+                Game1.currentLocation.currentEvent = null;
+            Game1.eventUp = false;
+            Game1.eventOver = false;
+            Game1.fadeToBlack = false;
+            Game1.nonWarpFade = false;
+            Game1.timeOfDayAfterFade = -1;
+            Game1.locationRequest = null;
+            typeof(Game1).GetProperty("isWarping", BindingFlags.Public | BindingFlags.Static)
+                ?.GetSetMethod(true)
+                ?.Invoke(null, new object[] { false });
+            Game1.timeOfDay = kept;
+            Game1.player.CanMove = true;
+            Game1.warpFarmer("FarmHouse", 9, 9, 2);
+            this.mod.Log.Add("event", $"Temp map was still holding the clock at {kept}; warping home.");
+            this.mod.Monitor.Log($"Warped home from a Temp map that did not release. Clock kept at {kept}.", LogLevel.Warn);
         }
 
         /// <summary>Click the center of a ClickableComponent field on a menu. Returns false if the field doesn't exist.</summary>
